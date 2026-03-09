@@ -290,6 +290,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
               return const EmptyState(
                 icon: Icons.photo_library_rounded,
                 title: 'No photos yet',
+                illustrationType: 'photos',
                 description: 'Tap the camera button to add your first photo',
               );
             }

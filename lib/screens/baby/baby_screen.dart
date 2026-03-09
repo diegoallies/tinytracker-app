@@ -475,6 +475,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
             const EmptyState(
               icon: Icons.child_care_rounded,
               title: 'Add Your Baby',
+              illustrationType: 'no_baby',
               description: 'Create a profile for your little one to start tracking.',
             ),
             const SizedBox(height: 24),

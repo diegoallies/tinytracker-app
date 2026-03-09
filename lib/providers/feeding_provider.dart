@@ -10,12 +10,13 @@ final recentFeedingsProvider = FutureProvider.autoDispose<List<Feeding>>((ref) a
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return [];
 
-  final data = await SupabaseService.client
-      .from('feedings')
-      .select('*')
-      .eq('baby_id', baby.id)
-      .order('logged_at', ascending: false)
-      .limit(10);
+  try {
+    final data = await SupabaseService.client
+        .from('feedings')
+        .select('*')
+        .eq('baby_id', baby.id)
+        .order('logged_at', ascending: false)
+        .limit(10);
 
     return data
         .where((json) => json['deleted_at'] == null)
@@ -73,7 +74,7 @@ class FeedingActions {
   static Future<void> deleteFeeding(String feedingId) async {
     await SupabaseService.client
         .from('feedings')
-        .delete()
+        .update({'deleted_at': DateTime.now().toIso8601String()})
         .eq('id', feedingId);
   }
 }
