@@ -10,7 +10,7 @@ final recentFeedingsProvider = FutureProvider.autoDispose<List<Feeding>>((ref) a
 
   final data = await SupabaseService.client
       .from('feedings')
-      .select('*, profiles(display_name)')
+      .select('*')
       .eq('baby_id', baby.id)
       .isFilter('deleted_at', null)
       .order('logged_at', ascending: false)

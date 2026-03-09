@@ -10,7 +10,7 @@ final recentDiapersProvider = FutureProvider.autoDispose<List<Diaper>>((ref) asy
 
   final data = await SupabaseService.client
       .from('diapers')
-      .select('*, profiles(display_name)')
+      .select('*')
       .eq('baby_id', baby.id)
       .isFilter('deleted_at', null)
       .order('logged_at', ascending: false)

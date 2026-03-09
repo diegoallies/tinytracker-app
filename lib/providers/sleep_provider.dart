@@ -28,7 +28,7 @@ final recentSleepsProvider = FutureProvider.autoDispose<List<SleepSession>>((ref
 
   final data = await SupabaseService.client
       .from('sleeps')
-      .select('*, profiles(display_name)')
+      .select('*')
       .eq('baby_id', baby.id)
       .isFilter('deleted_at', null)
       .not('end_time', 'is', null)
