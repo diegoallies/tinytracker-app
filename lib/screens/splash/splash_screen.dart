@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/supabase_service.dart';
 
-/// Splash screen matching TinyTrack web - purple baby icon, animated.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -11,15 +9,80 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late AnimationController _textController;
+  late AnimationController _pulseController;
+  late AnimationController _progressController;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoOpacity;
+  late Animation<double> _textSlide;
+  late Animation<double> _textOpacity;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _progressAnimation;
+
   @override
   void initState() {
     super.initState();
-    _navigate();
+
+    // Logo elastic bounce in
+    _logoController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
+    );
+    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: const Interval(0.0, 0.5)),
+    );
+
+    // Text slide up
+    _textController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _textSlide = Tween<double>(begin: 30.0, end: 0.0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
+    );
+    _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
+    );
+
+    // Pulse glow
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // Progress bar
+    _progressController = AnimationController(
+      duration: const Duration(milliseconds: 1800),
+      vsync: this,
+    );
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
+
+    _startAnimations();
   }
 
-  Future<void> _navigate() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
+  void _startAnimations() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    _logoController.forward();
+
+    await Future.delayed(const Duration(milliseconds: 500));
+    _textController.forward();
+    _pulseController.repeat(reverse: true);
+
+    await Future.delayed(const Duration(milliseconds: 300));
+    _progressController.forward();
+
+    await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
 
     final isLoggedIn = SupabaseService.currentUser != null;
@@ -31,89 +94,170 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void dispose() {
+    _logoController.dispose();
+    _textController.dispose();
+    _pulseController.dispose();
+    _progressController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Baby icon in purple circle
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: const Color(0xFF7C3AED).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.child_care,
-                size: 56,
-                color: Color(0xFF7C3AED),
-              ),
-            )
-                .animate()
-                .scale(
-                  begin: const Offset(0.5, 0.5),
-                  end: const Offset(1.0, 1.0),
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.elasticOut,
-                )
-                .fadeIn(duration: const Duration(milliseconds: 400)),
-            const SizedBox(height: 24),
-            // App name
-            const Text(
-              'TinyTrack',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A2E),
-                letterSpacing: -0.5,
-              ),
-            )
-                .animate()
-                .fadeIn(
-                  delay: const Duration(milliseconds: 300),
-                  duration: const Duration(milliseconds: 500),
-                )
-                .slideY(
-                  begin: 0.3,
-                  delay: const Duration(milliseconds: 300),
-                  duration: const Duration(milliseconds: 500),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF5B21B6),
+              Color(0xFF7C3AED),
+              Color(0xFF5B21B6),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Spacer(flex: 3),
+
+                // Animated logo with glow
+                AnimatedBuilder(
+                  animation: Listenable.merge([_logoController, _pulseController]),
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _logoScale.value * _pulseAnimation.value,
+                      child: Opacity(
+                        opacity: _logoOpacity.value,
+                        child: Container(
+                          width: 130,
+                          height: 130,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(28),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFA78BFA).withOpacity(0.4 * _pulseAnimation.value),
+                                blurRadius: 40,
+                                spreadRadius: 10,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Image.asset(
+                              'assets/images/logo.jpg',
+                              width: 130,
+                              height: 130,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-            const SizedBox(height: 8),
-            // Tagline
-            const Text(
-              'Track every precious moment',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF9CA3AF),
-                letterSpacing: 0.2,
-              ),
-            )
-                .animate()
-                .fadeIn(
-                  delay: const Duration(milliseconds: 600),
-                  duration: const Duration(milliseconds: 500),
+
+                const SizedBox(height: 24),
+
+                // Animated text
+                AnimatedBuilder(
+                  animation: _textController,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, _textSlide.value),
+                      child: Opacity(
+                        opacity: _textOpacity.value,
+                        child: Column(
+                          children: [
+                            const Text(
+                              'TinyTrack',
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Track every precious moment',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white.withOpacity(0.7),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-            const SizedBox(height: 48),
-            // Loading indicator
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  const Color(0xFF7C3AED).withOpacity(0.6),
+
+                const SizedBox(height: 48),
+
+                // Animated progress bar
+                AnimatedBuilder(
+                  animation: _progressController,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _textOpacity.value,
+                      child: Container(
+                        width: 180,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2),
+                          color: Colors.white.withOpacity(0.15),
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: _progressAnimation.value,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(2),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFA78BFA),
+                                    Color(0xFFF9A8D4),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ),
-            )
-                .animate()
-                .fadeIn(
-                  delay: const Duration(milliseconds: 900),
-                  duration: const Duration(milliseconds: 400),
+
+                const Spacer(flex: 2),
+
+                // Bottom tagline
+                AnimatedBuilder(
+                  animation: _textController,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _textOpacity.value * 0.5,
+                      child: Text(
+                        'Made with love',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.4),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-          ],
+
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
         ),
       ),
     );
