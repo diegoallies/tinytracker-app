@@ -6,7 +6,7 @@ import '../services/notification_service.dart';
 import '../utils/date_utils.dart';
 import 'baby_provider.dart';
 
-final recentFeedingsProvider = FutureProvider.autoDispose<List<Feeding>>((ref) async {
+final recentFeedingsProvider = FutureProvider<List<Feeding>>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return [];
 
@@ -25,7 +25,7 @@ final recentFeedingsProvider = FutureProvider.autoDispose<List<Feeding>>((ref) a
   }
 });
 
-final todayFeedCountProvider = FutureProvider.autoDispose<int>((ref) async {
+final todayFeedCountProvider = FutureProvider<int>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return 0;
 

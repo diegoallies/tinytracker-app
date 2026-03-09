@@ -4,7 +4,7 @@ import '../services/supabase_service.dart';
 import '../utils/date_utils.dart';
 import 'baby_provider.dart';
 
-final recentDiapersProvider = FutureProvider.autoDispose<List<Diaper>>((ref) async {
+final recentDiapersProvider = FutureProvider<List<Diaper>>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return [];
 
@@ -18,7 +18,7 @@ final recentDiapersProvider = FutureProvider.autoDispose<List<Diaper>>((ref) asy
   return data.map<Diaper>((json) => Diaper.fromJson(json)).toList();
 });
 
-final todayDiaperCountProvider = FutureProvider.autoDispose<int>((ref) async {
+final todayDiaperCountProvider = FutureProvider<int>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return 0;
 
@@ -31,7 +31,7 @@ final todayDiaperCountProvider = FutureProvider.autoDispose<int>((ref) async {
   return data.length;
 });
 
-final todayDiaperStatsProvider = FutureProvider.autoDispose<Map<String, int>>((ref) async {
+final todayDiaperStatsProvider = FutureProvider<Map<String, int>>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return {'wet': 0, 'dirty': 0, 'both': 0};
 

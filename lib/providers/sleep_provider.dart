@@ -4,7 +4,7 @@ import '../services/supabase_service.dart';
 import '../utils/date_utils.dart';
 import 'baby_provider.dart';
 
-final activeSleepProvider = FutureProvider.autoDispose<SleepSession?>((ref) async {
+final activeSleepProvider = FutureProvider<SleepSession?>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return null;
 
@@ -21,7 +21,7 @@ final activeSleepProvider = FutureProvider.autoDispose<SleepSession?>((ref) asyn
   return SleepSession.fromJson(data);
 });
 
-final recentSleepsProvider = FutureProvider.autoDispose<List<SleepSession>>((ref) async {
+final recentSleepsProvider = FutureProvider<List<SleepSession>>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return [];
 
@@ -36,7 +36,7 @@ final recentSleepsProvider = FutureProvider.autoDispose<List<SleepSession>>((ref
   return data.map<SleepSession>((json) => SleepSession.fromJson(json)).toList();
 });
 
-final todaySleepMinutesProvider = FutureProvider.autoDispose<int>((ref) async {
+final todaySleepMinutesProvider = FutureProvider<int>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return 0;
 

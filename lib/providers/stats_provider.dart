@@ -31,7 +31,7 @@ class DashboardStats {
   });
 }
 
-final dashboardStatsProvider = FutureProvider.autoDispose<DashboardStats>((ref) async {
+final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return DashboardStats();
 
@@ -101,7 +101,7 @@ class WeeklyDataPoint {
   WeeklyDataPoint({required this.day, required this.feeds, required this.diapers, required this.sleepHrs});
 }
 
-final weeklyDataProvider = FutureProvider.autoDispose<List<WeeklyDataPoint>>((ref) async {
+final weeklyDataProvider = FutureProvider<List<WeeklyDataPoint>>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return [];
 

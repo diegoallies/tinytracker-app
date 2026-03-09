@@ -5,7 +5,7 @@ import '../models/photo.dart';
 import '../services/supabase_service.dart';
 import 'baby_provider.dart';
 
-final photosProvider = FutureProvider.autoDispose<List<Photo>>((ref) async {
+final photosProvider = FutureProvider<List<Photo>>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return [];
 
