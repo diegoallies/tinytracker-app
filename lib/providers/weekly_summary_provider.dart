@@ -15,27 +15,25 @@ final weeklySummaryProvider = FutureProvider.autoDispose<WeeklySummary?>((ref) a
   final results = await Future.wait([
     // This week feeds
     client.from('feedings').select('id').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).gte('logged_at', thisWeekStart),
+        .gte('logged_at', thisWeekStart),
     // Last week feeds
     client.from('feedings').select('id').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null)
         .gte('logged_at', lastWeekStart)
         .lt('logged_at', thisWeekStart),
     // This week diapers
     client.from('diapers').select('id').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).gte('logged_at', thisWeekStart),
+        .gte('logged_at', thisWeekStart),
     // Last week diapers
     client.from('diapers').select('id').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null)
         .gte('logged_at', lastWeekStart)
         .lt('logged_at', thisWeekStart),
     // This week sleep
     client.from('sleeps').select('duration_minutes').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).not('end_time', 'is', null)
+        .not('end_time', 'is', null)
         .gte('start_time', thisWeekStart),
     // Last week sleep
     client.from('sleeps').select('duration_minutes').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).not('end_time', 'is', null)
+        .not('end_time', 'is', null)
         .gte('start_time', lastWeekStart)
         .lt('start_time', thisWeekStart),
   ]);

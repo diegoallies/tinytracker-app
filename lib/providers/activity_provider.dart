@@ -7,14 +7,12 @@ class ActivityItem {
   final String type; // feeding, diaper, sleep
   final String label;
   final DateTime time;
-  final String? userName;
 
   ActivityItem({
     required this.id,
     required this.type,
     required this.label,
     required this.time,
-    this.userName,
   });
 }
 
@@ -27,8 +25,11 @@ final activityFeedProvider = FutureProvider.autoDispose<List<ActivityItem>>((ref
 
   final results = await Future.wait([
     client.from('feedings').select('id, type, logged_at')
+        .eq('baby_id', baby.id).gte('logged_at', since),
     client.from('diapers').select('id, type, logged_at')
+        .eq('baby_id', baby.id).gte('logged_at', since),
     client.from('sleeps').select('id, start_time, end_time, duration_minutes')
+        .eq('baby_id', baby.id).gte('start_time', since),
   ]);
 
   final items = <ActivityItem>[];
@@ -48,7 +49,6 @@ final activityFeedProvider = FutureProvider.autoDispose<List<ActivityItem>>((ref
       type: 'feeding',
       label: label,
       time: DateTime.parse(f['logged_at']),
-      userName: f['profiles']?['display_name'],
     ));
   }
 
@@ -59,7 +59,6 @@ final activityFeedProvider = FutureProvider.autoDispose<List<ActivityItem>>((ref
       type: 'diaper',
       label: '${type[0].toUpperCase()}${type.substring(1)} diaper',
       time: DateTime.parse(d['logged_at']),
-      userName: d['profiles']?['display_name'],
     ));
   }
 
@@ -74,7 +73,6 @@ final activityFeedProvider = FutureProvider.autoDispose<List<ActivityItem>>((ref
       type: 'sleep',
       label: label,
       time: DateTime.parse(s['start_time']),
-      userName: s['profiles']?['display_name'],
     ));
   }
 
