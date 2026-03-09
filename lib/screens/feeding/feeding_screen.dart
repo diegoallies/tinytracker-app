@@ -6,8 +6,10 @@ import '../../providers/feeding_provider.dart';
 import '../../providers/feeding_timer_provider.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/swipe_to_dismiss.dart';
 
 class FeedingScreen extends ConsumerStatefulWidget {
   const FeedingScreen({super.key});
@@ -61,11 +63,13 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
   bool get _isBottle => ref.read(feedingTimerProvider).selectedType == 'bottle';
 
   void _startTimer() {
+    Haptics.mediumTap();
     ref.read(feedingTimerProvider.notifier).startTimer();
     _pulseController.repeat(reverse: true);
   }
 
   void _stopTimer() {
+    Haptics.mediumTap();
     ref.read(feedingTimerProvider.notifier).stopTimer();
     _pulseController.stop();
     _pulseController.reset();
@@ -78,6 +82,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
   }
 
   void _adjustAmount(int delta) {
+    Haptics.lightTap();
     final current = int.tryParse(_amountController.text) ?? 0;
     final next = (current + delta).clamp(0, 999);
     _amountController.text = next.toString();
@@ -111,6 +116,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
         _amountController.text = '60';
       });
 
+      Haptics.mediumTap();
+
       if (mounted) {
         context.showSuccessSnackBar('Feeding logged successfully');
       }
@@ -128,8 +135,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
     }
   }
 
-  Future<void> _deleteFeeding(String feedingId) async {
-    final confirmed = await showDialog<bool>(
+  Future<bool?> _confirmDelete() {
+    return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Feeding'),
@@ -147,25 +154,31 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
         ],
       ),
     );
+  }
 
-    if (confirmed == true) {
-      try {
-        await FeedingActions.deleteFeeding(feedingId);
-        ref.invalidate(recentFeedingsProvider);
-        if (mounted) {
-          context.showSuccessSnackBar('Feeding deleted');
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete: $e'),
-              backgroundColor: Colors.red.shade400,
-            ),
-          );
-        }
+  Future<void> _deleteFeeding(String feedingId) async {
+    try {
+      await FeedingActions.deleteFeeding(feedingId);
+      ref.invalidate(recentFeedingsProvider);
+      if (mounted) {
+        context.showSuccessSnackBar('Feeding deleted');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
       }
     }
+  }
+
+  Future<void> _onRefresh() async {
+    Haptics.lightTap();
+    ref.invalidate(recentFeedingsProvider);
+    await ref.read(recentFeedingsProvider.future);
   }
 
   @override
@@ -201,10 +214,13 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
         centerTitle: true,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.primary,
+          backgroundColor: AppColors.card,
+          child: ListView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             children: [
               _buildTypeSelector(),
               const SizedBox(height: 16),
@@ -251,6 +267,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
                 final isSelected = currentType == type.$1;
                 return GestureDetector(
                   onTap: () {
+                    Haptics.selectionClick();
                     ref.read(feedingTimerProvider.notifier).selectType(type.$1);
                   },
                   child: AnimatedContainer(
@@ -517,21 +534,26 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
               child: CircularProgressIndicator(color: AppColors.primary),
             ),
           ),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Text(
-                'Failed to load feedings',
-                style: TextStyle(color: AppColors.muted),
+          error: (error, _) {
+            debugPrint('Feeding load error: $error');
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(
+                  'Failed to load feedings\n$error',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted, fontSize: 13),
+                ),
               ),
-            ),
-          ),
+            );
+          },
           data: (feedings) {
             if (feedings.isEmpty) {
               return const EmptyState(
                 icon: Icons.restaurant_outlined,
                 title: 'No feedings yet',
                 description: 'Log your first feeding above',
+                illustrationType: 'feeding',
               );
             }
             return ListView.separated(
@@ -553,6 +575,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
   Widget _buildFeedingItem(dynamic feeding) {
     final type = feeding.type as String;
     final createdAt = feeding.createdAt as DateTime;
+    final feedingId = feeding.id as String;
 
     IconData icon;
     String label;
@@ -589,48 +612,50 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
         detail = '';
     }
 
-    return AnimatedCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.pastelPurple,
-                borderRadius: BorderRadius.circular(12),
+    return SwipeToDismiss(
+      itemId: feedingId,
+      onConfirmDismiss: _confirmDelete,
+      onDismissed: () => _deleteFeeding(feedingId),
+      child: AnimatedCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.pastelPurple,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 22),
               ),
-              child: Icon(icon, color: AppColors.primary, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    AppDateUtils.timeAgo(createdAt),
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 13,
+                    const SizedBox(height: 2),
+                    Text(
+                      AppDateUtils.timeAgo(createdAt),
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (detail.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Text(
+              if (detail.isNotEmpty)
+                Text(
                   detail,
                   style: const TextStyle(
                     color: AppColors.primary,
@@ -638,14 +663,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
                     fontSize: 15,
                   ),
                 ),
-              ),
-            IconButton(
-              icon: Icon(Icons.delete_outline,
-                  color: AppColors.muted.withValues(alpha:0.6), size: 20),
-              onPressed: () => _deleteFeeding(feeding.id as String),
-              splashRadius: 20,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

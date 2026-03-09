@@ -3,16 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
+import '../../utils/haptics.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/stats_provider.dart';
 import '../../providers/activity_provider.dart';
 import '../../utils/date_utils.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/baby_selector.dart';
+import '../../widgets/common/count_up_text.dart';
+import '../../widgets/common/last_activity_banner.dart';
 import '../../widgets/common/loading_skeleton.dart';
 import '../../widgets/common/night_mode_toggle.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/ai/smart_insights.dart';
+import '../../widgets/dashboard/weekly_summary_card.dart';
+import '../../widgets/dashboard/pattern_badges_widget.dart';
+import '../../providers/notification_provider.dart';
+import '../../providers/weekly_summary_provider.dart';
+import '../../providers/badge_provider.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -51,6 +59,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final stats = ref.watch(dashboardStatsProvider);
     final activity = ref.watch(activityFeedProvider);
 
+    // Activate feeding reminder scheduler
+    ref.watch(feedingReminderSchedulerProvider);
+
     if (babyState.loading) return const Center(child: PageSkeleton());
 
     final baby = babyState.selectedBaby;
@@ -61,6 +72,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         description: 'Add your baby to start tracking',
         actionLabel: 'Add Baby',
         onAction: () => context.go('/baby'),
+        illustrationType: 'no_baby',
       );
     }
 
@@ -68,6 +80,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onRefresh: () async {
         ref.invalidate(dashboardStatsProvider);
         ref.invalidate(activityFeedProvider);
+        ref.invalidate(weeklySummaryProvider);
+        ref.invalidate(earnedBadgesProvider);
       },
       color: AppColors.primary,
       child: ListView(
@@ -106,7 +120,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           const SizedBox(height: 12),
           const BabySelector(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+
+          // Last activity banner
+          stats.when(
+            data: (s) => LastActivityBanner(
+              babyName: baby.name,
+              lastFeedTime: s.lastFeedTime,
+              lastDiaperTime: s.lastDiaperTime,
+            ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 12),
 
           // Active sleep banner
           stats.when(
@@ -161,8 +187,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   _StatCard(
                     icon: Icons.restaurant_rounded,
                     label: 'Feeds',
-                    value: '${s.feedCount}',
+                    numericValue: s.feedCount,
                     color: AppColors.pastelPink,
+                    cardColor: AppColors.pastelPinkLight,
                     iconColor: const Color(0xFFE91E63),
                     index: 0,
                     onTap: () => context.go('/feeding'),
@@ -171,8 +198,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   _StatCard(
                     icon: Icons.water_drop_rounded,
                     label: 'Diapers',
-                    value: '${s.diaperCount}',
+                    numericValue: s.diaperCount,
                     color: AppColors.pastelYellow,
+                    cardColor: AppColors.pastelYellowLight,
                     iconColor: const Color(0xFFFF9800),
                     index: 1,
                     onTap: () => context.go('/diaper'),
@@ -181,8 +209,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   _StatCard(
                     icon: Icons.nightlight_round,
                     label: 'Sleep',
-                    value: '${s.sleepMinutes ~/ 60}h ${s.sleepMinutes % 60}m',
+                    sleepMinutes: s.sleepMinutes,
                     color: AppColors.pastelBlue,
+                    cardColor: AppColors.pastelBlueLight,
                     iconColor: const Color(0xFF2196F3),
                     index: 2,
                     onTap: () => context.go('/sleep'),
@@ -212,6 +241,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Expanded(
                     child: AnimatedCard(
                       index: 3,
+                      color: AppColors.pastelPinkLight,
                       padding: const EdgeInsets.all(14),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,6 +271,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Expanded(
                     child: AnimatedCard(
                       index: 4,
+                      color: AppColors.pastelYellowLight,
                       padding: const EdgeInsets.all(14),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,6 +315,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           SmartInsights(babyId: baby.id, babyName: baby.name, gender: baby.gender ?? 'boy'),
           const SizedBox(height: 20),
 
+          // Weekly Summary
+          const WeeklySummaryCard(),
+          const SizedBox(height: 20),
+
+          // Pattern Badges
+          const PatternBadgesWidget(),
+          const SizedBox(height: 20),
+
           // Quick Actions
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -316,6 +355,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: AnimatedCard(
               index: 6,
+              color: AppColors.pastelPurpleLight,
               onTap: () => context.go('/summary'),
               child: Row(
                 children: [
@@ -446,19 +486,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String value;
   final Color color;
+  final Color cardColor;
   final Color iconColor;
   final int index;
+  final int? numericValue;
+  final int? sleepMinutes;
   final VoidCallback? onTap;
 
   const _StatCard({
     required this.icon,
     required this.label,
-    required this.value,
     required this.color,
+    required this.cardColor,
     required this.iconColor,
     required this.index,
+    this.numericValue,
+    this.sleepMinutes,
     this.onTap,
   });
 
@@ -467,6 +511,7 @@ class _StatCard extends StatelessWidget {
     return Expanded(
       child: AnimatedCard(
         index: index,
+        color: cardColor,
         onTap: onTap,
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -480,10 +525,16 @@ class _StatCard extends StatelessWidget {
               child: Icon(icon, size: 20, color: iconColor),
             ),
             const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
-            ),
+            if (sleepMinutes != null)
+              CountUpDuration(
+                totalMinutes: sleepMinutes!,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
+              )
+            else
+              CountUpText(
+                targetValue: numericValue ?? 0,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
+              ),
             Text(label, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
           ],
         ),
@@ -509,7 +560,10 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = (MediaQuery.of(context).size.width - 62) / 4;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        Haptics.lightTap();
+        onTap();
+      },
       child: SizedBox(
         width: width,
         child: Column(

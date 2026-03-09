@@ -6,8 +6,10 @@ import '../../providers/baby_provider.dart';
 import '../../providers/sleep_provider.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/swipe_to_dismiss.dart';
 
 class SleepScreen extends ConsumerStatefulWidget {
   const SleepScreen({super.key});
@@ -80,6 +82,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
     final baby = ref.read(selectedBabyProvider);
     if (baby == null) return;
 
+    Haptics.mediumTap();
     setState(() => _isStarting = true);
 
     try {
@@ -106,6 +109,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
   }
 
   Future<void> _stopSleep(String sleepId, DateTime startTime) async {
+    Haptics.mediumTap();
     setState(() => _isStopping = true);
 
     try {
@@ -130,8 +134,8 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
     }
   }
 
-  Future<void> _deleteSleep(String sleepId) async {
-    final confirmed = await showDialog<bool>(
+  Future<bool?> _confirmDelete() {
+    return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Sleep'),
@@ -150,26 +154,33 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
         ],
       ),
     );
+  }
 
-    if (confirmed == true) {
-      try {
-        await SleepActions.deleteSleep(sleepId);
-        ref.invalidate(activeSleepProvider);
-        ref.invalidate(recentSleepsProvider);
-        if (mounted) {
-          context.showSuccessSnackBar('Sleep session deleted');
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete: $e'),
-              backgroundColor: Colors.red.shade400,
-            ),
-          );
-        }
+  Future<void> _deleteSleep(String sleepId) async {
+    try {
+      await SleepActions.deleteSleep(sleepId);
+      ref.invalidate(activeSleepProvider);
+      ref.invalidate(recentSleepsProvider);
+      if (mounted) {
+        context.showSuccessSnackBar('Sleep session deleted');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
       }
     }
+  }
+
+  Future<void> _onRefresh() async {
+    Haptics.lightTap();
+    ref.invalidate(activeSleepProvider);
+    ref.invalidate(recentSleepsProvider);
+    await ref.read(recentSleepsProvider.future);
   }
 
   @override
@@ -197,10 +208,13 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
         centerTitle: true,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.primary,
+          backgroundColor: AppColors.card,
+          child: ListView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             children: [
               _buildTimerCard(activeSleep),
               const SizedBox(height: 24),
@@ -386,6 +400,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                 icon: Icons.bedtime_outlined,
                 title: 'No sleep sessions yet',
                 description: 'Start tracking sleep above',
+                illustrationType: 'sleep',
               );
             }
             return ListView.separated(
@@ -408,6 +423,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
     final startTime = sleep.startTime as DateTime;
     final endTime = sleep.endTime as DateTime?;
     final isOngoing = endTime == null;
+    final sleepId = sleep.id as String;
 
     String durationText;
     if (isOngoing) {
@@ -431,7 +447,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
           '${AppDateUtils.formatTime(startTime)} - ${AppDateUtils.formatTime(endTime)}';
     }
 
-    return AnimatedCard(
+    final itemWidget = AnimatedCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -486,16 +502,18 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                 ),
               ),
             ),
-            if (!isOngoing)
-              IconButton(
-                icon: Icon(Icons.delete_outline,
-                    color: AppColors.muted.withValues(alpha:0.6), size: 20),
-                onPressed: () => _deleteSleep(sleep.id as String),
-                splashRadius: 20,
-              ),
           ],
         ),
       ),
+    );
+
+    if (isOngoing) return itemWidget;
+
+    return SwipeToDismiss(
+      itemId: sleepId,
+      onConfirmDismiss: _confirmDelete,
+      onDismissed: () => _deleteSleep(sleepId),
+      child: itemWidget,
     );
   }
 }

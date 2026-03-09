@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../providers/profile_provider.dart';
+import '../quick_log/quick_log_sheets.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class BottomNavBar extends ConsumerWidget {
@@ -55,6 +56,9 @@ class BottomNavBar extends ConsumerWidget {
                   label: _labels[i],
                   isActive: current == i,
                   onTap: () => context.go(_routes[i]),
+                  onLongPress: (i >= 1 && i <= 3)
+                      ? () => QuickLogSheets.show(context, ref, i)
+                      : null,
                 ),
               // Profile button
               _ProfileNavItem(
@@ -75,18 +79,21 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const _NavItem({
     required this.icon,
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

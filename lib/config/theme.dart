@@ -12,6 +12,13 @@ class AppColors {
   static const Color pastelGreen = Color(0xFFD5F5E8);
   static const Color pastelYellow = Color(0xFFF5F0D5);
 
+  // Lighter pastel tints for card backgrounds
+  static const Color pastelPinkLight = Color(0xFFFFF0F5);
+  static const Color pastelBlueLight = Color(0xFFF0F5FF);
+  static const Color pastelYellowLight = Color(0xFFFFFBF0);
+  static const Color pastelGreenLight = Color(0xFFF0FFF5);
+  static const Color pastelPurpleLight = Color(0xFFF5F0FF);
+
   static const Color surface = Color(0xFFFAF8FC);
   static const Color card = Color(0xFFFFFFFF);
   static const Color text = Color(0xFF2D2640);

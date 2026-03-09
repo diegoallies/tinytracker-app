@@ -5,8 +5,10 @@ import '../../providers/baby_provider.dart';
 import '../../providers/diaper_provider.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/swipe_to_dismiss.dart';
 
 class DiaperScreen extends ConsumerStatefulWidget {
   const DiaperScreen({super.key});
@@ -69,6 +71,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         _notesController.clear();
       });
 
+      Haptics.mediumTap();
+
       if (mounted) {
         context.showSuccessSnackBar('Diaper logged successfully');
       }
@@ -86,8 +90,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
     }
   }
 
-  Future<void> _deleteDiaper(String diaperId) async {
-    final confirmed = await showDialog<bool>(
+  Future<bool?> _confirmDelete() {
+    return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Diaper'),
@@ -106,26 +110,33 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         ],
       ),
     );
+  }
 
-    if (confirmed == true) {
-      try {
-        await DiaperActions.deleteDiaper(diaperId);
-        ref.invalidate(recentDiapersProvider);
-        ref.invalidate(todayDiaperStatsProvider);
-        if (mounted) {
-          context.showSuccessSnackBar('Diaper entry deleted');
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete: $e'),
-              backgroundColor: Colors.red.shade400,
-            ),
-          );
-        }
+  Future<void> _deleteDiaper(String diaperId) async {
+    try {
+      await DiaperActions.deleteDiaper(diaperId);
+      ref.invalidate(recentDiapersProvider);
+      ref.invalidate(todayDiaperStatsProvider);
+      if (mounted) {
+        context.showSuccessSnackBar('Diaper entry deleted');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
       }
     }
+  }
+
+  Future<void> _onRefresh() async {
+    Haptics.lightTap();
+    ref.invalidate(recentDiapersProvider);
+    ref.invalidate(todayDiaperStatsProvider);
+    await ref.read(recentDiapersProvider.future);
   }
 
   @override
@@ -153,10 +164,13 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.primary,
+          backgroundColor: AppColors.card,
+          child: ListView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             children: [
               _buildTodayStats(stats),
               const SizedBox(height: 16),
@@ -291,6 +305,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                     ),
                     child: GestureDetector(
                       onTap: () {
+                        Haptics.selectionClick();
                         setState(() {
                           _selectedType = type.$1;
                           if (!_showColorPicker) _selectedColor = null;
@@ -373,6 +388,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                 final isSelected = _selectedColor == colorData.$1;
                 return GestureDetector(
                   onTap: () {
+                    Haptics.selectionClick();
                     setState(() {
                       _selectedColor =
                           _selectedColor == colorData.$1 ? null : colorData.$1;
@@ -405,11 +421,9 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                               : null,
                         ),
                         child: isSelected
-                            ? Icon(
+                            ? const Icon(
                                 Icons.check,
-                                color: colorData.$1 == 'black'
-                                    ? Colors.white
-                                    : Colors.white,
+                                color: Colors.white,
                                 size: 20,
                               )
                             : null,
@@ -528,6 +542,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                 icon: Icons.baby_changing_station,
                 title: 'No diapers yet',
                 description: 'Log your first diaper change above',
+                illustrationType: 'diaper',
               );
             }
             return ListView.separated(
@@ -550,6 +565,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
     final type = diaper.type as String;
     final createdAt = diaper.createdAt as DateTime;
     final color = diaper.color as String?;
+    final diaperId = diaper.id as String;
 
     IconData icon;
     Color iconColor;
@@ -585,68 +601,67 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       }
     }
 
-    return AnimatedCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha:0.12),
-                borderRadius: BorderRadius.circular(12),
+    return SwipeToDismiss(
+      itemId: diaperId,
+      onConfirmDismiss: _confirmDelete,
+      onDismissed: () => _deleteDiaper(diaperId),
+      child: AnimatedCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha:0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
-              child: Icon(icon, color: iconColor, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          color: AppColors.text,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                      if (colorIndicator != null) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: colorIndicator,
-                            shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.grey.shade300, width: 1),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            color: AppColors.text,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
                           ),
                         ),
+                        if (colorIndicator != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: colorIndicator,
+                              shape: BoxShape.circle,
+                              border:
+                                  Border.all(color: Colors.grey.shade300, width: 1),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    AppDateUtils.timeAgo(createdAt),
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 13,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      AppDateUtils.timeAgo(createdAt),
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              icon: Icon(Icons.delete_outline,
-                  color: AppColors.muted.withValues(alpha:0.6), size: 20),
-              onPressed: () => _deleteDiaper(diaper.id as String),
-              splashRadius: 20,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

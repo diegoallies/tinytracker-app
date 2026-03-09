@@ -5,8 +5,10 @@ import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/tummy_time_provider.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/swipe_to_dismiss.dart';
 
 class TummyTimeScreen extends ConsumerStatefulWidget {
   const TummyTimeScreen({super.key});
@@ -56,6 +58,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
     final baby = ref.read(selectedBabyProvider);
     if (baby == null) return;
 
+    Haptics.mediumTap();
     setState(() => _isStarting = true);
 
     try {
@@ -84,6 +87,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
   Future<void> _handleStop() async {
     if (_activeSessionId == null || _sessionStartTime == null) return;
 
+    Haptics.mediumTap();
     setState(() => _isStopping = true);
 
     try {
@@ -113,8 +117,8 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
     }
   }
 
-  Future<void> _handleDelete(String id) async {
-    final confirmed = await showDialog<bool>(
+  Future<bool?> _confirmDelete() {
+    return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Session'),
@@ -134,9 +138,9 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
         ],
       ),
     );
+  }
 
-    if (confirmed != true) return;
-
+  Future<void> _handleDelete(String id) async {
     try {
       await TummyTimeActions.delete(id);
       ref.invalidate(recentTummyTimesProvider);
@@ -162,6 +166,13 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
     final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  Future<void> _onRefresh() async {
+    Haptics.lightTap();
+    ref.invalidate(recentTummyTimesProvider);
+    ref.invalidate(todayTummyTimeMinutesProvider);
+    await ref.read(recentTummyTimesProvider.future);
   }
 
   @override
@@ -202,10 +213,13 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.primary,
+          backgroundColor: AppColors.card,
+          child: ListView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            padding: const EdgeInsets.all(20),
             children: [
               // Daily Progress Card
               AnimatedCard(
@@ -396,6 +410,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                       icon: Icons.child_care_rounded,
                       title: 'No sessions today',
                       description: 'Start a tummy time session to track progress',
+                      illustrationType: 'tummy_time',
                     );
                   }
 
@@ -410,46 +425,43 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                       final startFormatted =
                           AppDateUtils.formatTime(session.startTime);
 
-                      return AnimatedCard(
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          leading: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.pastelPurple,
-                              borderRadius: BorderRadius.circular(12),
+                      return SwipeToDismiss(
+                        itemId: session.id,
+                        onConfirmDismiss: _confirmDelete,
+                        onDismissed: () => _handleDelete(session.id),
+                        child: AnimatedCard(
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
                             ),
-                            child: Icon(
-                              Icons.child_care_rounded,
-                              color: AppColors.primary,
-                              size: 22,
+                            leading: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppColors.pastelPurple,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.child_care_rounded,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
                             ),
-                          ),
-                          title: Text(
-                            '$duration min',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.text,
+                            title: Text(
+                              '$duration min',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text,
+                              ),
                             ),
-                          ),
-                          subtitle: Text(
-                            'Started at $startFormatted',
-                            style: TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 13,
+                            subtitle: Text(
+                              'Started at $startFormatted',
+                              style: TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 13,
+                              ),
                             ),
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(
-                              Icons.delete_outline_rounded,
-                              color: AppColors.muted,
-                              size: 20,
-                            ),
-                            onPressed: () => _handleDelete(session.id),
                           ),
                         ),
                       );

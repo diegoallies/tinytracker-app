@@ -35,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text,
         displayName: _nameController.text.trim(),
       );
-      if (mounted) context.go('/dashboard');
+      if (mounted) context.go('/onboarding');
     } catch (e) {
       if (mounted) {
         context.showSnackBar('Registration failed: ${e.toString()}', isError: true);
