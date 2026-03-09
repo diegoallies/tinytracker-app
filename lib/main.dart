@@ -56,18 +56,13 @@ class TinyTrackApp extends ConsumerWidget {
         return Stack(
           children: [
             child ?? const SizedBox.shrink(),
-            if (nightActive)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: AnimatedOpacity(
-                    opacity: 1.0,
-                    duration: const Duration(seconds: 1),
-                    child: Container(
-                      color: const Color(0x0DFF9800),
-                    ),
-                  ),
-                ),
-              ),
+            // Night mode overlay disabled - was covering content with brown tint
+            // if (nightActive)
+            //   Positioned.fill(
+            //     child: IgnorePointer(
+            //       child: Container(color: const Color(0x08FF9800)),
+            //     ),
+            //   ),
           ],
         );
       },
