@@ -1,0 +1,1111 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/theme.dart';
+import '../../providers/baby_provider.dart';
+import '../../models/baby_share.dart';
+import '../../services/supabase_service.dart';
+import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
+import '../../widgets/common/animated_card.dart';
+import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/loading_skeleton.dart';
+
+class BabyScreen extends ConsumerStatefulWidget {
+  const BabyScreen({super.key});
+
+  @override
+  ConsumerState<BabyScreen> createState() => _BabyScreenState();
+}
+
+class _BabyScreenState extends ConsumerState<BabyScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  DateTime? _selectedDob;
+  String? _selectedGender;
+  bool _isEditing = false;
+  bool _isSaving = false;
+  bool _isLoadingShares = false;
+  List<BabyShare> _shares = [];
+
+  static const _genderOptions = ['male', 'female', 'other'];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDob ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: AppColors.text,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() => _selectedDob = picked);
+    }
+  }
+
+  Future<void> _createBaby() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedDob == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a date of birth'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final notifier = ref.read(babyProvider.notifier);
+      await notifier.createBaby(
+        name: _nameController.text.trim(),
+        dateOfBirth: _selectedDob!,
+        gender: _selectedGender,
+      );
+
+      if (mounted) {
+        _nameController.clear();
+        setState(() {
+          _selectedDob = null;
+          _selectedGender = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Baby profile created!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create baby: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _updateBaby(String babyId) async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedDob == null) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final notifier = ref.read(babyProvider.notifier);
+      await notifier.updateBaby(
+        babyId: babyId,
+        name: _nameController.text.trim(),
+        dateOfBirth: _selectedDob!,
+        gender: _selectedGender,
+      );
+
+      if (mounted) {
+        setState(() => _isEditing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Baby profile updated'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _loadShares(String babyId) async {
+    setState(() => _isLoadingShares = true);
+    try {
+      final notifier = ref.read(babyProvider.notifier);
+      final shares = await notifier.getShares(babyId);
+      if (mounted) {
+        setState(() => _shares = shares);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load shares: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingShares = false);
+    }
+  }
+
+  Future<void> _removeShare(String shareId, String babyId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Remove Access'),
+        content: const Text('Are you sure you want to remove this person\'s access?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final notifier = ref.read(babyProvider.notifier);
+      await notifier.removeShare(shareId);
+      await _loadShares(babyId);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove share: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showCreateInviteSheet(String babyId) async {
+    String selectedRole = 'logger';
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                16,
+                24,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Invite Someone',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Create an invite link to share access to your baby\'s profile.',
+                    style: TextStyle(fontSize: 14, color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Select Role',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _RoleOption(
+                    label: 'Logger',
+                    description: 'Can add and edit entries',
+                    icon: Icons.edit_rounded,
+                    color: AppColors.pastelBlue,
+                    iconColor: const Color(0xFF5b8cbf),
+                    isSelected: selectedRole == 'logger',
+                    onTap: () => setSheetState(() => selectedRole = 'logger'),
+                  ),
+                  const SizedBox(height: 8),
+                  _RoleOption(
+                    label: 'Viewer',
+                    description: 'Can only view entries',
+                    icon: Icons.visibility_rounded,
+                    color: AppColors.pastelGreen,
+                    iconColor: const Color(0xFF5bbf8c),
+                    isSelected: selectedRole == 'viewer',
+                    onTap: () => setSheetState(() => selectedRole = 'viewer'),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await _createInvite(babyId, selectedRole);
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Create Invite Link',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _createInvite(String babyId, String role) async {
+    try {
+      final userId = SupabaseService.client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final now = DateTime.now();
+      final token = now.millisecondsSinceEpoch.toRadixString(36) +
+          _generateRandomChars(8);
+      final expiresAt = now.add(const Duration(days: 7));
+
+      await SupabaseService.client.from('baby_invites').insert({
+        'baby_id': babyId,
+        'invited_by': userId,
+        'token': token,
+        'role': role,
+        'expires_at': expiresAt.toIso8601String(),
+      });
+
+      final inviteLink = 'tinytracker://invite/$token';
+
+      await Clipboard.setData(ClipboardData(text: inviteLink));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invite link copied to clipboard!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create invite: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
+  }
+
+  String _generateRandomChars(int length) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = DateTime.now().microsecondsSinceEpoch;
+    final buffer = StringBuffer();
+    for (var i = 0; i < length; i++) {
+      buffer.write(chars[(random + i * 7) % chars.length]);
+    }
+    return buffer.toString();
+  }
+
+  IconData _roleIcon(String role) {
+    switch (role) {
+      case 'owner':
+        return Icons.shield_rounded;
+      case 'logger':
+        return Icons.edit_rounded;
+      case 'viewer':
+        return Icons.visibility_rounded;
+      default:
+        return Icons.person_rounded;
+    }
+  }
+
+  Color _roleColor(String role) {
+    switch (role) {
+      case 'owner':
+        return AppColors.pastelPurple;
+      case 'logger':
+        return AppColors.pastelBlue;
+      case 'viewer':
+        return AppColors.pastelGreen;
+      default:
+        return Colors.grey.shade100;
+    }
+  }
+
+  Color _roleIconColor(String role) {
+    switch (role) {
+      case 'owner':
+        return AppColors.primary;
+      case 'logger':
+        return const Color(0xFF5b8cbf);
+      case 'viewer':
+        return const Color(0xFF5bbf8c);
+      default:
+        return AppColors.muted;
+    }
+  }
+
+  String _genderEmoji(String? gender) {
+    switch (gender) {
+      case 'male':
+        return 'Boy';
+      case 'female':
+        return 'Girl';
+      case 'other':
+        return 'Other';
+      default:
+        return 'Not set';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final babyState = ref.watch(babyProvider);
+    final baby = babyState.selectedBaby;
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        title: const Text('Baby'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: AppColors.text,
+        actions: [
+          if (baby != null)
+            IconButton(
+              icon: Icon(_isEditing ? Icons.close_rounded : Icons.edit_rounded),
+              onPressed: () {
+                if (_isEditing) {
+                  setState(() => _isEditing = false);
+                } else {
+                  _nameController.text = baby.name;
+                  _selectedDob = baby.dateOfBirth;
+                  _selectedGender = baby.gender;
+                  setState(() => _isEditing = true);
+                }
+              },
+            ),
+        ],
+      ),
+      body: SafeArea(
+        child: babyState.loading
+            ? const _BabySkeleton()
+            : baby == null
+                ? _buildCreateForm()
+                : _isEditing
+                    ? _buildEditForm(baby)
+                    : _buildBabyProfile(baby),
+      ),
+    );
+  }
+
+  Widget _buildCreateForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            const EmptyState(
+              icon: Icons.child_care_rounded,
+              title: 'Add Your Baby',
+              description: 'Create a profile for your little one to start tracking.',
+            ),
+            const SizedBox(height: 24),
+            AnimatedCard(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Baby Details',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _nameController,
+                      style: const TextStyle(fontSize: 15, color: AppColors.text),
+                      decoration: _inputDecoration('Baby\'s Name', Icons.child_care_rounded),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Please enter a name' : null,
+                    ),
+                    const SizedBox(height: 14),
+                    GestureDetector(
+                      onTap: _selectDate,
+                      child: AbsorbPointer(
+                        child: TextFormField(
+                          style: const TextStyle(fontSize: 15, color: AppColors.text),
+                          decoration: _inputDecoration(
+                            'Date of Birth',
+                            Icons.cake_rounded,
+                          ).copyWith(
+                            hintText: _selectedDob != null
+                                ? AppDateUtils.formatDate(_selectedDob!)
+                                : 'Tap to select',
+                            hintStyle: TextStyle(
+                              color: _selectedDob != null ? AppColors.text : AppColors.muted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _buildGenderSelector(),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _createBaby,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Create Baby Profile',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditForm(dynamic baby) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            AnimatedCard(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Edit Baby Details',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _nameController,
+                      style: const TextStyle(fontSize: 15, color: AppColors.text),
+                      decoration: _inputDecoration('Baby\'s Name', Icons.child_care_rounded),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Please enter a name' : null,
+                    ),
+                    const SizedBox(height: 14),
+                    GestureDetector(
+                      onTap: _selectDate,
+                      child: AbsorbPointer(
+                        child: TextFormField(
+                          style: const TextStyle(fontSize: 15, color: AppColors.text),
+                          decoration: _inputDecoration(
+                            'Date of Birth',
+                            Icons.cake_rounded,
+                          ).copyWith(
+                            hintText: _selectedDob != null
+                                ? AppDateUtils.formatDate(_selectedDob!)
+                                : 'Tap to select',
+                            hintStyle: TextStyle(
+                              color: _selectedDob != null ? AppColors.text : AppColors.muted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _buildGenderSelector(),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : () => _updateBaby(baby.id),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Save Changes',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBabyProfile(dynamic baby) {
+    // Load shares on first build for owners
+    if (_shares.isEmpty && !_isLoadingShares && baby.isOwner != false) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadShares(baby.id);
+      });
+    }
+
+    final age = _calculateAge(baby.dateOfBirth);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Baby profile card
+          AnimatedCard(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 48,
+                    backgroundColor: AppColors.pastelPurple,
+                    child: Text(
+                      baby.name.isNotEmpty ? baby.name[0].toUpperCase() : 'B',
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    baby.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    age,
+                    style: const TextStyle(fontSize: 16, color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _InfoChip(
+                        icon: Icons.cake_rounded,
+                        label: AppDateUtils.formatDate(baby.dateOfBirth),
+                        color: AppColors.pastelPink,
+                      ),
+                      const SizedBox(width: 10),
+                      _InfoChip(
+                        icon: Icons.person_rounded,
+                        label: _genderEmoji(baby.gender),
+                        color: AppColors.pastelBlue,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Sharing section (owners only)
+          if (baby.isOwner != false) ...[
+            const SizedBox(height: 16),
+            AnimatedCard(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Sharing',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => _showCreateInviteSheet(baby.id),
+                          icon: const Icon(Icons.person_add_rounded, size: 18),
+                          label: const Text('Invite'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_isLoadingShares)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      )
+                    else if (_shares.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.people_outline_rounded,
+                                size: 40,
+                                color: Colors.grey.shade300,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'No one else has access yet',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      ...List.generate(_shares.length, (index) {
+                        final share = _shares[index];
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            top: index == 0 ? 0 : 8,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: _roleColor(share.role),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    _roleIcon(share.role),
+                                    size: 18,
+                                    color: _roleIconColor(share.role),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        share.userName ?? 'Unknown',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.text,
+                                        ),
+                                      ),
+                                      Text(
+                                        share.userEmail ?? share.role.capitalize,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.muted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _roleColor(share.role),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    share.role.capitalize,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _roleIconColor(share.role),
+                                    ),
+                                  ),
+                                ),
+                                if (!share.isOwner) ...[
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.close_rounded,
+                                      size: 18,
+                                      color: Colors.red.shade300,
+                                    ),
+                                    onPressed: () =>
+                                        _removeShare(share.id, baby.id),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGenderSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Gender',
+          style: TextStyle(
+            fontSize: 13,
+            color: AppColors.muted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: _genderOptions.map((gender) {
+            final isSelected = _selectedGender == gender;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: gender != _genderOptions.last ? 8 : 0,
+                ),
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedGender = gender),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primary : AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primary : Colors.grey.shade200,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        gender.capitalize,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: isSelected ? Colors.white : AppColors.text,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppColors.muted, fontSize: 14),
+      prefixIcon: Icon(icon, color: AppColors.muted, size: 20),
+      filled: true,
+      fillColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.red.shade300),
+      ),
+    );
+  }
+
+  String _calculateAge(DateTime dob) {
+    final now = DateTime.now();
+    final diff = now.difference(dob);
+    final months = (diff.inDays / 30.44).floor();
+    final years = (months / 12).floor();
+    final remainingMonths = months % 12;
+
+    if (years > 0) {
+      return '$years year${years > 1 ? 's' : ''}, $remainingMonths month${remainingMonths != 1 ? 's' : ''} old';
+    } else if (months > 0) {
+      return '$months month${months > 1 ? 's' : ''} old';
+    } else {
+      return '${diff.inDays} day${diff.inDays != 1 ? 's' : ''} old';
+    }
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.text),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.text,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoleOption extends StatelessWidget {
+  final String label;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final Color iconColor;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _RoleOption({
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.iconColor,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isSelected ? color : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? iconColor : Colors.grey.shade200,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 20, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle_rounded, color: iconColor, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BabySkeleton extends StatelessWidget {
+  const _BabySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: const [
+          LoadingSkeleton(width: double.infinity, height: 260, borderRadius: 16),
+          SizedBox(height: 16),
+          LoadingSkeleton(width: double.infinity, height: 200, borderRadius: 16),
+        ],
+      ),
+    );
+  }
+}

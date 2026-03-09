@@ -1,0 +1,46 @@
+class Photo {
+  final String id;
+  final String babyId;
+  final String userId;
+  final String url;
+  final String? caption;
+  final DateTime? takenAt;
+  final DateTime createdAt;
+  final DateTime? deletedAt;
+
+  Photo({
+    required this.id,
+    required this.babyId,
+    required this.userId,
+    required this.url,
+    this.caption,
+    this.takenAt,
+    required this.createdAt,
+    this.deletedAt,
+  });
+
+  factory Photo.fromJson(Map<String, dynamic> json) {
+    return Photo(
+      id: json['id'] as String,
+      babyId: json['baby_id'] as String,
+      userId: json['user_id'] as String,
+      url: json['url'] as String,
+      caption: json['caption'] as String?,
+      takenAt: json['taken_at'] != null
+          ? DateTime.parse(json['taken_at'] as String)
+          : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toInsertJson() => {
+    'baby_id': babyId,
+    'user_id': userId,
+    'url': url,
+    'caption': caption,
+    'taken_at': (takenAt ?? DateTime.now()).toIso8601String(),
+  };
+}

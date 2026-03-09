@@ -1,0 +1,190 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../services/supabase_service.dart';
+import '../widgets/layout/app_scaffold.dart';
+import '../screens/auth/login_screen.dart';
+import '../screens/auth/register_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/feeding/feeding_screen.dart';
+import '../screens/diaper/diaper_screen.dart';
+import '../screens/sleep/sleep_screen.dart';
+import '../screens/growth/growth_screen.dart';
+import '../screens/health/health_screen.dart';
+import '../screens/milestones/milestones_screen.dart';
+import '../screens/tummy_time/tummy_time_screen.dart';
+import '../screens/photos/photos_screen.dart';
+import '../screens/summary/summary_screen.dart';
+import '../screens/export/export_screen.dart';
+import '../screens/profile/profile_screen.dart';
+import '../screens/baby/baby_screen.dart';
+import '../screens/invites/invites_screen.dart';
+import '../screens/more/more_screen.dart';
+
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _shellNavigatorKey = GlobalKey<NavigatorState>();
+
+final appRouter = GoRouter(
+  navigatorKey: _rootNavigatorKey,
+  initialLocation: '/dashboard',
+  redirect: (context, state) {
+    final isAuthenticated = SupabaseService.currentUser != null;
+    final isAuthRoute = state.uri.toString() == '/login' || state.uri.toString() == '/register';
+
+    if (!isAuthenticated && !isAuthRoute) return '/login';
+    if (isAuthenticated && isAuthRoute) return '/dashboard';
+    return null;
+  },
+  routes: [
+    // Auth routes (no shell)
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterScreen(),
+    ),
+
+    // Main app with bottom nav
+    ShellRoute(
+      navigatorKey: _shellNavigatorKey,
+      builder: (context, state, child) => AppScaffold(child: child),
+      routes: [
+        GoRoute(
+          path: '/dashboard',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const DashboardScreen(),
+            transitionsBuilder: _fadeTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/feeding',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const FeedingScreen(),
+            transitionsBuilder: _fadeTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/diaper',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const DiaperScreen(),
+            transitionsBuilder: _fadeTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/sleep',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const SleepScreen(),
+            transitionsBuilder: _fadeTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/more',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const MoreScreen(),
+            transitionsBuilder: _fadeTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/profile',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const ProfileScreen(),
+            transitionsBuilder: _fadeTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/growth',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const GrowthScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/health',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const HealthScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/milestones',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const MilestonesScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/tummy-time',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const TummyTimeScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/photos',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const PhotosScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/summary',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const SummaryScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/export',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const ExportScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/baby',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const BabyScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/invites',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const InvitesScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+      ],
+    ),
+  ],
+);
+
+Widget _fadeTransition(
+    BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+  return FadeTransition(opacity: animation, child: child);
+}
+
+Widget _slideTransition(
+    BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+  return SlideTransition(
+    position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+        .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+    child: FadeTransition(opacity: animation, child: child),
+  );
+}
