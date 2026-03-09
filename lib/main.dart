@@ -63,7 +63,7 @@ class TinyTrackApp extends ConsumerWidget {
                     opacity: 1.0,
                     duration: const Duration(seconds: 1),
                     child: Container(
-                      color: const Color(0x30FF8B00),
+                      color: const Color(0x0DFF9800),
                     ),
                   ),
                 ),
