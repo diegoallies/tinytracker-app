@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
 import '../../utils/haptics.dart';
 
 class SwipeToDismiss extends StatelessWidget {
