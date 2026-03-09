@@ -573,7 +573,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
 
   Widget _buildFeedingItem(dynamic feeding) {
     final type = feeding.type as String;
-    final createdAt = feeding.createdAt as DateTime;
+    final loggedAt = feeding.loggedAt as DateTime;
     final feedingId = feeding.id as String;
 
     IconData icon;
@@ -584,15 +584,15 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
       case 'breast_left':
         icon = Icons.woman;
         label = 'Left Breast';
-        detail = feeding.durationSeconds != null
-            ? _formatTimer(feeding.durationSeconds as int)
+        detail = feeding.durationMinutes != null
+            ? '${feeding.durationMinutes} min'
             : '';
         break;
       case 'breast_right':
         icon = Icons.woman;
         label = 'Right Breast';
-        detail = feeding.durationSeconds != null
-            ? _formatTimer(feeding.durationSeconds as int)
+        detail = feeding.durationMinutes != null
+            ? '${feeding.durationMinutes} min'
             : '';
         break;
       case 'bottle':
@@ -644,7 +644,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      AppDateUtils.timeAgo(createdAt),
+                      AppDateUtils.timeAgo(loggedAt),
                       style: const TextStyle(
                         color: AppColors.muted,
                         fontSize: 13,
