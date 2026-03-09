@@ -16,7 +16,7 @@ class ActivityItem {
   });
 }
 
-final activityFeedProvider = FutureProvider.autoDispose<List<ActivityItem>>((ref) async {
+final activityFeedProvider = FutureProvider<List<ActivityItem>>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return [];
 
