@@ -67,13 +67,14 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "icon_1024.png"
+  image_path: "tinytrack_logo.jpg"
   adaptive_icon_background: "#7C3AED"
-  adaptive_icon_foreground: "icon_foreground.png"
+  adaptive_icon_foreground: "tinytrack_logo.jpg"
   min_sdk_android: 21
 
 flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/images/
     - assets/images/
