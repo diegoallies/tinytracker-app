@@ -209,9 +209,9 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
             style: TextStyle(color: AppColors.muted),
           ),
           data: (data) {
-            final wet = data.wet as int? ?? 0;
-            final dirty = data.dirty as int? ?? 0;
-            final both = data.both as int? ?? 0;
+            final wet = data['wet'] ?? 0;
+            final dirty = data['dirty'] ?? 0;
+            final both = data['both'] ?? 0;
 
             return Row(
               children: [
@@ -562,7 +562,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
 
   Widget _buildDiaperItem(dynamic diaper) {
     final type = diaper.type as String;
-    final createdAt = diaper.createdAt as DateTime;
+    final loggedAt = diaper.loggedAt as DateTime;
     final color = diaper.color as String?;
     final diaperId = diaper.id as String;
 
@@ -650,7 +650,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      AppDateUtils.timeAgo(createdAt),
+                      AppDateUtils.timeAgo(loggedAt),
                       style: const TextStyle(
                         color: AppColors.muted,
                         fontSize: 13,
