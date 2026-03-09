@@ -93,6 +93,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
+                  // Baby photo avatar
+                  stats.when(
+                    data: (s) => _BabyAvatar(
+                      photoUrl: s.latestPhotoUrl,
+                      babyName: baby.name,
+                    ),
+                    loading: () => _BabyAvatar(babyName: baby.name),
+                    error: (_, __) => _BabyAvatar(babyName: baby.name),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,6 +589,47 @@ class _QuickAction extends StatelessWidget {
             const SizedBox(height: 6),
             Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BabyAvatar extends StatelessWidget {
+  final String? photoUrl;
+  final String babyName;
+
+  const _BabyAvatar({this.photoUrl, required this.babyName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.pastelPurple,
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 2),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: photoUrl != null
+          ? Image.network(
+              photoUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _fallbackIcon(),
+            )
+          : _fallbackIcon(),
+    );
+  }
+
+  Widget _fallbackIcon() {
+    return Center(
+      child: Text(
+        babyName.isNotEmpty ? babyName[0].toUpperCase() : '?',
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppColors.primary,
         ),
       ),
     );
