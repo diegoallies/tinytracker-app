@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/feeding_provider.dart';
+import '../../providers/feeding_timer_provider.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../widgets/common/animated_card.dart';
@@ -18,10 +18,6 @@ class FeedingScreen extends ConsumerStatefulWidget {
 
 class _FeedingScreenState extends ConsumerState<FeedingScreen>
     with SingleTickerProviderStateMixin {
-  String _selectedType = 'breast_left';
-  Timer? _timer;
-  int _elapsedSeconds = 0;
-  bool _isTimerRunning = false;
   final TextEditingController _amountController =
       TextEditingController(text: '60');
   final TextEditingController _notesController = TextEditingController();
@@ -51,38 +47,28 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
 
   @override
   void dispose() {
-    _timer?.cancel();
     _amountController.dispose();
     _notesController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
 
-  bool get _isBreastFeeding =>
-      _selectedType == 'breast_left' || _selectedType == 'breast_right';
+  bool get _isBreastFeeding {
+    final type = ref.read(feedingTimerProvider).selectedType;
+    return type == 'breast_left' || type == 'breast_right';
+  }
 
-  bool get _isBottle => _selectedType == 'bottle';
+  bool get _isBottle => ref.read(feedingTimerProvider).selectedType == 'bottle';
 
   void _startTimer() {
-    setState(() {
-      _isTimerRunning = true;
-      _elapsedSeconds = 0;
-    });
+    ref.read(feedingTimerProvider.notifier).startTimer();
     _pulseController.repeat(reverse: true);
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {
-        _elapsedSeconds++;
-      });
-    });
   }
 
   void _stopTimer() {
-    _timer?.cancel();
+    ref.read(feedingTimerProvider.notifier).stopTimer();
     _pulseController.stop();
     _pulseController.reset();
-    setState(() {
-      _isTimerRunning = false;
-    });
   }
 
   String _formatTimer(int totalSeconds) {
@@ -101,25 +87,26 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
     final baby = ref.read(selectedBabyProvider);
     if (baby == null) return;
 
+    final timerState = ref.read(feedingTimerProvider);
     setState(() => _isSaving = true);
 
     try {
       await FeedingActions.logFeeding(
         babyId: baby.id,
-        type: _selectedType,
-        durationMinutes: _isBreastFeeding ? (_elapsedSeconds ~/ 60) : null,
+        type: timerState.selectedType,
+        durationMinutes: _isBreastFeeding ? (timerState.elapsedSeconds ~/ 60) : null,
         amountMl: _isBottle ? int.tryParse(_amountController.text) : null,
         notes: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
       );
 
-      if (_isTimerRunning) _stopTimer();
+      if (timerState.isRunning) _stopTimer();
 
       ref.invalidate(recentFeedingsProvider);
 
+      ref.read(feedingTimerProvider.notifier).resetTimer();
       setState(() {
-        _elapsedSeconds = 0;
         _notesController.clear();
         _amountController.text = '60';
       });
@@ -184,6 +171,15 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
   @override
   Widget build(BuildContext context) {
     final recentFeedings = ref.watch(recentFeedingsProvider);
+    final timerState = ref.watch(feedingTimerProvider);
+
+    // Sync pulse animation with timer state
+    if (timerState.isRunning && !_pulseController.isAnimating) {
+      _pulseController.repeat(reverse: true);
+    } else if (!timerState.isRunning && _pulseController.isAnimating) {
+      _pulseController.stop();
+      _pulseController.reset();
+    }
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -251,11 +247,11 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
               crossAxisSpacing: 10,
               childAspectRatio: 2.8,
               children: _feedTypes.map((type) {
-                final isSelected = _selectedType == type.$1;
+                final currentType = ref.read(feedingTimerProvider).selectedType;
+                final isSelected = currentType == type.$1;
                 return GestureDetector(
                   onTap: () {
-                    if (_isTimerRunning) _stopTimer();
-                    setState(() => _selectedType = type.$1);
+                    ref.read(feedingTimerProvider.notifier).selectType(type.$1);
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -324,41 +320,47 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
               ),
             ),
             const SizedBox(height: 16),
-            ScaleTransition(
-              scale: _isTimerRunning ? _pulseAnimation : const AlwaysStoppedAnimation(1.0),
-              child: Text(
-                _formatTimer(_elapsedSeconds),
-                style: TextStyle(
-                  fontSize: 56,
-                  fontWeight: FontWeight.w700,
-                  color: _isTimerRunning ? AppColors.primary : AppColors.text,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+            Builder(builder: (context) {
+              final ts = ref.watch(feedingTimerProvider);
+              return ScaleTransition(
+                scale: ts.isRunning ? _pulseAnimation : const AlwaysStoppedAnimation(1.0),
+                child: Text(
+                  _formatTimer(ts.elapsedSeconds),
+                  style: TextStyle(
+                    fontSize: 56,
+                    fontWeight: FontWeight.w700,
+                    color: ts.isRunning ? AppColors.primary : AppColors.text,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
-              ),
-            ),
+              );
+            }),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: _isTimerRunning ? _stopTimer : _startTimer,
-                icon: Icon(
-                    _isTimerRunning ? Icons.stop_rounded : Icons.play_arrow_rounded),
-                label: Text(_isTimerRunning ? 'Stop' : 'Start'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _isTimerRunning ? Colors.red.shade400 : AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+            Builder(builder: (context) {
+              final isRunning = ref.watch(feedingTimerProvider).isRunning;
+              return SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: isRunning ? _stopTimer : _startTimer,
+                  icon: Icon(
+                      isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded),
+                  label: Text(isRunning ? 'Stop' : 'Start'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isRunning ? Colors.red.shade400 : AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
           ],
         ),
       ),
