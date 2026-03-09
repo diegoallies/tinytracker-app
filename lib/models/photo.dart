@@ -30,7 +30,7 @@ class Photo {
           ? DateTime.parse(json['taken_at'] as String)
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
-      deletedAt: json['deleted_at'] != null
+      deletedAt: json.containsKey('deleted_at') && json['deleted_at'] != null
           ? DateTime.parse(json['deleted_at'] as String)
           : null,
     );
