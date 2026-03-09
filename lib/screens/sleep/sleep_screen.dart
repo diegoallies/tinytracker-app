@@ -400,7 +400,6 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                 icon: Icons.bedtime_outlined,
                 title: 'No sleep sessions yet',
                 description: 'Start tracking sleep above',
-                illustrationType: 'sleep',
               );
             }
             return ListView.separated(

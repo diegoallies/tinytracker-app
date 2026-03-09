@@ -553,7 +553,6 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
                 icon: Icons.restaurant_outlined,
                 title: 'No feedings yet',
                 description: 'Log your first feeding above',
-                illustrationType: 'feeding',
               );
             }
             return ListView.separated(

@@ -152,7 +152,6 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
               return const EmptyState(
                 icon: Icons.straighten,
                 title: 'No growth records yet',
-                illustrationType: 'growth',
                 description: 'Tap + to log your baby\'s first measurement',
               );
             }

@@ -142,7 +142,6 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
               return const EmptyState(
                 icon: Icons.emoji_events_outlined,
                 title: 'No milestones available',
-                illustrationType: 'milestones',
                 description: 'Milestones will appear here once set up',
               );
             }

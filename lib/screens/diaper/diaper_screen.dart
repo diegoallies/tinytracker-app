@@ -542,7 +542,6 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                 icon: Icons.baby_changing_station,
                 title: 'No diapers yet',
                 description: 'Log your first diaper change above',
-                illustrationType: 'diaper',
               );
             }
             return ListView.separated(

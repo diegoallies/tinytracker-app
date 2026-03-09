@@ -72,7 +72,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         description: 'Add your baby to start tracking',
         actionLabel: 'Add Baby',
         onAction: () => context.go('/baby'),
-        illustrationType: 'no_baby',
       );
     }
 

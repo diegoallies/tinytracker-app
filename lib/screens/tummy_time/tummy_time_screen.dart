@@ -410,7 +410,6 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                       icon: Icons.child_care_rounded,
                       title: 'No sessions today',
                       description: 'Start a tummy time session to track progress',
-                      illustrationType: 'tummy_time',
                     );
                   }
 

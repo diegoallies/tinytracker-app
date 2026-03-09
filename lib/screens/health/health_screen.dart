@@ -190,7 +190,6 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                   return const EmptyState(
                     icon: Icons.medical_services_outlined,
                     title: 'No health logs yet',
-                    illustrationType: 'health',
                     description: 'Log a temperature or medication above',
                   );
                 }
