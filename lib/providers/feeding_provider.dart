@@ -18,10 +18,7 @@ final recentFeedingsProvider = FutureProvider.autoDispose<List<Feeding>>((ref) a
         .order('logged_at', ascending: false)
         .limit(10);
 
-    return data
-        .where((json) => json['deleted_at'] == null)
-        .map<Feeding>((json) => Feeding.fromJson(json))
-        .toList();
+    return data.map<Feeding>((json) => Feeding.fromJson(json)).toList();
   } catch (e, st) {
     debugPrint('recentFeedingsProvider error: $e\n$st');
     rethrow;
@@ -34,11 +31,11 @@ final todayFeedCountProvider = FutureProvider.autoDispose<int>((ref) async {
 
   final data = await SupabaseService.client
       .from('feedings')
-      .select('id, deleted_at')
+      .select('id')
       .eq('baby_id', baby.id)
       .gte('logged_at', AppDateUtils.todayStart.toIso8601String());
 
-  return data.where((r) => r['deleted_at'] == null).length;
+  return data.length;
 });
 
 class FeedingActions {
@@ -74,7 +71,7 @@ class FeedingActions {
   static Future<void> deleteFeeding(String feedingId) async {
     await SupabaseService.client
         .from('feedings')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+        .delete()
         .eq('id', feedingId);
   }
 }

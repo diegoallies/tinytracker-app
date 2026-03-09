@@ -430,7 +430,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     children: [
                                       Text(item.label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                                       Text(
-                                        '${AppDateUtils.timeAgo(item.time)}${item.userName != null ? ' \u2022 ${item.userName}' : ''}',
+                                        AppDateUtils.timeAgo(item.time),
                                         style: const TextStyle(fontSize: 12, color: AppColors.muted),
                                       ),
                                     ],
