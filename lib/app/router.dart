@@ -19,22 +19,33 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/baby/baby_screen.dart';
 import '../screens/invites/invites_screen.dart';
 import '../screens/more/more_screen.dart';
+import '../screens/splash/splash_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/dashboard',
+  initialLocation: '/',
   redirect: (context, state) {
     final isAuthenticated = SupabaseService.currentUser != null;
-    final isAuthRoute = state.uri.toString() == '/login' || state.uri.toString() == '/register';
+    final path = state.uri.toString();
+    final isAuthRoute = path == '/login' || path == '/register';
+    final isSplash = path == '/';
+
+    // Don't redirect away from splash
+    if (isSplash) return null;
 
     if (!isAuthenticated && !isAuthRoute) return '/login';
     if (isAuthenticated && isAuthRoute) return '/dashboard';
     return null;
   },
   routes: [
+    // Splash screen
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const SplashScreen(),
+    ),
     // Auth routes (no shell)
     GoRoute(
       path: '/login',
