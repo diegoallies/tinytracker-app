@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/baby.dart';
 import '../models/baby_share.dart';
 import '../services/supabase_service.dart';
+import 'auth_provider.dart';
 
 class BabyState {
   final Baby? selectedBaby;
@@ -163,6 +164,8 @@ class BabyNotifier extends StateNotifier<BabyState> {
 }
 
 final babyProvider = StateNotifierProvider<BabyNotifier, BabyState>((ref) {
+  // Watch auth state so babies reload when user logs in/session restores
+  ref.watch(authStateProvider);
   return BabyNotifier();
 });
 

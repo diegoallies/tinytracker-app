@@ -7,9 +7,12 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
 });
 
 final currentUserProvider = Provider<User?>((ref) {
+  // Watch auth stream so this re-evaluates when auth state changes
+  ref.watch(authStateProvider);
   return SupabaseService.currentUser;
 });
 
 final isAuthenticatedProvider = Provider<bool>((ref) {
-  return SupabaseService.currentUser != null;
+  // Depend on reactive currentUserProvider instead of static check
+  return ref.watch(currentUserProvider) != null;
 });
