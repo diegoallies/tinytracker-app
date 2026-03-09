@@ -12,7 +12,6 @@ final recentFeedingsProvider = FutureProvider.autoDispose<List<Feeding>>((ref) a
       .from('feedings')
       .select('*')
       .eq('baby_id', baby.id)
-      .isFilter('deleted_at', null)
       .order('logged_at', ascending: false)
       .limit(10);
 
@@ -27,7 +26,6 @@ final todayFeedCountProvider = FutureProvider.autoDispose<int>((ref) async {
       .from('feedings')
       .select('id')
       .eq('baby_id', baby.id)
-      .isFilter('deleted_at', null)
       .gte('logged_at', AppDateUtils.todayStart.toIso8601String());
 
   return data.length;
@@ -58,7 +56,7 @@ class FeedingActions {
   static Future<void> deleteFeeding(String feedingId) async {
     await SupabaseService.client
         .from('feedings')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+        .delete()
         .eq('id', feedingId);
   }
 }

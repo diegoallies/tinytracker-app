@@ -43,11 +43,8 @@ class _SmartInsightsState extends State<SmartInsights> {
       // Fetch week data
       final results = await Future.wait([
         client.from('feedings').select('type, logged_at, duration_minutes, amount_ml')
-            .eq('baby_id', widget.babyId).isFilter('deleted_at', null).gte('logged_at', weekAgo),
         client.from('diapers').select('type, color, logged_at')
-            .eq('baby_id', widget.babyId).isFilter('deleted_at', null).gte('logged_at', weekAgo),
         client.from('sleeps').select('start_time, end_time, duration_minutes')
-            .eq('baby_id', widget.babyId).isFilter('deleted_at', null).gte('start_time', weekAgo),
         client.from('growth').select('weight_kg, height_cm, measured_at')
             .eq('baby_id', widget.babyId).gte('measured_at', weekAgo),
       ]);

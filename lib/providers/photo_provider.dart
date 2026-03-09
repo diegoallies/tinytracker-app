@@ -13,7 +13,6 @@ final photosProvider = FutureProvider.autoDispose<List<Photo>>((ref) async {
       .from('photos')
       .select()
       .eq('baby_id', baby.id)
-      .isFilter('deleted_at', null)
       .order('taken_at', ascending: false);
 
   return data.map<Photo>((json) => Photo.fromJson(json)).toList();
@@ -57,7 +56,7 @@ class PhotoActions {
     // Soft delete
     await SupabaseService.client
         .from('photos')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+        .delete()
         .eq('id', photo.id);
 
     // Try to remove from storage

@@ -27,11 +27,8 @@ final activityFeedProvider = FutureProvider.autoDispose<List<ActivityItem>>((ref
 
   final results = await Future.wait([
     client.from('feedings').select('id, type, logged_at')
-        .eq('baby_id', baby.id).isFilter('deleted_at', null).gte('logged_at', since),
     client.from('diapers').select('id, type, logged_at')
-        .eq('baby_id', baby.id).isFilter('deleted_at', null).gte('logged_at', since),
     client.from('sleeps').select('id, start_time, end_time, duration_minutes')
-        .eq('baby_id', baby.id).isFilter('deleted_at', null).gte('start_time', since),
   ]);
 
   final items = <ActivityItem>[];

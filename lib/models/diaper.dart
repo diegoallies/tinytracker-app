@@ -42,7 +42,7 @@ class Diaper {
       notes: json['notes'] as String?,
       loggedAt: DateTime.parse(json['logged_at'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
-      deletedAt: json['deleted_at'] != null
+      deletedAt: json.containsKey('deleted_at') && json['deleted_at'] != null
           ? DateTime.parse(json['deleted_at'] as String)
           : null,
       userName: json['profiles'] != null

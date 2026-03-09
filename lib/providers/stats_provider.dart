@@ -42,26 +42,19 @@ final dashboardStatsProvider = FutureProvider.autoDispose<DashboardStats>((ref) 
   final results = await Future.wait([
     // Today's feeds
     client.from('feedings').select('id').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).gte('logged_at', todayStr),
     // Today's diapers
     client.from('diapers').select('id').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).gte('logged_at', todayStr),
     // Today's sleep total
     client.from('sleeps').select('duration_minutes').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).not('end_time', 'is', null)
         .gte('start_time', todayStr),
     // Last feed
     client.from('feedings').select('logged_at, type').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).order('logged_at', ascending: false).limit(1),
     // Last diaper
     client.from('diapers').select('logged_at, type').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).order('logged_at', ascending: false).limit(1),
     // Active sleep
     client.from('sleeps').select('id, start_time').eq('baby_id', baby.id)
-        .isFilter('end_time', null).isFilter('deleted_at', null).limit(1),
     // Latest photo
     client.from('photos').select('url').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).order('taken_at', ascending: false).limit(1),
   ]);
 
   final feeds = results[0] as List;
@@ -110,11 +103,8 @@ final weeklyDataProvider = FutureProvider.autoDispose<List<WeeklyDataPoint>>((re
 
   final results = await Future.wait([
     client.from('feedings').select('logged_at').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).gte('logged_at', weekAgo),
     client.from('diapers').select('logged_at').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).gte('logged_at', weekAgo),
     client.from('sleeps').select('start_time, duration_minutes').eq('baby_id', baby.id)
-        .isFilter('deleted_at', null).not('end_time', 'is', null).gte('start_time', weekAgo),
   ]);
 
   final feeds = results[0] as List;
