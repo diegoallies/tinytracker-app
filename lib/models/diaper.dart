@@ -7,8 +7,6 @@ class Diaper {
   final String? notes;
   final DateTime loggedAt;
   final DateTime createdAt;
-  final DateTime? deletedAt;
-  final String? userName;
 
   Diaper({
     required this.id,
@@ -19,8 +17,6 @@ class Diaper {
     this.notes,
     required this.loggedAt,
     required this.createdAt,
-    this.deletedAt,
-    this.userName,
   });
 
   String get typeDisplay {
@@ -42,12 +38,6 @@ class Diaper {
       notes: json['notes'] as String?,
       loggedAt: DateTime.parse(json['logged_at'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
-      deletedAt: json.containsKey('deleted_at') && json['deleted_at'] != null
-          ? DateTime.parse(json['deleted_at'] as String)
-          : null,
-      userName: json['profiles'] != null
-          ? (json['profiles'] as Map<String, dynamic>)['display_name'] as String?
-          : null,
     );
   }
 

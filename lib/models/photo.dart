@@ -6,7 +6,6 @@ class Photo {
   final String? caption;
   final DateTime? takenAt;
   final DateTime createdAt;
-  final DateTime? deletedAt;
 
   Photo({
     required this.id,
@@ -16,7 +15,6 @@ class Photo {
     this.caption,
     this.takenAt,
     required this.createdAt,
-    this.deletedAt,
   });
 
   factory Photo.fromJson(Map<String, dynamic> json) {
@@ -30,9 +28,6 @@ class Photo {
           ? DateTime.parse(json['taken_at'] as String)
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
-      deletedAt: json.containsKey('deleted_at') && json['deleted_at'] != null
-          ? DateTime.parse(json['deleted_at'] as String)
-          : null,
     );
   }
 

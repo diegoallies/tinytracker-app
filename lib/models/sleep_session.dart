@@ -9,8 +9,6 @@ class SleepSession {
   final int? wakeCount;
   final String? notes;
   final DateTime createdAt;
-  final DateTime? deletedAt;
-  final String? userName;
 
   SleepSession({
     required this.id,
@@ -23,8 +21,6 @@ class SleepSession {
     this.wakeCount,
     this.notes,
     required this.createdAt,
-    this.deletedAt,
-    this.userName,
   });
 
   bool get isActive => endTime == null;
@@ -51,12 +47,6 @@ class SleepSession {
       wakeCount: json['wake_count'] as int?,
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
-      deletedAt: json.containsKey('deleted_at') && json['deleted_at'] != null
-          ? DateTime.parse(json['deleted_at'] as String)
-          : null,
-      userName: json['profiles'] != null
-          ? (json['profiles'] as Map<String, dynamic>)['display_name'] as String?
-          : null,
     );
   }
 
