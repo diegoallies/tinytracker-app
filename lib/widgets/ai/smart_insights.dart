@@ -192,7 +192,7 @@ class _SmartInsightsState extends State<SmartInsights> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: AnimatedCard(
         index: 5,
-        color: AppColors.pastelPurple.withValues(alpha: 0.4),
+        tint: AppColors.pastelPurple,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

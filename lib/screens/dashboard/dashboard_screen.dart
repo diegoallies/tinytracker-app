@@ -217,7 +217,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: AnimatedCard(
-                    color: AppColors.pastelBlue,
+                    tint: AppColors.pastelBlue,
                     child: Row(
                       children: [
                         const Icon(Icons.nightlight_round, color: AppColors.primary, size: 28),
@@ -320,7 +320,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   Expanded(
                     child: AnimatedCard(
                       index: 3,
-                      color: AppColors.pastelPinkLight,
+                      tint: AppColors.pastelPinkLight,
                       padding: const EdgeInsets.all(14),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,7 +350,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   Expanded(
                     child: AnimatedCard(
                       index: 4,
-                      color: AppColors.pastelYellowLight,
+                      tint: AppColors.pastelYellowLight,
                       padding: const EdgeInsets.all(14),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,7 +434,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: AnimatedCard(
               index: 6,
-              color: AppColors.pastelPurpleLight,
+              tint: AppColors.pastelPurpleLight,
               onTap: () => context.go('/summary'),
               child: Row(
                 children: [
@@ -590,7 +590,7 @@ class _StatCard extends StatelessWidget {
     return Expanded(
       child: AnimatedCard(
         index: index,
-        color: cardColor,
+        tint: cardColor,
         onTap: onTap,
         padding: const EdgeInsets.all(14),
         child: Column(

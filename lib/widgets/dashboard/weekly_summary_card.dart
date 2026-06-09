@@ -31,16 +31,27 @@ class WeeklySummaryCard extends ConsumerWidget {
     final weekStart = now.subtract(const Duration(days: 7));
     final dateRange = '${DateFormat('MMM d').format(weekStart)} - ${DateFormat('MMM d').format(now)}';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFF3E8FF), Color(0xFFE8D5F5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          // Tinted-surface rule: pastel gradient in light mode, standard dark
+          // card with a purple accent border in dark mode.
+          gradient: isDark
+              ? null
+              : const LinearGradient(
+                  colors: [Color(0xFFF3E8FF), Color(0xFFE8D5F5)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          color: isDark ? context.palette.card : null,
+          border: isDark
+              ? Border.all(
+                  color: AppColors.pastelPurple.withValues(alpha: 0.45))
+              : null,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -57,14 +68,18 @@ class WeeklySummaryCard extends ConsumerWidget {
               children: [
                 const Icon(Icons.bar_chart_rounded, color: AppColors.primary, size: 22),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'This Week',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.text),
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: context.palette.text),
                 ),
                 const Spacer(),
                 Text(
                   dateRange,
-                  style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                  style:
+                      TextStyle(fontSize: 12, color: context.palette.muted),
                 ),
               ],
             ),
@@ -99,16 +114,18 @@ class WeeklySummaryCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: isDark
+                    ? context.palette.surface.withValues(alpha: 0.6)
+                    : Colors.white.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _MiniStat(label: 'Avg feeds/day', value: summary.avgFeedsPerDay.toStringAsFixed(1)),
-                  Container(width: 1, height: 24, color: AppColors.muted.withValues(alpha: 0.2)),
+                  Container(width: 1, height: 24, color: context.palette.muted.withValues(alpha: 0.2)),
                   _MiniStat(label: 'Avg sleep/day', value: '${summary.avgDailySleepHours.toStringAsFixed(1)}h'),
-                  Container(width: 1, height: 24, color: AppColors.muted.withValues(alpha: 0.2)),
+                  Container(width: 1, height: 24, color: context.palette.muted.withValues(alpha: 0.2)),
                   _MiniStat(label: 'Avg diapers/day', value: summary.avgDiapersPerDay.toStringAsFixed(1)),
                 ],
               ),
@@ -143,11 +160,11 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: iconColor),
         const SizedBox(width: 10),
-        Text(label, style: const TextStyle(fontSize: 14, color: AppColors.text)),
+        Text(label, style: TextStyle(fontSize: 14, color: context.palette.text)),
         const Spacer(),
         Text(
           value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.palette.text),
         ),
         const SizedBox(width: 10),
         _TrendBadge(trend: trend, label: changeLabel),
@@ -203,8 +220,8 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text)),
-        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.muted)),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: context.palette.text)),
+        Text(label, style: TextStyle(fontSize: 10, color: context.palette.muted)),
       ],
     );
   }

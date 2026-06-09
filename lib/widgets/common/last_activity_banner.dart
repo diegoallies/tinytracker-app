@@ -103,10 +103,17 @@ class _LastActivityBannerState extends State<LastActivityBanner>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: bgColor,
+            // Tinted-surface rule: pastel fill in light, dark card with the
+            // status color as the accent border in dark.
+            color: Theme.of(context).brightness == Brightness.dark
+                ? context.palette.card
+                : bgColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: iconColor.withValues(alpha: 0.3),
+              color: iconColor.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.dark
+                      ? 0.55
+                      : 0.3),
               width: 1,
             ),
           ),

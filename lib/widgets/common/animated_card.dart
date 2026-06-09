@@ -8,6 +8,12 @@ class AnimatedCard extends StatelessWidget {
   final EdgeInsets? padding;
   final Color? color;
 
+  /// Brand pastel accent. Prefer this over [color] for tinted cards: light
+  /// mode gets the pastel fill, dark mode gets a normal dark card with the
+  /// pastel as a border accent (see BuildContext.tintedCard) — so
+  /// palette-based text stays readable in both modes.
+  final Color? tint;
+
   const AnimatedCard({
     super.key,
     required this.child,
@@ -15,10 +21,12 @@ class AnimatedCard extends StatelessWidget {
     this.index = 0,
     this.padding,
     this.color,
-  });
+    this.tint,
+  }) : assert(color == null || tint == null, 'use either color or tint');
 
   @override
   Widget build(BuildContext context) {
+    final tinted = tint != null ? context.tintedCard(tint!) : null;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 300 + (index * 50)),
@@ -37,7 +45,8 @@ class AnimatedCard extends StatelessWidget {
         child: Container(
           padding: padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: color ?? context.palette.card,
+            color: tinted?.background ?? color ?? context.palette.card,
+            border: tinted?.border,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(

@@ -69,6 +69,22 @@ class AppPalette extends ThemeExtension<AppPalette> {
 extension PaletteOnContext on BuildContext {
   AppPalette get palette =>
       Theme.of(this).extension<AppPalette>() ?? AppPalette.light;
+
+  /// THE rule for brand-tinted surfaces (stat cards, banners, accent cards).
+  ///
+  /// Light mode: the pastel IS the background. Dark mode: the background is
+  /// the standard dark card and the pastel survives as a visible accent
+  /// border — so `palette.text`/`palette.muted` are correct on top of it in
+  /// BOTH modes. Never hand-roll pastel fills on cards again.
+  ({Color background, BoxBorder? border}) tintedCard(Color pastel) {
+    if (Theme.of(this).brightness == Brightness.light) {
+      return (background: pastel, border: null);
+    }
+    return (
+      background: palette.card,
+      border: Border.all(color: pastel.withValues(alpha: 0.45)),
+    );
+  }
 }
 
 class AppColors {
