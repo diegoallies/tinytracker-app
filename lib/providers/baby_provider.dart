@@ -150,12 +150,41 @@ class BabyNotifier extends StateNotifier<BabyState> {
   }
 
   Future<List<BabyShare>> getShares(String babyId) async {
-    final data = await _client
+    // Get shares first
+    final sharesData = await _client
         .from('baby_shares')
-        .select('*, profiles(display_name, email)')
+        .select('*')
         .eq('baby_id', babyId);
 
-    return data.map<BabyShare>((json) => BabyShare.fromJson(json)).toList();
+    // Get unique user IDs
+    final userIds = sharesData
+        .map<String>((s) => s['user_id'] as String)
+        .toSet()
+        .toList();
+
+    // Fetch profiles for those users
+    final profilesData = userIds.isNotEmpty
+        ? await _client
+            .from('profiles')
+            .select('id, display_name, email')
+            .inFilter('id', userIds)
+        : [];
+
+    // Build a map for quick lookup
+    final profilesMap = <String, Map<String, dynamic>>{};
+    for (final p in profilesData) {
+      profilesMap[p['id'] as String] = p;
+    }
+
+    // Merge profile data into shares
+    return sharesData.map<BabyShare>((json) {
+      final userId = json['user_id'] as String;
+      final profile = profilesMap[userId];
+      return BabyShare.fromJson({
+        ...json,
+        'profiles': profile,
+      });
+    }).toList();
   }
 
   Future<void> removeShare(String shareId) async {
