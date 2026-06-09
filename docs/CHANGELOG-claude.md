@@ -113,6 +113,26 @@ Diego's family runs a paper "Baby Care Tracking & Reporting Pack" with the nanny
 - New `integration_test/smoke_test.dart`: boots the real app on an Android emulator against the live backend, signs in, and walks every tab + all 16 feature screens asserting clean renders.
 - Stood up the test rig itself on this machine (Android system image + AVD; the iOS simulator service is broken OS-side).
 
+## Round 3 (Diego awake & testing on his iPhone — live feedback loop)
+
+### 22. Medication regimen + dose safety (from the wife's WhatsApp)
+- Dezhay's meds seeded with schedules: Nexiam 1×/day, Hyospasmol syrup 3×/day, Retina drops 1×/day, Calpol & Panado as-needed (4h minimum gap, max 4/24h).
+- Dose guard warns before a double dose / too-soon dose — "Give anyway" to override, never blocks on network failure. Invite tokens now `Random.secure()`.
+
+### 23. Health page redesigned (Diego: "doesn't feel natural")
+- Medication tab is now a daily checklist: one row per med with dose-slot circles (●○○), as-needed meds show last-given + Give button, tap a row for full instructions / today's doses / give-backdated-dose / edit / remove. The lumpy chips and hold-to-delete are gone; one-off meds live behind "Log a different medicine".
+
+### 24. Dark mode finished properly (Diego's screenshots: "colors too close")
+- ~150 light-hardcoded sites fixed across every screen by two sweep agents.
+- New **tinted-surface design rule** (`context.tintedCard` / `AnimatedCard(tint:)`): pastel fills in light mode become dark cards with pastel accent borders in dark mode — fixes the *class* of invisible-text bugs, not instances. Applied to all dashboard cards, banners, summary and AI cards.
+- Dark palette retuned for separation (card vs background vs border).
+- Verified by **screenshot review**: the smoke test now captures a PNG of every screen in dark mode; Claude reviewed all 22 frames and fixed what it saw (truncated More-grid labels, a silently-missing tab-tap in the test itself).
+
+### 25. Shipped to the device, repeatedly
+- Wireless release installs to Diego's iPhone 16 Pro after each verified round (with an auto-retry when the Wi-Fi tunnel dropped mid-install).
+- Failing GitHub Actions workflow removed + run records wiped (notification spam).
+
 ## Verification
-- `flutter analyze`: 0 issues. `flutter test`: 13/13 green. `flutter build apk --debug`: builds.
-- End-to-end smoke test on a live emulator + three adversarial review rounds; every finding fixed same-night.
+- `flutter analyze`: 0 issues. `flutter test`: 13/13 green. APK + iOS builds green.
+- End-to-end emulator test: login → dark mode on → every tab + 16 feature screens + live writes (diaper/reflux/journal) → all passing, with screenshots reviewed by Claude frame-by-frame.
+- Three adversarial review rounds; every finding fixed same-night.
