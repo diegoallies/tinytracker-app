@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../app/deep_links.dart';
 import '../../services/supabase_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -88,6 +89,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     final isLoggedIn = SupabaseService.currentUser != null;
     if (isLoggedIn) {
+      // A cold-start invite deep link takes priority over the dashboard.
+      final inviteToken = pendingInviteToken;
+      if (inviteToken != null) {
+        pendingInviteToken = null;
+        context.go('/invites?code=$inviteToken');
+        return;
+      }
       final prefs = await SharedPreferences.getInstance();
       final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
       if (!mounted) return;

@@ -13,7 +13,11 @@ import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
 class InvitesScreen extends ConsumerStatefulWidget {
-  const InvitesScreen({super.key});
+  /// Invite token arriving via a `tinytracker://invite/...` deep link;
+  /// pre-fills the join field and redeems automatically.
+  final String? initialCode;
+
+  const InvitesScreen({super.key, this.initialCode});
 
   @override
   ConsumerState<InvitesScreen> createState() => _InvitesScreenState();
@@ -31,6 +35,13 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
   void initState() {
     super.initState();
     _loadInvites();
+    final code = widget.initialCode;
+    if (code != null && code.isNotEmpty) {
+      _codeController.text = code;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _redeemCode();
+      });
+    }
   }
 
   @override

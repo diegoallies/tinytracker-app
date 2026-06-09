@@ -194,7 +194,9 @@ final appRouter = GoRouter(
           path: '/invites',
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
-            child: const InvitesScreen(),
+            child: InvitesScreen(
+              initialCode: state.uri.queryParameters['code'],
+            ),
             transitionsBuilder: _slideTransition,
           ),
         ),

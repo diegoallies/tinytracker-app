@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/env.dart';
 import 'config/theme.dart';
+import 'app/deep_links.dart';
 import 'app/router.dart';
 import 'providers/night_mode_provider.dart';
 import 'services/notification_service.dart';
@@ -26,6 +27,8 @@ void main() async {
       child: TinyTrackApp(),
     ),
   );
+
+  setupDeepLinks();
 }
 
 class TinyTrackApp extends ConsumerWidget {
