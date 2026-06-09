@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/diaper_provider.dart';
+import '../../utils/care_pack_data.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
@@ -22,6 +23,7 @@ class DiaperScreen extends ConsumerStatefulWidget {
 class _DiaperScreenState extends ConsumerState<DiaperScreen> {
   String _selectedType = 'wet';
   String? _selectedColor;
+  int? _stoolType; // Bristol-style 1–7, only for dirty/both
   final TextEditingController _notesController = TextEditingController();
   bool _isSaving = false;
   DateTime _loggedAt = DateTime.now();
@@ -61,6 +63,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         babyId: baby.id,
         type: _selectedType,
         color: _showColorPicker ? _selectedColor : null,
+        stoolType: _showColorPicker ? _stoolType : null,
         notes: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
@@ -73,6 +76,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
 
       setState(() {
         _selectedColor = null;
+        _stoolType = null;
         _notesController.clear();
         _loggedAt = DateTime.now();
       });
@@ -106,12 +110,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
-        );
+        context.showErrorSnackBar('Couldn’t delete the diaper entry.');
       }
     }
   }
@@ -216,6 +215,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
               const SizedBox(height: 16),
               if (_showColorPicker) ...[
                 _buildColorPicker(),
+                const SizedBox(height: 16),
+                _buildStoolTypePicker(),
                 const SizedBox(height: 16),
               ],
               _buildTimeSelector(),
@@ -537,7 +538,10 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                         Haptics.selectionClick();
                         setState(() {
                           _selectedType = type.$1;
-                          if (!_showColorPicker) _selectedColor = null;
+                          if (!_showColorPicker) {
+                            _selectedColor = null;
+                            _stoolType = null;
+                          }
                         });
                       },
                       child: AnimatedContainer(
@@ -677,6 +681,114 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                 );
               }).toList(),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _stoolAccent(CareScalePoint point) {
+    if (!point.alert) return AppColors.primary;
+    return point.value == 1 ? AppColors.warning : AppColors.error;
+  }
+
+  Widget _buildStoolTypePicker() {
+    final selected =
+        _stoolType == null ? null : CarePackData.stoolTypes[_stoolType! - 1];
+
+    return AnimatedCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Stool type',
+              style: TextStyle(
+                color: context.palette.text,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Optional — 1 to 7, tap again to clear',
+              style: TextStyle(color: context.palette.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                for (final point in CarePackData.stoolTypes) ...[
+                  if (point.value > 1) const SizedBox(width: 6),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Haptics.selectionClick();
+                        setState(() => _stoolType =
+                            _stoolType == point.value ? null : point.value);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: _stoolType == point.value
+                              ? _stoolAccent(point).withValues(alpha: 0.15)
+                              : context.palette.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _stoolType == point.value
+                                ? _stoolAccent(point)
+                                : context.palette.muted
+                                    .withValues(alpha: 0.25),
+                            width: _stoolType == point.value ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${point.value}',
+                            style: TextStyle(
+                              color: _stoolType == point.value
+                                  ? _stoolAccent(point)
+                                  : context.palette.muted,
+                              fontWeight: _stoolType == point.value
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (selected != null) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  if (selected.alert) ...[
+                    Icon(Icons.warning_amber_rounded,
+                        color: _stoolAccent(selected), size: 16),
+                    const SizedBox(width: 4),
+                  ],
+                  Expanded(
+                    child: Text(
+                      selected.label,
+                      style: TextStyle(
+                        color: selected.alert
+                            ? _stoolAccent(selected)
+                            : context.palette.muted,
+                        fontWeight: selected.alert
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

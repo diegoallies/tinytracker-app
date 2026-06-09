@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../services/auth_service.dart';
 import '../../utils/extensions.dart';
+import '../../utils/haptics.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,27 +18,90 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _loading = false;
+  bool _obscurePassword = true;
 
   Future<void> _signIn() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      context.showSnackBar('Please fill in all fields', isError: true);
+    final email = _emailController.text.trim();
+    if (email.isEmpty || _passwordController.text.isEmpty) {
+      context.showErrorSnackBar('Please fill in all fields');
+      return;
+    }
+    if (!email.contains('@') || !email.contains('.')) {
+      context.showErrorSnackBar('That doesn’t look like an email address');
       return;
     }
 
+    Haptics.lightTap();
     setState(() => _loading = true);
     try {
       final auth = AuthService();
-      await auth.signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      await auth.signIn(email: email, password: _passwordController.text);
+      Haptics.mediumTap();
       if (mounted) context.go('/dashboard');
     } catch (e) {
       if (mounted) {
-        context.showSnackBar('Invalid email or password', isError: true);
+        context.showErrorSnackBar('Invalid email or password');
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    Haptics.lightTap();
+    final controller =
+        TextEditingController(text: _emailController.text.trim());
+    final email = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          AppSpacing.xs,
+          AppSpacing.gutter,
+          MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Reset password',
+                style: Theme.of(ctx).textTheme.titleLarge,
+                textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'We’ll email you a link to set a new password.',
+              style: Theme.of(ctx).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.emailAddress,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+              onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+              child: const Text('Send reset link'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (email == null || email.isEmpty || !mounted) return;
+    final ok = await AuthService().resetPassword(email);
+    if (!mounted) return;
+    if (ok) {
+      context.showSuccessSnackBar('Reset link sent — check your inbox');
+    } else {
+      context.showErrorSnackBar('Couldn’t send the reset link. Try again.');
     }
   }
 
@@ -51,67 +117,103 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 60),
               // Logo
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.pastelPurple,
-                  borderRadius: BorderRadius.circular(20),
+              Center(
+                child: ClipRRect(
+                  borderRadius: AppRadius.xlAll,
+                  child: Image.asset(
+                    'assets/images/tinytrack_logo.jpg',
+                    width: 88,
+                    height: 88,
+                    errorBuilder: (_, _, _) => Container(
+                      width: 88,
+                      height: 88,
+                      decoration: const BoxDecoration(
+                        color: AppColors.pastelPurple,
+                        borderRadius: AppRadius.xlAll,
+                      ),
+                      child: const Icon(
+                        Icons.child_care_rounded,
+                        size: 48,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.child_care_rounded,
-                  size: 48,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
+              )
+                  .animate()
+                  .fadeIn(duration: AppMotion.entrance)
+                  .scale(
+                      begin: const Offset(0.85, 0.85),
+                      curve: AppMotion.spring,
+                      duration: AppMotion.entrance),
+              const SizedBox(height: AppSpacing.xl),
               Text(
                 'Welcome back',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: context.palette.text,
-                ),
-              ),
-              const SizedBox(height: 8),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineLarge,
+              ).animate().fadeIn(delay: 100.ms, duration: AppMotion.entrance),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 'Sign in to continue tracking',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: context.palette.muted,
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(color: context.palette.muted),
+              ).animate().fadeIn(delay: 150.ms, duration: AppMotion.entrance),
+              const SizedBox(height: AppSpacing.xxl),
+              AutofillGroup(
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      autocorrect: false,
+                      autofillHints: const [AutofillHints.email],
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      autofillHints: const [AutofillHints.password],
+                      onSubmitted: (_) => _signIn(),
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outlined),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn(delay: 200.ms, duration: AppMotion.entrance),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _forgotPassword,
+                  child: const Text('Forgot password?'),
                 ),
               ),
-              const SizedBox(height: 40),
-              // Email
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Password
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _signIn(),
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outlined),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Sign In
+              const SizedBox(height: AppSpacing.xs),
               ElevatedButton(
                 onPressed: _loading ? null : _signIn,
                 child: _loading
@@ -124,9 +226,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       )
                     : const Text('Sign In'),
-              ),
-              const SizedBox(height: 16),
-              // Register link
+              ).animate().fadeIn(delay: 250.ms, duration: AppMotion.entrance),
+              const SizedBox(height: AppSpacing.md),
               TextButton(
                 onPressed: () => context.go('/register'),
                 child: RichText(

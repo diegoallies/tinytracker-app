@@ -18,6 +18,11 @@ import '../screens/export/export_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/baby/baby_screen.dart';
 import '../screens/invites/invites_screen.dart';
+import '../screens/reflux/reflux_screen.dart';
+import '../screens/journal/daily_journal_screen.dart';
+import '../screens/weekly_report/weekly_report_screen.dart';
+import '../screens/monthly_review/monthly_review_screen.dart';
+import '../screens/care_guide/care_guide_screen.dart';
 import '../screens/more/more_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
@@ -198,6 +203,46 @@ final appRouter = GoRouter(
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: const SettingsScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/reflux',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const RefluxScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/journal',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const DailyJournalScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/weekly-report',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const WeeklyReportScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/monthly-review',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const MonthlyReviewScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/care-guide',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const CareGuideScreen(),
             transitionsBuilder: _slideTransition,
           ),
         ),

@@ -82,6 +82,51 @@ class MoreScreen extends ConsumerWidget {
     ),
   ];
 
+  /// Daily care + reporting workflow, digitised from the family's paper
+  /// "Baby Care Tracking & Reporting Pack".
+  static const _carePack = <_FeatureItem>[
+    _FeatureItem(
+      icon: Icons.water_drop_rounded,
+      label: 'Reflux',
+      description: 'Spit-up tracker',
+      route: '/reflux',
+      color: Color(0xFFf5d5e8),
+      iconColor: Color(0xFFbf5b8c),
+    ),
+    _FeatureItem(
+      icon: Icons.menu_book_rounded,
+      label: 'Daily Journal',
+      description: 'Mood & activity',
+      route: '/journal',
+      color: Color(0xFFf5f0d5),
+      iconColor: Color(0xFFb0a040),
+    ),
+    _FeatureItem(
+      icon: Icons.assignment_rounded,
+      label: 'Weekly Report',
+      description: 'For the parents',
+      route: '/weekly-report',
+      color: Color(0xFFe8d5f5),
+      iconColor: Color(0xFF9b72cf),
+    ),
+    _FeatureItem(
+      icon: Icons.fact_check_rounded,
+      label: 'Monthly Review',
+      description: 'Milestone check',
+      route: '/monthly-review',
+      color: Color(0xFFd5f5e8),
+      iconColor: Color(0xFF5bbf8c),
+    ),
+    _FeatureItem(
+      icon: Icons.health_and_safety_rounded,
+      label: 'Care Guide',
+      description: 'Red flags & contacts',
+      route: '/care-guide',
+      color: Color(0xFFd5e8f5),
+      iconColor: Color(0xFF5b8cbf),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -96,46 +141,21 @@ class MoreScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Features',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: context.palette.text,
-                ),
+              _SectionHeader(
+                title: 'Care Pack',
+                subtitle: 'Daily care, reports & safety — the paper pack, digitised',
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Everything you need to track your little one',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: context.palette.muted,
-                ),
-              ),
-
               const SizedBox(height: 16),
+              _FeatureGrid(items: _carePack),
 
-              // Feature grid
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  const crossAxisCount = 3;
-                  const spacing = 12.0;
-                  final itemWidth =
-                      (constraints.maxWidth - (spacing * (crossAxisCount - 1))) /
-                          crossAxisCount;
+              const SizedBox(height: 28),
 
-                  return Wrap(
-                    spacing: spacing,
-                    runSpacing: spacing,
-                    children: _features.map((feature) {
-                      return SizedBox(
-                        width: itemWidth,
-                        child: _FeatureCard(feature: feature),
-                      );
-                    }).toList(),
-                  );
-                },
+              _SectionHeader(
+                title: 'Features',
+                subtitle: 'Everything you need to track your little one',
               ),
+              const SizedBox(height: 16),
+              _FeatureGrid(items: _features),
 
               const SizedBox(height: 32),
 
@@ -168,6 +188,68 @@ class MoreScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _SectionHeader({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: context.palette.text,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 14,
+            color: context.palette.muted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureGrid extends StatelessWidget {
+  final List<_FeatureItem> items;
+
+  const _FeatureGrid({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const crossAxisCount = 3;
+        const spacing = 12.0;
+        final itemWidth =
+            (constraints.maxWidth - (spacing * (crossAxisCount - 1))) /
+                crossAxisCount;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: items.map((feature) {
+            return SizedBox(
+              width: itemWidth,
+              child: _FeatureCard(feature: feature),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }

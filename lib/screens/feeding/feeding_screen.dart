@@ -36,6 +36,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
   String _selectedType = 'bottle';
   int? _durationMinutes; // for breast feeds
   BabyMedication? _selectedMedication;
+  int? _feedQuality; // optional 1–5 "how did the feed go?"
+  bool _hadSpitup = false;
 
   static const _allFeedTypes = [
     ('breast_left', 'Left Breast', Icons.woman),
@@ -95,6 +97,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         type: _selectedType,
         durationMinutes: _isBreastFeeding ? _durationMinutes : null,
         amountMl: _isBottle ? int.tryParse(_amountController.text) : null,
+        quality: _feedQuality,
+        hadSpitup: _hadSpitup,
         notes: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
@@ -121,6 +125,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         _durationMinutes = null;
         _selectedMedication = null;
         _addMeds = false;
+        _feedQuality = null;
+        _hadSpitup = false;
         _loggedAt = DateTime.now();
       });
 
@@ -435,6 +441,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
               _buildTimeSelector(),
               const SizedBox(height: 16),
               _buildMedsSection(),
+              const SizedBox(height: 16),
+              _buildFeedQualitySection(),
               const SizedBox(height: 16),
               _buildNotesField(),
               const SizedBox(height: 20),
@@ -907,6 +915,64 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                 style: const TextStyle(color: AppColors.text),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeedQualitySection() {
+    return AnimatedCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'How did the feed go?',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Optional — tap a star again to clear',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (var star = 1; star <= 5; star++)
+                  GestureDetector(
+                    onTap: () {
+                      Haptics.selectionClick();
+                      setState(() =>
+                          _feedQuality = _feedQuality == star ? null : star);
+                    },
+                    child: SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        Icons.star_rounded,
+                        size: 32,
+                        color: _feedQuality != null && star <= _feedQuality!
+                            ? AppColors.warning
+                            : AppColors.muted.withValues(alpha: 0.3),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _SpitupChip(
+              selected: _hadSpitup,
+              onTap: () {
+                Haptics.selectionClick();
+                setState(() => _hadSpitup = !_hadSpitup);
+              },
+            ),
           ],
         ),
       ),
@@ -1655,6 +1721,55 @@ class _Pill extends StatelessWidget {
               label,
               style: TextStyle(
                 color: selected ? AppColors.primary : AppColors.text,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SpitupChip extends StatelessWidget {
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SpitupChip({required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.warning.withValues(alpha: 0.15)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? AppColors.warning
+                : AppColors.muted.withValues(alpha: 0.3),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.water_drop_outlined,
+              size: 16,
+              color: selected ? AppColors.warning : AppColors.muted,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Spit-up after feed',
+              style: TextStyle(
+                color: selected ? AppColors.warning : AppColors.text,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: 13,
               ),

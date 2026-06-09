@@ -8,6 +8,7 @@ import '../../providers/feeding_provider.dart';
 import '../../providers/diaper_provider.dart';
 import '../../providers/sleep_provider.dart';
 import '../../utils/extensions.dart';
+import '../../utils/haptics.dart';
 
 class QuickLogSheets {
   static void show(BuildContext context, WidgetRef ref, int navIndex) {
@@ -101,6 +102,8 @@ class _QuickLogFeedingSheet extends ConsumerStatefulWidget {
 class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
   String _selectedType = 'bottle';
   int _amountMl = 60;
+  int? _quality; // optional 1–5 "how did the feed go?"
+  bool _hadSpitup = false;
   bool _isSaving = false;
 
   static const _feedTypes = [
@@ -123,6 +126,8 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
         type: _selectedType,
         durationMinutes: _isBottle ? null : 0,
         amountMl: _isBottle ? _amountMl : null,
+        quality: _quality,
+        hadSpitup: _hadSpitup,
       );
       ref.invalidate(recentFeedingsProvider);
       ref.invalidate(todayFeedCountProvider);
@@ -236,6 +241,81 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
             ],
           ),
         ],
+
+        // Optional feed quality + spit-up flag (kept compact)
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var star = 1; star <= 5; star++)
+              GestureDetector(
+                onTap: () {
+                  Haptics.selectionClick();
+                  setState(() => _quality = _quality == star ? null : star);
+                },
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(
+                    Icons.star_rounded,
+                    size: 28,
+                    color: _quality != null && star <= _quality!
+                        ? AppColors.warning
+                        : context.palette.muted.withValues(alpha: 0.3),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        Center(
+          child: GestureDetector(
+            onTap: () {
+              Haptics.selectionClick();
+              setState(() => _hadSpitup = !_hadSpitup);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: _hadSpitup
+                    ? AppColors.warning.withValues(alpha: 0.15)
+                    : context.palette.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: _hadSpitup
+                      ? AppColors.warning
+                      : context.palette.muted.withValues(alpha: 0.3),
+                  width: _hadSpitup ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.water_drop_outlined,
+                    size: 16,
+                    color: _hadSpitup
+                        ? AppColors.warning
+                        : context.palette.muted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Spit-up after feed',
+                    style: TextStyle(
+                      color: _hadSpitup
+                          ? AppColors.warning
+                          : context.palette.text,
+                      fontWeight:
+                          _hadSpitup ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
 
         const SizedBox(height: 20),
         ElevatedButton(
