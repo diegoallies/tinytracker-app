@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,8 +46,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     _sleepTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() {
+          final diff = DateTime.now().difference(startTime);
           _sleepDuration = AppDateUtils.formatElapsed(
-            DateTime.now().difference(startTime),
+            diff.isNegative ? Duration.zero : diff,
           );
         });
       }
@@ -124,7 +126,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               children: [
                                 Text(
                                   baby.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.text,
@@ -132,7 +134,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                                 Text(
                                   '${baby.ageDisplay} old  \u2022  ${DateFormat('EEEE, MMM d').format(DateTime.now())}',
-                                  style: const TextStyle(fontSize: 13, color: AppColors.muted),
+                                  style: TextStyle(fontSize: 13, color: AppColors.muted),
                                 ),
                               ],
                             ),
@@ -278,7 +280,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             children: [
                               Icon(Icons.restaurant_rounded, size: 16, color: AppColors.muted),
                               const SizedBox(width: 6),
-                              const Text('Last Feed', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                              Text('Last Feed', style: TextStyle(fontSize: 12, color: AppColors.muted)),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -289,7 +291,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           if (s.lastFeedType != null)
                             Text(
                               _feedTypeLabel(s.lastFeedType!),
-                              style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                              style: TextStyle(fontSize: 12, color: AppColors.muted),
                             ),
                         ],
                       ),
@@ -308,7 +310,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             children: [
                               Icon(Icons.water_drop_rounded, size: 16, color: AppColors.muted),
                               const SizedBox(width: 6),
-                              const Text('Last Diaper', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                              Text('Last Diaper', style: TextStyle(fontSize: 12, color: AppColors.muted)),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -319,7 +321,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           if (s.lastDiaperType != null)
                             Text(
                               s.lastDiaperType!.substring(0, 1).toUpperCase() + s.lastDiaperType!.substring(1),
-                              style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                              style: TextStyle(fontSize: 12, color: AppColors.muted),
                             ),
                         ],
                       ),
@@ -405,7 +407,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.muted),
                 ],
               ),
             ),
@@ -459,7 +461,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       Text(item.label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                                       Text(
                                         AppDateUtils.timeAgo(item.time),
-                                        style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                                        style: TextStyle(fontSize: 12, color: AppColors.muted),
                                       ),
                                     ],
                                   ),
@@ -556,14 +558,14 @@ class _StatCard extends StatelessWidget {
             if (sleepMinutes != null)
               CountUpDuration(
                 totalMinutes: sleepMinutes!,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
               )
             else
               CountUpText(
                 targetValue: numericValue ?? 0,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
               ),
-            Text(label, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+            Text(label, style: TextStyle(fontSize: 11, color: AppColors.muted)),
           ],
         ),
       ),
@@ -622,6 +624,7 @@ class _BabyAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
     return Container(
       width: 48,
       height: 48,
@@ -631,11 +634,14 @@ class _BabyAvatar extends StatelessWidget {
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 2),
       ),
       clipBehavior: Clip.antiAlias,
-      child: photoUrl != null
-          ? Image.network(
-              photoUrl!,
+      child: hasPhoto
+          ? CachedNetworkImage(
+              key: ValueKey(photoUrl),
+              imageUrl: photoUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _fallbackIcon(),
+              fadeInDuration: const Duration(milliseconds: 150),
+              placeholder: (_, __) => _fallbackIcon(),
+              errorWidget: (_, __, ___) => _fallbackIcon(),
             )
           : _fallbackIcon(),
     );

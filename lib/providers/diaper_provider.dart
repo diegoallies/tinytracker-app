@@ -26,7 +26,7 @@ final todayDiaperCountProvider = FutureProvider<int>((ref) async {
       .from('diapers')
       .select('id')
       .eq('baby_id', baby.id)
-      .gte('logged_at', AppDateUtils.todayStart.toIso8601String());
+      .gte('logged_at', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   return data.length;
 });
@@ -39,7 +39,7 @@ final todayDiaperStatsProvider = FutureProvider<Map<String, int>>((ref) async {
       .from('diapers')
       .select('type')
       .eq('baby_id', baby.id)
-      .gte('logged_at', AppDateUtils.todayStart.toIso8601String());
+      .gte('logged_at', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   int wet = 0, dirty = 0, both = 0;
   for (final d in data) {
@@ -68,7 +68,7 @@ class DiaperActions {
       'type': type,
       'color': (type == 'dirty' || type == 'both') ? color : null,
       'notes': notes?.isNotEmpty == true ? notes : null,
-      'logged_at': DateTime.now().toIso8601String(),
+      'logged_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 

@@ -450,7 +450,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
         'invited_by': userId,
         'token': token,
         'role': role,
-        'expires_at': expiresAt.toIso8601String(),
+        'expires_at': expiresAt.toUtc().toIso8601String(),
       });
 
       final inviteLink = 'tinytracker://invite/$token';
@@ -611,7 +611,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
-                      style: const TextStyle(fontSize: 15, color: AppColors.text),
+                      style: TextStyle(fontSize: 15, color: AppColors.text),
                       decoration: _inputDecoration('Baby\'s Name', Icons.child_care_rounded),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? 'Please enter a name' : null,
@@ -621,7 +621,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                       onTap: _selectDate,
                       child: AbsorbPointer(
                         child: TextFormField(
-                          style: const TextStyle(fontSize: 15, color: AppColors.text),
+                          style: TextStyle(fontSize: 15, color: AppColors.text),
                           decoration: _inputDecoration(
                             'Date of Birth',
                             Icons.cake_rounded,
@@ -684,6 +684,17 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
         key: _formKey,
         child: Column(
           children: [
+            Center(
+              child: _EditableBabyAvatar(
+                babyName: baby.name,
+                photoUrl: baby.photoUrl,
+                isUploading: _isUploadingPhoto,
+                onTap: _isUploadingPhoto
+                    ? null
+                    : () => _pickAndUploadBabyPhoto(baby.id),
+              ),
+            ),
+            const SizedBox(height: 20),
             AnimatedCard(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -701,7 +712,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
-                      style: const TextStyle(fontSize: 15, color: AppColors.text),
+                      style: TextStyle(fontSize: 15, color: AppColors.text),
                       decoration: _inputDecoration('Baby\'s Name', Icons.child_care_rounded),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? 'Please enter a name' : null,
@@ -711,7 +722,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                       onTap: _selectDate,
                       child: AbsorbPointer(
                         child: TextFormField(
-                          style: const TextStyle(fontSize: 15, color: AppColors.text),
+                          style: TextStyle(fontSize: 15, color: AppColors.text),
                           decoration: _inputDecoration(
                             'Date of Birth',
                             Icons.cake_rounded,
@@ -807,7 +818,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                   const SizedBox(height: 4),
                   Text(
                     age,
-                    style: const TextStyle(fontSize: 16, color: AppColors.muted),
+                    style: TextStyle(fontSize: 16, color: AppColors.muted),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -1052,7 +1063,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: AppColors.muted, fontSize: 14),
+      labelStyle: TextStyle(color: AppColors.muted, fontSize: 14),
       prefixIcon: Icon(icon, color: AppColors.muted, size: 20),
       filled: true,
       fillColor: AppColors.surface,
@@ -1190,7 +1201,7 @@ class _RoleOption extends StatelessWidget {
                   ),
                   Text(
                     description,
-                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                    style: TextStyle(fontSize: 12, color: AppColors.muted),
                   ),
                 ],
               ),
@@ -1341,14 +1352,14 @@ class _PhotoSourceTile extends StatelessWidget {
             const SizedBox(width: 14),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.text,
               ),
             ),
             const Spacer(),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            Icon(Icons.chevron_right_rounded, color: AppColors.muted),
           ],
         ),
       ),

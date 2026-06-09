@@ -208,10 +208,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Feeding',
           style: TextStyle(
             color: AppColors.text,
@@ -488,7 +488,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          style: const TextStyle(color: AppColors.text),
+          style: TextStyle(color: AppColors.text),
         ),
       ),
     );

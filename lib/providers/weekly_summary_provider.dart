@@ -9,8 +9,8 @@ final weeklySummaryProvider = FutureProvider.autoDispose<WeeklySummary?>((ref) a
   if (baby == null) return null;
 
   final client = SupabaseService.client;
-  final thisWeekStart = AppDateUtils.daysAgoStart(7).toIso8601String();
-  final lastWeekStart = AppDateUtils.daysAgoStart(14).toIso8601String();
+  final thisWeekStart = AppDateUtils.daysAgoStart(7).toUtc().toIso8601String();
+  final lastWeekStart = AppDateUtils.daysAgoStart(14).toUtc().toIso8601String();
 
   final results = await Future.wait([
     // This week feeds

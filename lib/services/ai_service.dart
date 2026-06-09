@@ -79,7 +79,7 @@ class AiService {
         'ai_type': cacheKey,
         'response': result,
         'cached_date': cachedDate,
-        'created_at': now.toIso8601String(),
+        'created_at': now.toUtc().toIso8601String(),
       });
     } catch (_) {}
 

@@ -45,7 +45,7 @@ final todayTummyTimeMinutesProvider = FutureProvider.autoDispose<int>((ref) asyn
       .select('duration_minutes')
       .eq('baby_id', baby.id)
       .not('end_time', 'is', null)
-      .gte('start_time', AppDateUtils.todayStart.toIso8601String());
+      .gte('start_time', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   int total = 0;
   for (final t in data) {

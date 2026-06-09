@@ -49,7 +49,7 @@ class MilestoneActions {
   static Future<void> toggleAchieved(String milestoneId, bool achieved) async {
     await SupabaseService.client.from('milestones').update({
       'achieved': achieved,
-      'achieved_at': achieved ? DateTime.now().toIso8601String() : null,
+      'achieved_at': achieved ? DateTime.now().toUtc().toIso8601String() : null,
     }).eq('id', milestoneId);
   }
 

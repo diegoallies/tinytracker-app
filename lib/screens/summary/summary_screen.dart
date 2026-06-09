@@ -60,21 +60,21 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .from('feedings')
           .select('id')
           .eq('baby_id', baby.id)
-          .gte('created_at', todayStart.toIso8601String())
+          .gte('created_at', todayStart.toUtc().toIso8601String())
           .lte('created_at', now);
 
       final todayDiapersResult = await supabase
           .from('diapers')
           .select('id')
           .eq('baby_id', baby.id)
-          .gte('created_at', todayStart.toIso8601String())
+          .gte('created_at', todayStart.toUtc().toIso8601String())
           .lte('created_at', now);
 
       final todaySleepsResult = await supabase
           .from('sleeps')
           .select('duration_minutes')
           .eq('baby_id', baby.id)
-          .gte('created_at', todayStart.toIso8601String())
+          .gte('created_at', todayStart.toUtc().toIso8601String())
           .lte('created_at', now);
 
       // Fetch yesterday's data
@@ -82,22 +82,22 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .from('feedings')
           .select('id')
           .eq('baby_id', baby.id)
-          .gte('created_at', yesterdayStart.toIso8601String())
-          .lte('created_at', yesterdayEnd.toIso8601String());
+          .gte('created_at', yesterdayStart.toUtc().toIso8601String())
+          .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
 
       final yesterdayDiapersResult = await supabase
           .from('diapers')
           .select('id')
           .eq('baby_id', baby.id)
-          .gte('created_at', yesterdayStart.toIso8601String())
-          .lte('created_at', yesterdayEnd.toIso8601String());
+          .gte('created_at', yesterdayStart.toUtc().toIso8601String())
+          .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
 
       final yesterdaySleepsResult = await supabase
           .from('sleeps')
           .select('duration_minutes')
           .eq('baby_id', baby.id)
-          .gte('created_at', yesterdayStart.toIso8601String())
-          .lte('created_at', yesterdayEnd.toIso8601String());
+          .gte('created_at', yesterdayStart.toUtc().toIso8601String())
+          .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
 
       // Calculate sleep totals
       int todaySleep = 0;

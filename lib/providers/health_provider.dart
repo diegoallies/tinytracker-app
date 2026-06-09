@@ -37,7 +37,7 @@ class HealthActions {
       'dosage': dosage?.isNotEmpty == true ? dosage : null,
       'symptoms': symptoms?.isNotEmpty == true ? symptoms : null,
       'notes': notes?.isNotEmpty == true ? notes : null,
-      'logged_at': DateTime.now().toIso8601String(),
+      'logged_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 }

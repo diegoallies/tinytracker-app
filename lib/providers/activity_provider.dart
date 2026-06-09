@@ -21,7 +21,7 @@ final activityFeedProvider = FutureProvider<List<ActivityItem>>((ref) async {
   if (baby == null) return [];
 
   final client = SupabaseService.client;
-  final since = DateTime.now().subtract(const Duration(hours: 24)).toIso8601String();
+  final since = DateTime.now().subtract(const Duration(hours: 24)).toUtc().toIso8601String();
 
   final results = await Future.wait([
     client.from('feedings').select('id, type, logged_at')

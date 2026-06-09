@@ -33,7 +33,7 @@ final todayFeedCountProvider = FutureProvider<int>((ref) async {
       .from('feedings')
       .select('id')
       .eq('baby_id', baby.id)
-      .gte('logged_at', AppDateUtils.todayStart.toIso8601String());
+      .gte('logged_at', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   return data.length;
 });
@@ -57,7 +57,7 @@ class FeedingActions {
       'duration_minutes': durationMinutes,
       'amount_ml': amountMl,
       'notes': notes?.isNotEmpty == true ? notes : null,
-      'logged_at': now.toIso8601String(),
+      'logged_at': now.toUtc().toIso8601String(),
     });
 
     // Reschedule feeding reminder

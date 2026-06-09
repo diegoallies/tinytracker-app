@@ -143,11 +143,11 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: iconColor),
         const SizedBox(width: 10),
-        Text(label, style: const TextStyle(fontSize: 14, color: AppColors.text)),
+        Text(label, style: TextStyle(fontSize: 14, color: AppColors.text)),
         const Spacer(),
         Text(
           value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text),
         ),
         const SizedBox(width: 10),
         _TrendBadge(trend: trend, label: changeLabel),
@@ -203,8 +203,8 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text)),
-        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.muted)),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text)),
+        Text(label, style: TextStyle(fontSize: 10, color: AppColors.muted)),
       ],
     );
   }

@@ -57,9 +57,10 @@ class AppDateUtils {
   }
 
   static String formatElapsed(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    final s = d.inSeconds % 60;
+    final clamped = d.isNegative ? Duration.zero : d;
+    final h = clamped.inHours;
+    final m = clamped.inMinutes % 60;
+    final s = clamped.inSeconds % 60;
     if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }

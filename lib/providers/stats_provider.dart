@@ -36,7 +36,7 @@ final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
   if (baby == null) return DashboardStats();
 
   final client = SupabaseService.client;
-  final todayStr = AppDateUtils.todayStart.toIso8601String();
+  final todayStr = AppDateUtils.todayStart.toUtc().toIso8601String();
 
   // Run all queries in parallel
   final results = await Future.wait([
@@ -106,7 +106,7 @@ final weeklyDataProvider = FutureProvider<List<WeeklyDataPoint>>((ref) async {
   if (baby == null) return [];
 
   final client = SupabaseService.client;
-  final weekAgo = AppDateUtils.weekAgoStart().toIso8601String();
+  final weekAgo = AppDateUtils.weekAgoStart().toUtc().toIso8601String();
 
   final results = await Future.wait([
     client.from('feedings').select('logged_at').eq('baby_id', baby.id)

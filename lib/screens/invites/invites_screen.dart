@@ -49,7 +49,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
           .from('baby_invites')
           .select('*, babies:baby_id(name)')
           .eq('status', 'pending')
-          .gte('expires_at', DateTime.now().toIso8601String())
+          .gte('expires_at', DateTime.now().toUtc().toIso8601String())
           .order('created_at', ascending: false);
 
       if (mounted) {

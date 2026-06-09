@@ -43,7 +43,7 @@ class BadgeEvaluator {
 
   Future<List<PatternBadge>> evaluate() async {
     final client = SupabaseService.client;
-    final fourteenDaysAgo = AppDateUtils.daysAgoStart(14).toIso8601String();
+    final fourteenDaysAgo = AppDateUtils.daysAgoStart(14).toUtc().toIso8601String();
 
     final results = await Future.wait([
       // Feedings last 14 days

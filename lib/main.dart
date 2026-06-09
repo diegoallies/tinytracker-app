@@ -12,26 +12,14 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
   await dotenv.load(fileName: '.env');
 
-  // Initialize Supabase
   await Supabase.initialize(
     url: Env.supabaseUrl,
     anonKey: Env.supabaseAnonKey,
   );
 
-  // Initialize notifications
   await NotificationService.initialize();
-
-  // Set status bar style
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-    ),
-  );
 
   runApp(
     const ProviderScope(
@@ -45,27 +33,24 @@ class TinyTrackApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final nightActive = ref.watch(nightModeActiveProvider);
+    final mode = ref.watch(themeModeProvider);
+    final isDark = mode == ThemeMode.dark;
+
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+    );
 
     return MaterialApp.router(
       title: 'TinyTrack',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: mode,
       routerConfig: appRouter,
-      builder: (context, child) {
-        return Stack(
-          children: [
-            child ?? const SizedBox.shrink(),
-            // Night mode overlay disabled - was covering content with brown tint
-            // if (nightActive)
-            //   Positioned.fill(
-            //     child: IgnorePointer(
-            //       child: Container(color: const Color(0x08FF9800)),
-            //     ),
-            //   ),
-          ],
-        );
-      },
     );
   }
 }

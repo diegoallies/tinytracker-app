@@ -129,7 +129,7 @@ class _LastActivityBannerState extends State<LastActivityBanner>
                     if (widget.lastDiaperTime != null)
                       Text(
                         'Last diaper ${_formatTimeAgo(DateTime.now().difference(widget.lastDiaperTime!))}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                        style: TextStyle(fontSize: 12, color: AppColors.muted),
                       ),
                   ],
                 ),

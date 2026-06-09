@@ -164,12 +164,12 @@ void _showBadgeDetail(BuildContext context, PatternBadge badge) {
             const SizedBox(height: 16),
             Text(
               badge.title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text),
             ),
             const SizedBox(height: 8),
             Text(
               badge.description,
-              style: const TextStyle(fontSize: 14, color: AppColors.muted),
+              style: TextStyle(fontSize: 14, color: AppColors.muted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -247,13 +247,13 @@ class _AllBadgesSheet extends StatelessWidget {
                   controller: scrollController,
                   children: [
                     if (earned.isNotEmpty) ...[
-                      const Text('Earned', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.muted)),
+                      Text('Earned', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.muted)),
                       const SizedBox(height: 8),
                       ...earned.map((b) => _BadgeListTile(badge: b, isLocked: false)),
                       const SizedBox(height: 20),
                     ],
                     if (locked.isNotEmpty) ...[
-                      const Text('Locked', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.muted)),
+                      Text('Locked', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.muted)),
                       const SizedBox(height: 8),
                       ...locked.map((b) => _BadgeListTile(badge: b, isLocked: true)),
                     ],

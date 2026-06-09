@@ -34,7 +34,7 @@ class GrowthActions {
       'height_cm': heightCm,
       'head_cm': headCm,
       'notes': notes?.isNotEmpty == true ? notes : null,
-      'measured_at': DateTime.now().toIso8601String(),
+      'measured_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 

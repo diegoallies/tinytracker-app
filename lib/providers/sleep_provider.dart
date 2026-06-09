@@ -45,7 +45,7 @@ final todaySleepMinutesProvider = FutureProvider<int>((ref) async {
       .select('duration_minutes')
       .eq('baby_id', baby.id)
       .not('end_time', 'is', null)
-      .gte('start_time', AppDateUtils.todayStart.toIso8601String());
+      .gte('start_time', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   int total = 0;
   for (final s in data) {
@@ -62,7 +62,7 @@ class SleepActions {
     final data = await SupabaseService.client.from('sleeps').insert({
       'baby_id': babyId,
       'user_id': userId,
-      'start_time': DateTime.now().toIso8601String(),
+      'start_time': DateTime.now().toUtc().toIso8601String(),
     }).select().single();
 
     return SleepSession.fromJson(data);
@@ -73,7 +73,7 @@ class SleepActions {
     final duration = now.difference(startTime).inMinutes;
 
     await SupabaseService.client.from('sleeps').update({
-      'end_time': now.toIso8601String(),
+      'end_time': now.toUtc().toIso8601String(),
       'duration_minutes': duration,
     }).eq('id', sleepId);
   }

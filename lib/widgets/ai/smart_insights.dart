@@ -38,7 +38,7 @@ class _SmartInsightsState extends State<SmartInsights> {
 
     try {
       final client = SupabaseService.client;
-      final weekAgo = AppDateUtils.weekAgoStart().toIso8601String();
+      final weekAgo = AppDateUtils.weekAgoStart().toUtc().toIso8601String();
 
       // Fetch week data
       final results = await Future.wait([
@@ -122,14 +122,14 @@ class _SmartInsightsState extends State<SmartInsights> {
               children: [
                 const Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'AI Insights',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.text),
                 ),
                 const Spacer(),
                 GestureDetector(
                   onTap: _fetchInsights,
-                  child: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.muted),
+                  child: Icon(Icons.refresh_rounded, size: 18, color: AppColors.muted),
                 ),
               ],
             ),
@@ -146,7 +146,7 @@ class _SmartInsightsState extends State<SmartInsights> {
                   Expanded(
                     child: Text(
                       _insights[_currentIndex],
-                      style: const TextStyle(fontSize: 14, color: AppColors.text, height: 1.4),
+                      style: TextStyle(fontSize: 14, color: AppColors.text, height: 1.4),
                     ),
                   ),
                 ],

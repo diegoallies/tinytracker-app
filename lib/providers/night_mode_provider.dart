@@ -1,55 +1,33 @@
-import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final nightModeEnabledProvider = StateNotifierProvider<NightModeNotifier, bool>((ref) {
-  return NightModeNotifier();
+const _prefsKey = 'theme_mode';
+
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+  return ThemeModeNotifier();
 });
 
-class NightModeNotifier extends StateNotifier<bool> {
-  NightModeNotifier() : super(false) {
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  ThemeModeNotifier() : super(ThemeMode.light) {
     _loadPref();
   }
 
   Future<void> _loadPref() async {
     final prefs = await SharedPreferences.getInstance();
-    state = prefs.getBool('night_mode_auto') ?? true;
+    final raw = prefs.getString(_prefsKey);
+    state = raw == 'dark' ? ThemeMode.dark : ThemeMode.light;
   }
 
   Future<void> toggle() async {
-    state = !state;
+    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('night_mode_auto', state);
+    await prefs.setString(_prefsKey, state == ThemeMode.dark ? 'dark' : 'light');
+  }
+
+  Future<void> setMode(ThemeMode mode) async {
+    state = mode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, mode == ThemeMode.dark ? 'dark' : 'light');
   }
 }
-
-final isNightTimeProvider = StateNotifierProvider<NightTimeNotifier, bool>((ref) {
-  return NightTimeNotifier();
-});
-
-class NightTimeNotifier extends StateNotifier<bool> {
-  Timer? _timer;
-
-  NightTimeNotifier() : super(_checkNightTime()) {
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      state = _checkNightTime();
-    });
-  }
-
-  static bool _checkNightTime() {
-    final hour = DateTime.now().hour;
-    return hour >= 20 || hour < 6;
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-}
-
-final nightModeActiveProvider = Provider<bool>((ref) {
-  final enabled = ref.watch(nightModeEnabledProvider);
-  final isNight = ref.watch(isNightTimeProvider);
-  return enabled && isNight;
-});

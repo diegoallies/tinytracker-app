@@ -12,7 +12,6 @@ class AppColors {
   static const Color pastelGreen = Color(0xFFD5F5E8);
   static const Color pastelYellow = Color(0xFFF5F0D5);
 
-  // Lighter pastel tints for card backgrounds
   static const Color pastelPinkLight = Color(0xFFFFF0F5);
   static const Color pastelBlueLight = Color(0xFFF0F5FF);
   static const Color pastelYellowLight = Color(0xFFFFFBF0);
@@ -29,7 +28,6 @@ class AppColors {
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
 
-  // Poop colors
   static const Color poopYellow = Color(0xFFDAA520);
   static const Color poopGreen = Color(0xFF228B22);
   static const Color poopBrown = Color(0xFF8B4513);
@@ -39,23 +37,35 @@ class AppColors {
 }
 
 class AppTheme {
-  static ThemeData get lightTheme {
-    final base = ThemeData.light(useMaterial3: true);
+  static ThemeData get lightTheme => _build(Brightness.light);
+  static ThemeData get darkTheme => _build(Brightness.dark);
+
+  static ThemeData _build(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final base = isDark ? ThemeData.dark(useMaterial3: true) : ThemeData.light(useMaterial3: true);
+
+    final surface = isDark ? const Color(0xFF14111C) : const Color(0xFFFAF8FC);
+    final card = isDark ? const Color(0xFF1F1A2B) : const Color(0xFFFFFFFF);
+    final text = isDark ? const Color(0xFFE8E4F0) : const Color(0xFF2D2640);
+    final muted = isDark ? const Color(0xFF9A93AE) : const Color(0xFF8B85A0);
 
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.surface,
-      colorScheme: ColorScheme.light(
+      scaffoldBackgroundColor: surface,
+      colorScheme: ColorScheme(
+        brightness: brightness,
         primary: AppColors.primary,
         onPrimary: Colors.white,
         secondary: AppColors.pastelPurple,
-        surface: AppColors.surface,
-        onSurface: AppColors.text,
+        onSecondary: AppColors.primaryDark,
+        surface: surface,
+        onSurface: text,
         error: AppColors.error,
+        onError: Colors.white,
       ),
       cardTheme: CardThemeData(
-        color: AppColors.card,
+        color: card,
         elevation: 0,
-        shadowColor: Colors.black.withValues(alpha: 0.05),
+        shadowColor: Colors.black.withValues(alpha: isDark ? 0.4 : 0.05),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -86,7 +96,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: isDark ? card : surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: AppColors.pastelPurple.withValues(alpha: 0.3)),
@@ -102,54 +112,54 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.text,
+        backgroundColor: surface,
+        foregroundColor: text,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: AppColors.text,
+          color: text,
         ),
       ),
       textTheme: GoogleFonts.interTextTheme(base.textTheme).copyWith(
         headlineLarge: GoogleFonts.inter(
           fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: AppColors.text,
+          color: text,
         ),
         headlineMedium: GoogleFonts.inter(
           fontSize: 22,
           fontWeight: FontWeight.bold,
-          color: AppColors.text,
+          color: text,
         ),
         titleLarge: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: AppColors.text,
+          color: text,
         ),
         titleMedium: GoogleFonts.inter(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: AppColors.text,
+          color: text,
         ),
         bodyLarge: GoogleFonts.inter(
           fontSize: 16,
-          color: AppColors.text,
+          color: text,
         ),
         bodyMedium: GoogleFonts.inter(
           fontSize: 14,
-          color: AppColors.text,
+          color: text,
         ),
         bodySmall: GoogleFonts.inter(
           fontSize: 12,
-          color: AppColors.muted,
+          color: muted,
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: AppColors.card,
+        backgroundColor: card,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.muted,
+        unselectedItemColor: muted,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),

@@ -150,10 +150,10 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Diaper',
           style: TextStyle(
             color: AppColors.text,
@@ -470,7 +470,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          style: const TextStyle(color: AppColors.text),
+          style: TextStyle(color: AppColors.text),
         ),
       ),
     );

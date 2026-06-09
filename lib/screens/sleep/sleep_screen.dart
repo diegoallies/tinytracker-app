@@ -58,7 +58,8 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
 
   void _updateElapsed(DateTime startTime) {
     setState(() {
-      _elapsed = DateTime.now().difference(startTime);
+      final diff = DateTime.now().difference(startTime);
+      _elapsed = diff.isNegative ? Duration.zero : diff;
     });
   }
 
@@ -194,10 +195,10 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Sleep',
           style: TextStyle(
             color: AppColors.text,

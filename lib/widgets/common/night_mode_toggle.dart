@@ -8,21 +8,24 @@ class NightModeToggle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final enabled = ref.watch(nightModeEnabledProvider);
-    final isActive = ref.watch(nightModeActiveProvider);
+    final mode = ref.watch(themeModeProvider);
+    final isDark = mode == ThemeMode.dark;
 
     return GestureDetector(
-      onTap: () => ref.read(nightModeEnabledProvider.notifier).toggle(),
-      child: Container(
+      onTap: () => ref.read(themeModeProvider.notifier).toggle(),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primary.withValues(alpha: 0.2) : AppColors.surface,
+          color: isDark
+              ? AppColors.primary.withValues(alpha: 0.2)
+              : AppColors.surface,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
-          enabled ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+          isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
           size: 20,
-          color: isActive ? AppColors.primary : AppColors.muted,
+          color: isDark ? AppColors.primary : AppColors.muted,
         ),
       ),
     );

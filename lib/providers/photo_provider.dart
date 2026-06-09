@@ -46,7 +46,7 @@ class PhotoActions {
       'user_id': userId,
       'url': url,
       'caption': caption?.isNotEmpty == true ? caption : null,
-      'taken_at': DateTime.now().toIso8601String(),
+      'taken_at': DateTime.now().toUtc().toIso8601String(),
     }).select().single();
 
     return Photo.fromJson(data);

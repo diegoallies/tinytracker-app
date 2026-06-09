@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Welcome back',
                 style: TextStyle(
                   fontSize: 28,
@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Sign in to continue tracking',
                 style: TextStyle(
                   fontSize: 16,
