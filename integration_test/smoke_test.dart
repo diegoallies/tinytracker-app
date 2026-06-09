@@ -41,7 +41,24 @@ Future<void> settleABit(WidgetTester tester,
 }
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  var surfaceConverted = false;
+
+  /// Screenshot helper — no-op under plain `flutter test`, captures PNGs
+  /// under `flutter drive` (see test_driver/integration_test.dart).
+  Future<void> shot(WidgetTester tester, String name) async {
+    try {
+      if (!surfaceConverted) {
+        await binding.convertFlutterSurfaceToImage();
+        surfaceConverted = true;
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await tester.pump(const Duration(milliseconds: 100));
+      await binding.takeScreenshot(name);
+    } catch (e) {
+      debugPrint('screenshot $name skipped: $e');
+    }
+  }
 
   testWidgets('full app walk: login → all screens render', (tester) async {
     app.main();
@@ -74,6 +91,8 @@ void main() {
         reason: 'dashboard should show the test baby after sign-in');
     await settleABit(tester);
 
+    await shot(tester, 'light_dashboard');
+
     // Flip to DARK MODE so the whole walk verifies dark-mode rendering.
     final nightToggle = find.byIcon(Icons.nightlight_round);
     if (nightToggle.evaluate().isNotEmpty) {
@@ -82,6 +101,7 @@ void main() {
       expect(tester.takeException(), isNull,
           reason: 'dark mode toggle should not throw');
     }
+    await shot(tester, 'dark_dashboard');
 
     // Bottom tabs (custom nav bar labels: Home/Feed/Diaper/Sleep/More).
     Future<void> tapTab(String label) async {
@@ -92,6 +112,7 @@ void main() {
     for (final tab in ['Feed', 'Diaper', 'Sleep', 'More']) {
       await tapTab(tab);
       expect(tester.takeException(), isNull, reason: '$tab tab should render');
+      await shot(tester, 'dark_tab_${tab.toLowerCase()}');
     }
 
     // Every feature screen reachable from the More grid.
@@ -114,6 +135,8 @@ void main() {
       await settleABit(tester, const Duration(seconds: 3));
       expect(tester.takeException(), isNull,
           reason: '$feature screen should render without exceptions');
+      await shot(tester,
+          'dark_${feature.toLowerCase().replaceAll(' ', '_')}');
 
       // Leave detail screens (slide routes have a back affordance).
       final back = find.byType(BackButton);

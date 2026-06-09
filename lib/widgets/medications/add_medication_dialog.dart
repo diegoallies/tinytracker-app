@@ -6,11 +6,17 @@ import '../../providers/baby_medication_provider.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 
-/// Dialog for adding a baby's daily/recurring medication.
-/// Returns the created [BabyMedication] via Navigator.pop on success.
+/// Dialog for adding — or, when [existing] is set, editing — a baby's
+/// daily/recurring medication.
+/// Returns the created/updated [BabyMedication] via Navigator.pop on success.
 class AddMedicationDialog extends StatefulWidget {
   final String babyId;
-  const AddMedicationDialog({super.key, required this.babyId});
+
+  /// When non-null the dialog prefills from this med and updates it
+  /// instead of inserting a new row.
+  final BabyMedication? existing;
+
+  const AddMedicationDialog({super.key, required this.babyId, this.existing});
 
   @override
   State<AddMedicationDialog> createState() => _AddMedicationDialogState();
@@ -33,6 +39,27 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
     ('3x', 3, false),
     ('As needed', null, true),
   ];
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final med = widget.existing;
+    if (med != null) {
+      _nameCtrl.text = med.name;
+      _dosageCtrl.text = med.defaultDosage ?? '';
+      _instructionsCtrl.text = med.instructions ?? '';
+      _frequencyPerDay = med.frequencyPerDay;
+      _asNeeded = med.asNeeded;
+      final gap = med.minIntervalHours;
+      if (gap != null) {
+        _minHoursCtrl.text = gap == gap.roundToDouble()
+            ? gap.toInt().toString()
+            : gap.toStringAsFixed(1);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -67,21 +94,34 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
     if (name.isEmpty) return;
     setState(() => _saving = true);
     try {
-      final created = await BabyMedicationActions.add(
-        babyId: widget.babyId,
-        name: name,
-        defaultDosage: _dosageCtrl.text.trim(),
-        frequencyPerDay: _frequencyPerDay,
-        asNeeded: _asNeeded,
-        minIntervalHours: double.tryParse(_minHoursCtrl.text.trim()),
-        instructions: _instructionsCtrl.text.trim(),
-      );
-      if (mounted) Navigator.pop(context, created);
+      final existing = widget.existing;
+      final saved = existing != null
+          ? await BabyMedicationActions.update(
+              id: existing.id,
+              name: name,
+              defaultDosage: _dosageCtrl.text.trim(),
+              frequencyPerDay: _frequencyPerDay,
+              asNeeded: _asNeeded,
+              minIntervalHours: double.tryParse(_minHoursCtrl.text.trim()),
+              instructions: _instructionsCtrl.text.trim(),
+            )
+          : await BabyMedicationActions.add(
+              babyId: widget.babyId,
+              name: name,
+              defaultDosage: _dosageCtrl.text.trim(),
+              frequencyPerDay: _frequencyPerDay,
+              asNeeded: _asNeeded,
+              minIntervalHours: double.tryParse(_minHoursCtrl.text.trim()),
+              instructions: _instructionsCtrl.text.trim(),
+            );
+      if (mounted) Navigator.pop(context, saved);
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
         context.showErrorSnackBar(
-          'Couldn’t add the medication. Check your connection and try again.',
+          _isEditing
+              ? 'Couldn’t save the changes. Check your connection and try again.'
+              : 'Couldn’t add the medication. Check your connection and try again.',
           onRetry: _save,
         );
       }
@@ -109,7 +149,7 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text('Add Medication'),
+      title: Text(_isEditing ? 'Edit Medication' : 'Add Medication'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -117,7 +157,7 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
           children: [
             TextField(
               controller: _nameCtrl,
-              autofocus: true,
+              autofocus: !_isEditing,
               decoration: const InputDecoration(
                 labelText: 'Medication name',
                 hintText: 'e.g. Panado',
@@ -198,7 +238,7 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Add'),
+              : Text(_isEditing ? 'Save' : 'Add'),
         ),
       ],
     );

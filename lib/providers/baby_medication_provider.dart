@@ -50,6 +50,43 @@ final medicationDosesTodayProvider =
   return byName;
 });
 
+/// One administered dose row from health_logs. Carries the row id so a
+/// mis-tap can be deleted from the med detail sheet.
+class MedDoseLog {
+  final String id;
+  final DateTime at;
+  final String? dosage;
+
+  const MedDoseLog({required this.id, required this.at, this.dosage});
+}
+
+/// Today's administered doses of one medication (newest first), with row
+/// ids. Only queried while a med's detail sheet is open.
+final medDoseLogsTodayProvider = FutureProvider.autoDispose
+    .family<List<MedDoseLog>, String>((ref, medName) async {
+  final baby = ref.watch(selectedBabyProvider);
+  if (baby == null) return [];
+
+  final now = DateTime.now();
+  final since = DateTime(now.year, now.month, now.day);
+
+  final data = await SupabaseService.client
+      .from('health_logs')
+      .select('id, dosage, logged_at')
+      .eq('baby_id', baby.id)
+      .ilike('medication', medName.trim())
+      .gte('logged_at', since.toUtc().toIso8601String())
+      .order('logged_at', ascending: false);
+
+  return data
+      .map<MedDoseLog>((row) => MedDoseLog(
+            id: row['id'] as String,
+            at: DateTime.parse(row['logged_at'] as String).toLocal(),
+            dosage: row['dosage'] as String?,
+          ))
+      .toList();
+});
+
 class BabyMedicationActions {
   static Future<BabyMedication?> add({
     required String babyId,
@@ -83,6 +120,46 @@ class BabyMedicationActions {
         .single();
 
     return BabyMedication.fromJson(data);
+  }
+
+  /// Update an existing catalog medication. Sends every schedule column
+  /// explicitly so a cleared schedule actually clears in the database.
+  static Future<BabyMedication?> update({
+    required String id,
+    required String name,
+    String? defaultDosage,
+    int? frequencyPerDay,
+    bool asNeeded = false,
+    double? minIntervalHours,
+    String? instructions,
+  }) async {
+    final data = await SupabaseService.client
+        .from('baby_medications')
+        .update({
+          'name': name,
+          'default_dosage': (defaultDosage?.trim().isNotEmpty ?? false)
+              ? defaultDosage!.trim()
+              : null,
+          'frequency_per_day': frequencyPerDay,
+          'as_needed': asNeeded,
+          'min_interval_hours': minIntervalHours,
+          'instructions': (instructions?.trim().isNotEmpty ?? false)
+              ? instructions!.trim()
+              : null,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+    return BabyMedication.fromJson(data);
+  }
+
+  /// Delete one administered dose (a health_logs row) by id.
+  static Future<void> deleteDoseLog(String healthLogId) async {
+    await SupabaseService.client
+        .from('health_logs')
+        .delete()
+        .eq('id', healthLogId);
   }
 
   static Future<void> delete(String id) async {

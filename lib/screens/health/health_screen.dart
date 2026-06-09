@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../models/baby_medication.dart';
 import '../../providers/baby_medication_provider.dart';
@@ -10,10 +11,13 @@ import '../../providers/health_provider.dart';
 import '../../services/medication_guard.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/medications/add_medication_dialog.dart';
+import '../../widgets/medications/dose_row.dart';
+import '../../widgets/medications/give_dose_sheet.dart';
 
 enum HealthTab { temperature, medication }
 
@@ -43,6 +47,10 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
   final _notesController = TextEditingController();
 
   bool _isSaving = false;
+
+  /// Whether the one-off "log a different medicine" form is expanded on the
+  /// Medication tab. The daily checklist is the primary flow.
+  bool _showOneOff = false;
 
   @override
   void initState() {
@@ -174,6 +182,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
 
       ref.invalidate(healthLogsProvider);
       ref.invalidate(medicationDosesTodayProvider);
+      ref.invalidate(medDoseLogsTodayProvider);
 
       _tempController.clear();
       _medicationController.clear();
@@ -329,61 +338,66 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             ),
           Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SizeTransition(
-                        sizeFactor: animation,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: (!canAdministerMeds || _tabController?.index == 0)
-                      ? _buildTemperatureInput()
-                      : _buildMedicationInput(),
-                ),
-                const SizedBox(height: 12),
-                _buildSharedInputs(),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isSaving ? null : _saveHealth,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9B72CF),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Save Health Log',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SizeTransition(
+                    sizeFactor: animation,
+                    child: child,
                   ),
-                ),
-              ],
+                );
+              },
+              child: (!canAdministerMeds || _tabController?.index == 0)
+                  ? Column(
+                      key: const ValueKey('temperature'),
+                      children: [
+                        _buildTemperatureInput(),
+                        const SizedBox(height: 12),
+                        _buildSharedInputs(),
+                        const SizedBox(height: 20),
+                        _buildSaveButton(),
+                      ],
+                    )
+                  : _buildMedicationInput(),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _isSaving ? null : _saveHealth,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF9B72CF),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: 0,
+        ),
+        child: _isSaving
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
+              )
+            : const Text(
+                'Save Health Log',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
       ),
     );
   }
@@ -393,7 +407,6 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     final status = temp != null ? _getTempStatus(temp) : null;
 
     return Column(
-      key: const ValueKey('temperature'),
       children: [
         TextFormField(
           controller: _tempController,
@@ -473,45 +486,36 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     );
   }
 
-  void _applySavedMed(BabyMedication med) {
-    _medicationController.text = med.name;
-    _dosageController.text = med.defaultDosage ?? '';
-    setState(() {});
-  }
-
   Future<void> _addSavedMed() async {
     final baby = ref.read(selectedBabyProvider);
     if (baby == null) return;
+    Haptics.lightTap();
     final added = await showDialog<BabyMedication>(
       context: context,
       builder: (_) => AddMedicationDialog(babyId: baby.id),
     );
     if (added != null) {
       ref.invalidate(babyMedicationsProvider);
-      _applySavedMed(added);
     }
   }
 
-  Future<void> _deleteSavedMed(BabyMedication med) async {
-    final confirmed = await showDeleteDialog(
-      context,
-      what: 'Medication',
-      message: 'Remove "${med.name}" from saved medications?',
+  /// Opens the detail/give-dose sheet for one catalog med.
+  void _openMedSheet(BabyMedication med) {
+    final baby = ref.read(selectedBabyProvider);
+    if (baby == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => GiveDoseSheet(
+        babyId: baby.id,
+        med: med,
+        canEdit: ref.read(babyProvider).isOwner,
+      ),
     );
-    if (!confirmed) return;
-    try {
-      await BabyMedicationActions.delete(med.id);
-      ref.invalidate(babyMedicationsProvider);
-    } catch (e) {
-      if (mounted) {
-        context.showErrorSnackBar(
-          'Couldn’t delete the medication. Check your connection and try again.',
-        );
-      }
-    }
   }
 
-  Widget _buildSavedMedsRow() {
+  Widget _buildTodaysDoses() {
     final medsAsync = ref.watch(babyMedicationsProvider);
     final isOwner = ref.watch(babyProvider).isOwner;
     final dosesToday = ref.watch(medicationDosesTodayProvider).asData?.value ??
@@ -522,33 +526,27 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
       children: [
         Row(
           children: [
-            const Icon(Icons.bookmark_rounded,
+            const Icon(Icons.today_rounded,
                 size: 16, color: AppColors.primary),
             const SizedBox(width: 6),
             Text(
-              'Saved medications',
+              'Today’s doses',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: context.palette.text,
               ),
             ),
-            const Spacer(),
-            Text(
-              isOwner ? 'Tap to fill • Hold to delete' : 'Tap to fill',
-              style:
-                  TextStyle(fontSize: 11, color: context.palette.muted),
-            ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         medsAsync.when(
           loading: () => const SizedBox(
-            height: 36,
+            height: 64,
             child: Center(
               child: SizedBox(
-                width: 16,
-                height: 16,
+                width: 18,
+                height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: AppColors.primary,
@@ -558,39 +556,36 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
           ),
           error: (_, _) => const SizedBox.shrink(),
           data: (meds) {
-            final chips = <Widget>[
-              ...meds.map((m) => _SavedMedChip(
-                    med: m,
-                    dosesToday:
-                        dosesToday[m.name.trim().toLowerCase()] ?? const [],
-                    onTap: () => _applySavedMed(m),
-                    onLongPress: isOwner ? () => _deleteSavedMed(m) : null,
-                  )),
-              if (isOwner)
-                _AddMedChip(onTap: _addSavedMed),
-            ];
-
-            if (chips.isEmpty) {
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: context.palette.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.palette.border),
-                ),
-                child: Text(
-                  'No daily meds saved yet — ask the owner to add some.',
-                  style: TextStyle(
-                      fontSize: 12, color: context.palette.muted),
-                ),
-              );
-            }
-
-            return Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: chips,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (meds.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: context.palette.surface,
+                      borderRadius: AppRadius.mdAll,
+                      border: Border.all(color: context.palette.border),
+                    ),
+                    child: Text(
+                      isOwner
+                          ? 'No daily meds yet — add the first one below.'
+                          : 'No daily meds saved yet — ask the owner to add some.',
+                      style: TextStyle(
+                          fontSize: 12, color: context.palette.muted),
+                    ),
+                  ),
+                ...meds.map((m) => MedDoseRow(
+                      med: m,
+                      dosesToday:
+                          dosesToday[m.name.trim().toLowerCase()] ?? const [],
+                      onOpen: () => _openMedSheet(m),
+                    )),
+                if (isOwner) _AddDailyMedRow(onTap: _addSavedMed),
+              ],
             );
           },
         ),
@@ -603,8 +598,42 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
       key: const ValueKey('medication'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSavedMedsRow(),
-        const SizedBox(height: 12),
+        _buildTodaysDoses(),
+        const SizedBox(height: AppSpacing.xxs),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () {
+              Haptics.selectionClick();
+              setState(() => _showOneOff = !_showOneOff);
+            },
+            icon: AnimatedRotation(
+              turns: _showOneOff ? 0.5 : 0,
+              duration: AppMotion.fast,
+              child: const Icon(Icons.expand_more_rounded, size: 20),
+            ),
+            label: const Text('Log a different medicine'),
+          ),
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox(width: double.infinity),
+          secondChild: _buildOneOffForm(),
+          crossFadeState: _showOneOff
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: AppMotion.normal,
+          sizeCurve: AppMotion.ease,
+        ),
+      ],
+    );
+  }
+
+  /// One-off medicine form — anything not in the daily catalog
+  /// (still guarded by [MedicationGuard.checkByName] on save).
+  Widget _buildOneOffForm() {
+    return Column(
+      children: [
+        const SizedBox(height: AppSpacing.xxs),
         TextFormField(
           controller: _medicationController,
           decoration: InputDecoration(
@@ -655,6 +684,10 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             fillColor: context.palette.surface,
           ),
         ),
+        const SizedBox(height: 12),
+        _buildSharedInputs(),
+        const SizedBox(height: 20),
+        _buildSaveButton(),
       ],
     );
   }
@@ -917,144 +950,38 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
   }
 }
 
-class _SavedMedChip extends StatelessWidget {
-  final BabyMedication med;
-  final List<DateTime> dosesToday;
+/// Full-width "Add daily med" row at the bottom of the checklist.
+class _AddDailyMedRow extends StatelessWidget {
   final VoidCallback onTap;
-  final VoidCallback? onLongPress;
-
-  const _SavedMedChip({
-    required this.med,
-    required this.dosesToday,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasDosage = med.defaultDosage != null && med.defaultDosage!.isNotEmpty;
-    final hasInstructions =
-        med.instructions != null && med.instructions!.isNotEmpty;
-    final status = MedicationGuard.todayStatus(med, dosesToday);
-    final statusColor = status.done ? AppColors.success : AppColors.muted;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE8D5F5),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.medication_rounded,
-                      size: 14, color: AppColors.primary),
-                  const SizedBox(width: 6),
-                  Text(
-                    med.name,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  if (hasDosage) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      '• ${med.defaultDosage}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF8B85A0),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      status.label,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: statusColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (hasInstructions) ...[
-                const SizedBox(height: 3),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 220),
-                  child: Text(
-                    med.instructions!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF8B85A0),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AddMedChip extends StatelessWidget {
-  final VoidCallback onTap;
-  const _AddMedChip({required this.onTap});
+  const _AddDailyMedRow({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
+      borderRadius: AppRadius.lgAll,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadius.lgAll,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: AppRadius.lgAll,
             border: Border.all(
-              color: AppColors.primary,
-              style: BorderStyle.solid,
+              color: AppColors.primary.withValues(alpha: 0.45),
               width: 1.2,
             ),
           ),
           child: const Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_rounded, size: 16, color: AppColors.primary),
-              SizedBox(width: 4),
+              Icon(Icons.add_rounded, size: 18, color: AppColors.primary),
+              SizedBox(width: 6),
               Text(
                 'Add daily med',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
                 ),
