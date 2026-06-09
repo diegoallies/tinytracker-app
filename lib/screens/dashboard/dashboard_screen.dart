@@ -93,33 +93,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  // Baby photo avatar
-                  stats.when(
-                    data: (s) => _BabyAvatar(
-                      photoUrl: s.latestPhotoUrl,
-                      babyName: baby.name,
-                    ),
-                    loading: () => _BabyAvatar(babyName: baby.name),
-                    error: (_, __) => _BabyAvatar(babyName: baby.name),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          baby.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.text,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        Haptics.lightTap();
+                        context.go('/baby');
+                      },
+                      child: Row(
+                        children: [
+                          // Baby photo avatar
+                          stats.when(
+                            data: (s) => _BabyAvatar(
+                              photoUrl: baby.photoUrl ?? s.latestPhotoUrl,
+                              babyName: baby.name,
+                            ),
+                            loading: () => _BabyAvatar(
+                              photoUrl: baby.photoUrl,
+                              babyName: baby.name,
+                            ),
+                            error: (_, __) => _BabyAvatar(
+                              photoUrl: baby.photoUrl,
+                              babyName: baby.name,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${baby.ageDisplay} old  \u2022  ${DateFormat('EEEE, MMM d').format(DateTime.now())}',
-                          style: const TextStyle(fontSize: 13, color: AppColors.muted),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  baby.name,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.text,
+                                  ),
+                                ),
+                                Text(
+                                  '${baby.ageDisplay} old  \u2022  ${DateFormat('EEEE, MMM d').format(DateTime.now())}',
+                                  style: const TextStyle(fontSize: 13, color: AppColors.muted),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const NightModeToggle(),

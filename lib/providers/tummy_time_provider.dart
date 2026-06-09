@@ -62,7 +62,7 @@ class TummyTimeActions {
     final data = await SupabaseService.client.from('tummy_times').insert({
       'baby_id': babyId,
       'user_id': userId,
-      'start_time': DateTime.now().toIso8601String(),
+      'start_time': DateTime.now().toUtc().toIso8601String(),
     }).select().single();
 
     return TummyTime.fromJson(data);
@@ -73,7 +73,7 @@ class TummyTimeActions {
     final duration = now.difference(startTime).inMinutes;
 
     await SupabaseService.client.from('tummy_times').update({
-      'end_time': now.toIso8601String(),
+      'end_time': now.toUtc().toIso8601String(),
       'duration_minutes': duration,
     }).eq('id', tummyTimeId);
   }

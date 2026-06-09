@@ -39,7 +39,8 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {
-        _elapsed = DateTime.now().difference(_sessionStartTime!);
+        final diff = DateTime.now().difference(_sessionStartTime!);
+        _elapsed = diff.isNegative ? Duration.zero : diff;
       });
     });
   }

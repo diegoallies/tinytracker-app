@@ -19,6 +19,7 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/baby/baby_screen.dart';
 import '../screens/invites/invites_screen.dart';
 import '../screens/more/more_screen.dart';
+import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 
@@ -183,6 +184,14 @@ final appRouter = GoRouter(
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: const InvitesScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/settings',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const SettingsScreen(),
             transitionsBuilder: _slideTransition,
           ),
         ),

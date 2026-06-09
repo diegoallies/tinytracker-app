@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
-import '../../providers/notification_provider.dart';
-import '../../providers/feeding_settings_provider.dart';
 import '../../widgets/common/animated_card.dart';
-import '../../widgets/common/night_mode_toggle.dart';
 
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
   static const _features = <_FeatureItem>[
+    _FeatureItem(
+      icon: Icons.settings_rounded,
+      label: 'Settings',
+      description: 'Preferences',
+      route: '/settings',
+      color: Color(0xFFEDEAF3),
+      iconColor: AppColors.text,
+    ),
     _FeatureItem(
       icon: Icons.auto_awesome_rounded,
       label: 'Summary',
@@ -79,10 +84,6 @@ class MoreScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reminderEnabled = ref.watch(feedingReminderEnabledProvider);
-    final reminderInterval = ref.watch(feedingReminderIntervalProvider);
-    final showBreastFeeding = ref.watch(showBreastFeedingProvider);
-
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -97,206 +98,6 @@ class MoreScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Night mode toggle
-              AnimatedCard(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2d2640).withValues(alpha:0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.dark_mode_rounded,
-                          color: AppColors.text,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Night Mode',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.text,
-                              ),
-                            ),
-                            Text(
-                              'Dim the screen for nighttime',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const NightModeToggle(),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Feeding reminder
-              AnimatedCard(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.pastelPink,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.notifications_active_rounded,
-                              color: Color(0xFFE91E63),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Feeding Reminders',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.text,
-                                  ),
-                                ),
-                                Text(
-                                  'Alert when it\'s time to feed',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.muted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch.adaptive(
-                            value: reminderEnabled,
-                            onChanged: (_) => ref.read(feedingReminderEnabledProvider.notifier).toggle(),
-                            activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-                            activeThumbColor: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                      if (reminderEnabled) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Text(
-                              'Remind after:',
-                              style: TextStyle(fontSize: 13, color: AppColors.muted),
-                            ),
-                            const Spacer(),
-                            _IntervalChip(
-                              label: '2h',
-                              minutes: 120,
-                              selected: reminderInterval == 120,
-                              onTap: () => ref.read(feedingReminderIntervalProvider.notifier).setInterval(120),
-                            ),
-                            const SizedBox(width: 6),
-                            _IntervalChip(
-                              label: '2.5h',
-                              minutes: 150,
-                              selected: reminderInterval == 150,
-                              onTap: () => ref.read(feedingReminderIntervalProvider.notifier).setInterval(150),
-                            ),
-                            const SizedBox(width: 6),
-                            _IntervalChip(
-                              label: '3h',
-                              minutes: 180,
-                              selected: reminderInterval == 180,
-                              onTap: () => ref.read(feedingReminderIntervalProvider.notifier).setInterval(180),
-                            ),
-                            const SizedBox(width: 6),
-                            _IntervalChip(
-                              label: '4h',
-                              minutes: 240,
-                              selected: reminderInterval == 240,
-                              onTap: () => ref.read(feedingReminderIntervalProvider.notifier).setInterval(240),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Breast feeding toggle
-              AnimatedCard(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.pastelPurple,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.woman_rounded,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Breast Feeding',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.text,
-                              ),
-                            ),
-                            Text(
-                              'Show breast feeding options',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch.adaptive(
-                        value: showBreastFeeding,
-                        onChanged: (_) => ref.read(showBreastFeedingProvider.notifier).toggle(),
-                        activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-                        activeThumbColor: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
               const Text(
                 'Features',
                 style: TextStyle(
@@ -449,41 +250,3 @@ class _FeatureItem {
   });
 }
 
-class _IntervalChip extends StatelessWidget {
-  final String label;
-  final int minutes;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _IntervalChip({
-    required this.label,
-    required this.minutes,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.muted.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : AppColors.text,
-          ),
-        ),
-      ),
-    );
-  }
-}

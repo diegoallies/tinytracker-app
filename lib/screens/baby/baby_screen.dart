@@ -1,6 +1,9 @@
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../models/baby_share.dart';
@@ -21,10 +24,12 @@ class BabyScreen extends ConsumerStatefulWidget {
 class _BabyScreenState extends ConsumerState<BabyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _imagePicker = ImagePicker();
   DateTime? _selectedDob;
   String? _selectedGender;
   bool _isEditing = false;
   bool _isSaving = false;
+  bool _isUploadingPhoto = false;
   bool _isLoadingShares = false;
   List<BabyShare> _shares = [];
 
@@ -145,6 +150,107 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _pickAndUploadBabyPhoto(String babyId) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  'Change Baby Photo',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.text,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _PhotoSourceTile(
+                icon: Icons.camera_alt_rounded,
+                color: AppColors.pastelPurple,
+                iconColor: AppColors.primary,
+                label: 'Take Photo',
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              const SizedBox(height: 8),
+              _PhotoSourceTile(
+                icon: Icons.photo_library_rounded,
+                color: AppColors.pastelBlue,
+                iconColor: const Color(0xFF5b8cbf),
+                label: 'Choose from Gallery',
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final pickedFile = await _imagePicker.pickImage(
+      source: source,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 80,
+    );
+    if (pickedFile == null) return;
+
+    setState(() => _isUploadingPhoto = true);
+
+    try {
+      final url = await BabyActions.uploadPhoto(File(pickedFile.path));
+      if (url != null) {
+        await ref.read(babyProvider.notifier).updateBaby(
+              babyId: babyId,
+              photoUrl: url,
+            );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Baby photo updated'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload photo: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
     }
   }
 
@@ -681,17 +787,13 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 48,
-                    backgroundColor: AppColors.pastelPurple,
-                    child: Text(
-                      baby.name.isNotEmpty ? baby.name[0].toUpperCase() : 'B',
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
+                  _EditableBabyAvatar(
+                    babyName: baby.name,
+                    photoUrl: baby.photoUrl,
+                    isUploading: _isUploadingPhoto,
+                    onTap: _isUploadingPhoto
+                        ? null
+                        : () => _pickAndUploadBabyPhoto(baby.id),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -1095,6 +1197,158 @@ class _RoleOption extends StatelessWidget {
             ),
             if (isSelected)
               Icon(Icons.check_circle_rounded, color: iconColor, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EditableBabyAvatar extends StatelessWidget {
+  final String babyName;
+  final String? photoUrl;
+  final bool isUploading;
+  final VoidCallback? onTap;
+
+  const _EditableBabyAvatar({
+    required this.babyName,
+    required this.photoUrl,
+    required this.isUploading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.pastelPurple,
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: hasPhoto
+                ? CachedNetworkImage(
+                    imageUrl: photoUrl!,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => _fallback(),
+                    placeholder: (_, __) => _fallback(),
+                  )
+                : _fallback(),
+          ),
+          if (isUploading)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.35),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.camera_alt_rounded,
+                size: 14,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _fallback() {
+    return Center(
+      child: Text(
+        babyName.isNotEmpty ? babyName[0].toUpperCase() : 'B',
+        style: const TextStyle(
+          fontSize: 36,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoSourceTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color iconColor;
+  final String label;
+  final VoidCallback onTap;
+
+  const _PhotoSourceTile({
+    required this.icon,
+    required this.color,
+    required this.iconColor,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.text,
+              ),
+            ),
+            const Spacer(),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
           ],
         ),
       ),

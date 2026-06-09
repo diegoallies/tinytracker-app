@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../models/baby.dart';
 import '../models/baby_share.dart';
 import '../services/supabase_service.dart';
@@ -189,6 +191,21 @@ class BabyNotifier extends StateNotifier<BabyState> {
 
   Future<void> removeShare(String shareId) async {
     await _client.from('baby_shares').delete().eq('id', shareId);
+  }
+}
+
+class BabyActions {
+  static Future<String?> uploadPhoto(File file) async {
+    final userId = SupabaseService.userId;
+    if (userId == null) return null;
+
+    final ext = file.path.split('.').last;
+    final fileName = 'baby_${const Uuid().v4()}.$ext';
+    final storagePath = '$userId/$fileName';
+
+    await SupabaseService.client.storage.from('avatars').upload(storagePath, file);
+
+    return SupabaseService.client.storage.from('avatars').getPublicUrl(storagePath);
   }
 }
 

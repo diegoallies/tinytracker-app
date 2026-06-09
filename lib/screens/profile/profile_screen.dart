@@ -18,16 +18,19 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _displayNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _bioController = TextEditingController();
   final _imagePicker = ImagePicker();
 
-  bool _isSaving = false;
   bool _isUploadingAvatar = false;
   bool _isLoggingOut = false;
   bool _initialized = false;
+
+  // Per-field inline editing state
+  String? _editingField;
+  String? _savingField;
+  final Map<String, String> _snapshot = {};
 
   @override
   void dispose() {
@@ -43,6 +46,93 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _phoneController.text = profile.phone ?? '';
       _bioController.text = profile.bio ?? '';
       _initialized = true;
+    }
+  }
+
+  TextEditingController _controllerFor(String field) {
+    switch (field) {
+      case 'displayName':
+        return _displayNameController;
+      case 'phone':
+        return _phoneController;
+      case 'bio':
+        return _bioController;
+    }
+    throw ArgumentError('Unknown field: $field');
+  }
+
+  void _startEdit(String field) {
+    if (_savingField != null) return;
+    setState(() {
+      _editingField = field;
+      _snapshot[field] = _controllerFor(field).text;
+    });
+  }
+
+  void _cancelEdit() {
+    final field = _editingField;
+    if (field == null) return;
+    _controllerFor(field).text = _snapshot[field] ?? '';
+    setState(() {
+      _editingField = null;
+      _snapshot.remove(field);
+    });
+  }
+
+  Future<void> _saveField(String field) async {
+    final value = _controllerFor(field).text.trim();
+
+    if (field == 'displayName' && value.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Display name cannot be empty'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _savingField = field);
+
+    try {
+      await ProfileActions.updateProfile(
+        displayName: field == 'displayName' ? value : null,
+        phone: field == 'phone' ? value : null,
+        bio: field == 'bio' ? value : null,
+      );
+      _controllerFor(field).text = value;
+      ref.invalidate(profileProvider);
+
+      if (mounted) {
+        setState(() {
+          _editingField = null;
+          _savingField = null;
+          _snapshot.remove(field);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Saved'),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        // Restore prior value on failure
+        _controllerFor(field).text = _snapshot[field] ?? '';
+        setState(() {
+          _savingField = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
     }
   }
 
@@ -148,42 +238,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSaving = true);
-
-    try {
-      await ProfileActions.updateProfile(
-        displayName: _displayNameController.text.trim(),
-        phone: _phoneController.text.trim(),
-        bio: _bioController.text.trim(),
-      );
-      ref.invalidate(profileProvider);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile saved successfully'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save profile: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
-  }
-
   Future<void> _logout() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -241,6 +295,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         elevation: 0,
         foregroundColor: Colors.white,
         systemOverlayStyle: null,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            tooltip: 'Settings',
+            onPressed: () => context.push('/settings'),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: profileAsync.when(
         loading: () => const _ProfileSkeleton(),
@@ -274,143 +336,121 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           return SingleChildScrollView(
             padding: EdgeInsets.zero,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  _ProfileHero(
-                    profile: profile,
-                    isUploading: _isUploadingAvatar,
-                    onTapAvatar: _isUploadingAvatar ? null : _pickAndUploadAvatar,
-                  ),
+            child: Column(
+              children: [
+                _ProfileHero(
+                  profile: profile,
+                  isUploading: _isUploadingAvatar,
+                  onTapAvatar: _isUploadingAvatar ? null : _pickAndUploadAvatar,
+                ),
 
-                  Transform.translate(
-                    offset: const Offset(0, -28),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          _StatPill(
-                            icon: Icons.calendar_today_rounded,
-                            label: 'Member since',
-                            value: AppDateUtils.formatFull(profile.createdAt),
-                          ),
+                Transform.translate(
+                  offset: const Offset(0, -28),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _StatPill(
+                          icon: Icons.calendar_today_rounded,
+                          label: 'Member since',
+                          value: AppDateUtils.formatFull(profile.createdAt),
+                        ),
 
-                          const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                          _SectionCard(
-                            title: 'Personal Information',
-                            child: Column(
-                              children: [
-                                _ProfileField(
-                                  controller: _displayNameController,
-                                  label: 'Display Name',
-                                  hint: 'Your name',
-                                  icon: Icons.person_outline_rounded,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Please enter your name';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const _FieldDivider(),
-                                _ProfileField(
-                                  label: 'Email',
-                                  hint: profile.email ?? '',
-                                  icon: Icons.email_outlined,
-                                  initialValue: profile.email,
-                                  enabled: false,
-                                ),
-                                const _FieldDivider(),
-                                _ProfileField(
-                                  controller: _phoneController,
-                                  label: 'Phone',
-                                  hint: 'Optional',
-                                  icon: Icons.phone_outlined,
-                                  keyboardType: TextInputType.phone,
-                                ),
-                                const _FieldDivider(),
-                                _ProfileField(
-                                  controller: _bioController,
-                                  label: 'Bio',
-                                  hint: 'A short note about you',
-                                  icon: Icons.info_outline_rounded,
-                                  maxLines: 3,
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: ElevatedButton(
-                              onPressed: _isSaving ? null : _saveProfile,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor:
-                                    AppColors.primary.withValues(alpha: 0.5),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
-                                shadowColor: Colors.transparent,
+                        _SectionCard(
+                          title: 'Personal Information',
+                          child: Column(
+                            children: [
+                              _ProfileField(
+                                fieldKey: 'displayName',
+                                controller: _displayNameController,
+                                label: 'Display Name',
+                                hint: 'Set your name',
+                                icon: Icons.person_outline_rounded,
+                                isEditing: _editingField == 'displayName',
+                                isSaving: _savingField == 'displayName',
+                                canEdit: _editingField == null ||
+                                    _editingField == 'displayName',
+                                onEdit: () => _startEdit('displayName'),
+                                onCancel: _cancelEdit,
+                                onSave: () => _saveField('displayName'),
                               ),
-                              child: _isSaving
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.check_rounded, size: 20),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Save Changes',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                            ),
+                              const _FieldDivider(),
+                              _ProfileField(
+                                fieldKey: 'email',
+                                label: 'Email',
+                                hint: '',
+                                icon: Icons.email_outlined,
+                                staticValue: profile.email ?? '',
+                                isEditing: false,
+                                isSaving: false,
+                                canEdit: false,
+                                readOnly: true,
+                                onEdit: () {},
+                                onCancel: () {},
+                                onSave: () {},
+                              ),
+                              const _FieldDivider(),
+                              _ProfileField(
+                                fieldKey: 'phone',
+                                controller: _phoneController,
+                                label: 'Phone',
+                                hint: 'Not set',
+                                icon: Icons.phone_outlined,
+                                keyboardType: TextInputType.phone,
+                                isEditing: _editingField == 'phone',
+                                isSaving: _savingField == 'phone',
+                                canEdit:
+                                    _editingField == null || _editingField == 'phone',
+                                onEdit: () => _startEdit('phone'),
+                                onCancel: _cancelEdit,
+                                onSave: () => _saveField('phone'),
+                              ),
+                              const _FieldDivider(),
+                              _ProfileField(
+                                fieldKey: 'bio',
+                                controller: _bioController,
+                                label: 'Bio',
+                                hint: 'Add a short note about you',
+                                icon: Icons.info_outline_rounded,
+                                maxLines: 3,
+                                isEditing: _editingField == 'bio',
+                                isSaving: _savingField == 'bio',
+                                canEdit:
+                                    _editingField == null || _editingField == 'bio',
+                                onEdit: () => _startEdit('bio'),
+                                onCancel: _cancelEdit,
+                                onSave: () => _saveField('bio'),
+                              ),
+                            ],
                           ),
+                        ),
 
-                          const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                          _AccountActionsCard(
-                            isLoggingOut: _isLoggingOut,
-                            onLogout: _logout,
+                        _AccountActionsCard(
+                          isLoggingOut: _isLoggingOut,
+                          onLogout: _logout,
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        Text(
+                          'TinyTracker',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.muted.withValues(alpha: 0.6),
+                            letterSpacing: 0.4,
                           ),
-
-                          const SizedBox(height: 32),
-
-                          Text(
-                            'TinyTracker',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.muted.withValues(alpha: 0.6),
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
@@ -717,36 +757,52 @@ class _SectionCard extends StatelessWidget {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// Inline list-style form field with leading icon
+// Per-field inline editable row with pencil/save/cancel
 // ──────────────────────────────────────────────────────────────────────
 
 class _ProfileField extends StatelessWidget {
+  final String fieldKey;
   final TextEditingController? controller;
   final String label;
   final String hint;
   final IconData icon;
-  final String? initialValue;
-  final bool enabled;
+  final String? staticValue;
   final TextInputType? keyboardType;
   final int maxLines;
-  final String? Function(String?)? validator;
+  final bool isEditing;
+  final bool isSaving;
+  final bool canEdit;
+  final bool readOnly;
+  final VoidCallback onEdit;
+  final VoidCallback onCancel;
+  final VoidCallback onSave;
 
   const _ProfileField({
+    required this.fieldKey,
     this.controller,
     required this.label,
     required this.hint,
     required this.icon,
-    this.initialValue,
-    this.enabled = true,
+    this.staticValue,
     this.keyboardType,
     this.maxLines = 1,
-    this.validator,
+    required this.isEditing,
+    required this.isSaving,
+    required this.canEdit,
+    this.readOnly = false,
+    required this.onEdit,
+    required this.onCancel,
+    required this.onSave,
   });
 
   @override
   Widget build(BuildContext context) {
+    final value = staticValue ?? controller?.text ?? '';
+    final hasValue = value.trim().isNotEmpty;
+    final dimmed = !canEdit && !readOnly;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+      padding: const EdgeInsets.fromLTRB(20, 14, 12, 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -755,10 +811,18 @@ class _ProfileField extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.pastelPurple.withValues(alpha: 0.5),
+                color: AppColors.pastelPurple.withValues(
+                  alpha: dimmed ? 0.2 : 0.5,
+                ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 18, color: AppColors.primary),
+              child: Icon(
+                icon,
+                size: 18,
+                color: AppColors.primary.withValues(
+                  alpha: dimmed ? 0.4 : 1.0,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -768,48 +832,203 @@ class _ProfileField extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.muted,
+                    color: AppColors.muted.withValues(
+                      alpha: dimmed ? 0.5 : 1.0,
+                    ),
                     letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 2),
-                TextFormField(
-                  controller: controller,
-                  initialValue: controller == null ? initialValue : null,
-                  enabled: enabled,
-                  keyboardType: keyboardType,
-                  maxLines: maxLines,
-                  validator: validator,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: enabled ? AppColors.text : AppColors.muted,
-                  ),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 6),
-                    hintText: hint,
-                    hintStyle: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.muted.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w400,
+                const SizedBox(height: 4),
+                if (isEditing && controller != null)
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    keyboardType: keyboardType,
+                    maxLines: maxLines,
+                    enabled: !isSaving,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.text,
                     ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    focusedErrorBorder: InputBorder.none,
-                    filled: false,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: const EdgeInsets.only(bottom: 4),
+                      hintText: hint,
+                      hintStyle: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.muted.withValues(alpha: 0.5),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      border: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: AppColors.primary.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                      filled: false,
+                    ),
+                    onSubmitted: maxLines == 1 ? (_) => onSave() : null,
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text(
+                      hasValue ? value : hint,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: hasValue ? FontWeight.w500 : FontWeight.w400,
+                        color: hasValue
+                            ? (dimmed
+                                ? AppColors.text.withValues(alpha: 0.5)
+                                : AppColors.text)
+                            : AppColors.muted.withValues(
+                                alpha: dimmed ? 0.5 : 0.7,
+                              ),
+                      ),
+                      maxLines: maxLines,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
+          if (!readOnly)
+            Padding(
+              padding: const EdgeInsets.only(top: 18, left: 4),
+              child: _EditActions(
+                isEditing: isEditing,
+                isSaving: isSaving,
+                enabled: canEdit,
+                onEdit: onEdit,
+                onCancel: onCancel,
+                onSave: onSave,
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _EditActions extends StatelessWidget {
+  final bool isEditing;
+  final bool isSaving;
+  final bool enabled;
+  final VoidCallback onEdit;
+  final VoidCallback onCancel;
+  final VoidCallback onSave;
+
+  const _EditActions({
+    required this.isEditing,
+    required this.isSaving,
+    required this.enabled,
+    required this.onEdit,
+    required this.onCancel,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isSaving) {
+      return const SizedBox(
+        width: 36,
+        height: 36,
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (isEditing) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _IconButton(
+            icon: Icons.close_rounded,
+            color: AppColors.muted,
+            background: Colors.grey.shade100,
+            onTap: onCancel,
+            tooltip: 'Cancel',
+          ),
+          const SizedBox(width: 6),
+          _IconButton(
+            icon: Icons.check_rounded,
+            color: Colors.white,
+            background: AppColors.primary,
+            onTap: onSave,
+            tooltip: 'Save',
+          ),
+        ],
+      );
+    }
+
+    return _IconButton(
+      icon: Icons.edit_rounded,
+      color: enabled
+          ? AppColors.primary
+          : AppColors.muted.withValues(alpha: 0.4),
+      background: enabled
+          ? AppColors.pastelPurple.withValues(alpha: 0.5)
+          : Colors.grey.shade100,
+      onTap: enabled ? onEdit : null,
+      tooltip: 'Edit',
+    );
+  }
+}
+
+class _IconButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color background;
+  final VoidCallback? onTap;
+  final String tooltip;
+
+  const _IconButton({
+    required this.icon,
+    required this.color,
+    required this.background,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+        ),
       ),
     );
   }
@@ -1022,12 +1241,6 @@ class _ProfileSkeleton extends StatelessWidget {
                   width: double.infinity,
                   height: 320,
                   borderRadius: 24,
-                ),
-                SizedBox(height: 16),
-                LoadingSkeleton(
-                  width: double.infinity,
-                  height: 54,
-                  borderRadius: 16,
                 ),
                 SizedBox(height: 16),
                 LoadingSkeleton(
