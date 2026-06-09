@@ -27,3 +27,14 @@ Process: small working increments, committed and pushed continuously. Self-revie
 - `theme.dart` upgraded to a full Material 3 component theme: dialogs, bottom sheets (drag handle, rounded top), snackbars (floating, dark pill), chips, switches, FAB, list tiles, progress indicators, text buttons, dividers — all consistent with tokens. Added `border` color to `AppPalette` (light `#EDE8F4` / dark `#2E2740`), iOS/Android page transitions, InkSparkle splash, tighter letter-spacing on headlines, 52px buttons with disabled states. AppPalette/AppColors stay const + `Theme.of(context)`-driven (per repo memory).
 - New `lib/widgets/common/app_dialogs.dart`: `showConfirmDialog` / `showDeleteDialog` — one premium confirmation dialog (icon badge, centered copy, side-by-side actions, haptics) to replace every hand-rolled AlertDialog.
 - `extensions.dart`: snackbars rebuilt — themed dark pill with colored leading icon, `showErrorSnackBar(onRetry:)` support, auto-dismiss of previous snackbar.
+
+### 3. Supabase production audit (docs/SUPABASE-AUDIT.md)
+- Audited the live database against the code. All 14 tables exist; found and fixed: **missing `milestones` storage bucket (created live)**.
+- Found a high-impact silent bug: `ai_cache` writes have failed since March (missing `ai_type` column, NOT-NULL `user_id` omitted, wrong date format) — swallowed by `catch (_) {}`, so every AI insight re-hits Groq. Code fix queued.
+- Found `sleeps.quality`/`wake_count` referenced in code but absent in DB (silently null), zero indexes on hot `(baby_id, time)` paths, and 10 tables whose RLS only lives in the dashboard.
+- Wrote idempotent `supabase/2026-06-09_production_upgrade.sql` (missing columns, 13 indexes, versioned RLS policies, storage policies) — **needs a one-time run in the Supabase SQL editor**.
+
+### 4. Smart predictions engine ("what's next")
+- New `lib/services/prediction_service.dart`: pure-Dart pattern engine — median-gap prediction with outlier filtering (double-logs, overnight stretches), day/night-aware bucketing, and a confidence score (sample size + regularity). Nap prediction works on awake windows (wake → next sleep start).
+- New `lib/providers/prediction_provider.dart`: `nextFeedingPredictionProvider` / `nextNapPredictionProvider` over the last 7 days; failures degrade to null, never break a screen; no nap prediction while a sleep session is active.
+- New `test/prediction_service_test.dart`: 8 unit tests, all green. Dashboard "Next up" card lands with the dashboard polish.
