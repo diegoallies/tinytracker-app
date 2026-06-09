@@ -470,7 +470,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                 ? _buildCreateForm()
                 : _isEditing
                     ? _buildEditForm(baby)
-                    : _buildBabyProfile(baby),
+                    : _buildBabyProfile(baby, babyState.isOwner),
       ),
     );
   }
@@ -661,9 +661,9 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
     );
   }
 
-  Widget _buildBabyProfile(dynamic baby) {
+  Widget _buildBabyProfile(dynamic baby, bool isOwner) {
     // Load shares on first build for owners
-    if (_shares.isEmpty && !_isLoadingShares && baby.isOwner != false) {
+    if (_shares.isEmpty && !_isLoadingShares && isOwner) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadShares(baby.id);
       });
@@ -730,7 +730,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
           ),
 
           // Sharing section (owners only)
-          if (baby.isOwner != false) ...[
+          if (isOwner) ...[
             const SizedBox(height: 16),
             AnimatedCard(
               child: Padding(
