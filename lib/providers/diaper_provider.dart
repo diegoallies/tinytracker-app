@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/diaper.dart';
 import '../services/supabase_service.dart';
 import '../utils/date_utils.dart';
@@ -73,20 +75,36 @@ class DiaperActions {
     required String babyId,
     required String type,
     String? color,
+    int? stoolType,
     String? notes,
     DateTime? loggedAt,
   }) async {
     final userId = SupabaseService.userId;
     if (userId == null) return;
 
-    await SupabaseService.client.from('diapers').insert({
+    final isDirty = type == 'dirty' || type == 'both';
+    final payload = {
       'baby_id': babyId,
       'user_id': userId,
       'type': type,
-      'color': (type == 'dirty' || type == 'both') ? color : null,
+      'color': isDirty ? color : null,
       'notes': notes?.isNotEmpty == true ? notes : null,
       'logged_at': (loggedAt ?? DateTime.now()).toUtc().toIso8601String(),
-    });
+    };
+
+    // stool_type lands with the Care Pack migration; if the column doesn't
+    // exist yet the insert is retried without it so logging never breaks.
+    if (isDirty && stoolType != null) {
+      try {
+        await SupabaseService.client
+            .from('diapers')
+            .insert({...payload, 'stool_type': stoolType});
+        return;
+      } on PostgrestException catch (e) {
+        debugPrint('diaper insert with stool_type failed (${e.code}), retrying without');
+      }
+    }
+    await SupabaseService.client.from('diapers').insert(payload);
   }
 
   static Future<void> deleteDiaper(String diaperId) async {

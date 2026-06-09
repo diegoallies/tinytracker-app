@@ -32,7 +32,7 @@ create table if not exists public.reflux_events (
   severity       integer not null check (severity between 1 and 5),
   painful_crying boolean not null default false,
   arching_back   boolean not null default false,
-  trigger        text,
+  trigger_noticed text,
   notes          text,
   logged_at      timestamptz not null default now(),
   created_at     timestamptz not null default now()

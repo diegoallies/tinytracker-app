@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/feeding.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
@@ -114,6 +115,8 @@ class FeedingActions {
     required String type,
     int? durationMinutes,
     int? amountMl,
+    int? quality,
+    bool hadSpitup = false,
     String? notes,
     DateTime? loggedAt,
   }) async {
@@ -121,7 +124,7 @@ class FeedingActions {
     if (userId == null) return;
 
     final ts = loggedAt ?? DateTime.now();
-    await SupabaseService.client.from('feedings').insert({
+    final payload = {
       'baby_id': babyId,
       'user_id': userId,
       'type': type,
@@ -129,7 +132,26 @@ class FeedingActions {
       'amount_ml': amountMl,
       'notes': notes?.isNotEmpty == true ? notes : null,
       'logged_at': ts.toUtc().toIso8601String(),
-    });
+    };
+
+    // quality/had_spitup land with the Care Pack migration; retry without
+    // them if the columns don't exist yet so logging never breaks.
+    var inserted = false;
+    if (quality != null || hadSpitup) {
+      try {
+        await SupabaseService.client.from('feedings').insert({
+          ...payload,
+          'quality': ?quality,
+          'had_spitup': hadSpitup,
+        });
+        inserted = true;
+      } on PostgrestException catch (e) {
+        debugPrint('feeding insert with care-pack fields failed (${e.code}), retrying without');
+      }
+    }
+    if (!inserted) {
+      await SupabaseService.client.from('feedings').insert(payload);
+    }
 
     // Reschedule feeding reminder from the actual logged time
     final interval = await NotificationService.getReminderInterval();
