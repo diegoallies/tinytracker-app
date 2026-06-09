@@ -34,13 +34,16 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
   @override
   void initState() {
     super.initState();
-    _loadInvites();
     final code = widget.initialCode;
     if (code != null && code.isNotEmpty) {
       _codeController.text = code;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Sequence load → redeem so the redeem's reload can't be overwritten
+      // by the initial (pre-redeem) load resolving late.
+      _loadInvites().then((_) {
         if (mounted) _redeemCode();
       });
+    } else {
+      _loadInvites();
     }
   }
 

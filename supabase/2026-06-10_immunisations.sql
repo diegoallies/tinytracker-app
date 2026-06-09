@@ -35,3 +35,9 @@ create policy "immunisations_update_members" on public.immunisations
 drop policy if exists "immunisations_delete_members" on public.immunisations;
 create policy "immunisations_delete_members" on public.immunisations
   for delete using ( public.user_has_baby_access(baby_id) );
+
+-- given_on is required (applied live 2026-06-10): the app always writes it,
+-- and a null row would have crashed the list parse.
+update public.immunisations set given_on = created_at::date where given_on is null;
+alter table public.immunisations alter column given_on set default (now()::date);
+alter table public.immunisations alter column given_on set not null;

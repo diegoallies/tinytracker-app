@@ -1,10 +1,12 @@
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 
+import '../services/supabase_service.dart';
 import 'router.dart';
 
-/// Invite token from a cold-start deep link, parked until the splash screen
-/// finishes its auth check and can route somewhere meaningful.
+/// Invite token parked until the app can act on it — set on cold-start links
+/// (consumed by the splash screen once the session is restored) and on links
+/// arriving while logged out (consumed by the login screen after sign-in).
 String? pendingInviteToken;
 
 String? _tokenFrom(Uri uri) {
@@ -15,21 +17,22 @@ String? _tokenFrom(Uri uri) {
   return token.isEmpty ? null : token;
 }
 
-/// Call once from main() after runApp. Handles both the link that launched
-/// the app (parked for splash) and links arriving while it runs.
+/// Call once from main() after runApp.
+///
+/// app_links re-emits the launch link on the stream when the listener
+/// attaches, so a single stream listener covers both cold and warm starts —
+/// no separate getInitialLink() call (which would double-deliver).
 void setupDeepLinks() {
-  final appLinks = AppLinks();
-
-  appLinks.getInitialLink().then((uri) {
-    if (uri == null) return;
-    pendingInviteToken = _tokenFrom(uri);
-  }).catchError((Object e) {
-    debugPrint('initial deep link failed: $e');
-  });
-
-  appLinks.uriLinkStream.listen((uri) {
+  AppLinks().uriLinkStream.listen((uri) {
     final token = _tokenFrom(uri);
-    if (token != null) {
+    if (token == null) return;
+
+    if (SupabaseService.currentUser == null) {
+      // Session not restored yet (cold start) or genuinely logged out —
+      // park it; splash/login will pick it up.
+      pendingInviteToken = token;
+    } else {
+      pendingInviteToken = null;
       appRouter.go('/invites?code=$token');
     }
   }, onError: (Object e) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/deep_links.dart';
 import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../services/auth_service.dart';
@@ -39,7 +40,16 @@ class _LoginScreenState extends State<LoginScreen> {
       await auth.signIn(email: email, password: _passwordController.text);
       TextInput.finishAutofillContext();
       Haptics.mediumTap();
-      if (mounted) context.go('/dashboard');
+      if (mounted) {
+        // An invite link tapped while logged out resumes after sign-in.
+        final inviteToken = pendingInviteToken;
+        if (inviteToken != null) {
+          pendingInviteToken = null;
+          context.go('/invites?code=$inviteToken');
+        } else {
+          context.go('/dashboard');
+        }
+      }
     } catch (e) {
       if (mounted) {
         context.showErrorSnackBar('Invalid email or password');

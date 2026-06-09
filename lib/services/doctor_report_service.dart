@@ -11,7 +11,7 @@ import 'supabase_service.dart';
 /// Builds the "Doctor visit report" PDF: a clinical summary of the last
 /// 14 days of reflux, digestion, feeding, temperature and medication data.
 ///
-/// Pure data — no AI calls. Tables that ship with the Care Pack migration
+/// Pure data - no AI calls. Tables that ship with the Care Pack migration
 /// (reflux_events, daily_journals) or columns that ship with it (stool_type,
 /// quality) may not exist yet; every query degrades to an empty section
 /// instead of crashing.
@@ -182,7 +182,7 @@ class DoctorReportService {
       final key = _dayKey(dt);
       perDay[key] = (perDay[key] ?? 0) + 1;
     }
-    String worstDay = '—';
+    String worstDay = '-';
     int worstCount = 0;
     perDay.forEach((day, count) {
       if (count > worstCount) {
@@ -193,7 +193,7 @@ class DoctorReportService {
     final avg = (reflux.length / _days).toStringAsFixed(1);
     widgets.add(pw.Text(
       '${reflux.length} events in $_days days - avg $avg/day - worst day: '
-      '${worstDay == '—' ? '—' : '${_formatDayKey(worstDay)} ($worstCount events)'}',
+      '${worstDay == '-' ? '-' : '${_formatDayKey(worstDay)} ($worstCount events)'}',
       style: bodyStyle,
     ));
     widgets.add(pw.SizedBox(height: 8));
@@ -206,11 +206,11 @@ class DoctorReportService {
         ...reflux.map((r) {
           final dt = _parseDate(r['logged_at']);
           return _tableRow([
-            dt != null ? AppDateUtils.formatDate(dt) : '—',
-            dt != null ? AppDateUtils.formatTime(dt) : '—',
-            (r['severity'] ?? '—').toString(),
-            r['painful_crying'] == true ? 'Yes' : '—',
-            r['arching_back'] == true ? 'Yes' : '—',
+            dt != null ? AppDateUtils.formatDate(dt) : '-',
+            dt != null ? AppDateUtils.formatTime(dt) : '-',
+            (r['severity'] ?? '-').toString(),
+            r['painful_crying'] == true ? 'Yes' : '-',
+            r['arching_back'] == true ? 'Yes' : '-',
             _orDash(r['trigger_noticed']),
           ]);
         }),
@@ -269,7 +269,7 @@ class DoctorReportService {
                 .firstOrNull;
             return _tableRow([
               'Type $type',
-              label ?? '—',
+              label ?? '-',
               '${stoolCounts[type]}',
             ]);
           }),
@@ -367,9 +367,9 @@ class DoctorReportService {
         ...relevant.map((h) {
           final dt = _parseDate(h['logged_at']);
           return _tableRow([
-            dt != null ? AppDateUtils.formatDate(dt) : '—',
-            dt != null ? AppDateUtils.formatTime(dt) : '—',
-            h['temperature_c'] != null ? '${h['temperature_c']}' : '—',
+            dt != null ? AppDateUtils.formatDate(dt) : '-',
+            dt != null ? AppDateUtils.formatTime(dt) : '-',
+            h['temperature_c'] != null ? '${h['temperature_c']}' : '-',
             _orDash(h['medication']),
             _orDash(h['dosage']),
             _orDash(h['symptoms']),
@@ -425,7 +425,7 @@ class DoctorReportService {
 
   static String _orDash(dynamic value) {
     final s = value?.toString().trim();
-    return (s == null || s.isEmpty) ? '—' : s;
+    return (s == null || s.isEmpty) ? '-' : s;
   }
 
   static String _dayKey(DateTime dt) =>

@@ -108,14 +108,17 @@ class NotificationService {
     // Replace any previously scheduled reminder.
     await _plugin.cancel(_weeklyReportNotificationId);
 
-    // Next Friday 14:00 (day-component arithmetic keeps the hour DST-safe).
-    final now = tz.TZDateTime.now(tz.local);
-    var scheduledAt = tz.TZDateTime(tz.local, now.year, now.month,
+    // Next Friday 14:00 in DEVICE-local time. tz.local is UTC (we never call
+    // setLocalLocation), so compute the target with Dart's local DateTime and
+    // anchor the tz instant via a delta — same trick as the feeding reminder.
+    final now = DateTime.now();
+    var target = DateTime(now.year, now.month,
         now.day + (DateTime.friday - now.weekday) % 7, 14);
-    if (!scheduledAt.isAfter(now)) {
-      scheduledAt = tz.TZDateTime(
-          tz.local, scheduledAt.year, scheduledAt.month, scheduledAt.day + 7, 14);
+    if (!target.isAfter(now)) {
+      target = DateTime(target.year, target.month, target.day + 7, 14);
     }
+    final scheduledAt =
+        tz.TZDateTime.now(tz.local).add(target.difference(now));
 
     const androidDetails = AndroidNotificationDetails(
       _weeklyReportChannelId,

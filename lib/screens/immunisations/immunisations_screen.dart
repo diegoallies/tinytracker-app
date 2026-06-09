@@ -400,7 +400,10 @@ class _VisitSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final due = ImmunisationData.dueDateFor(visit, dob);
     final status = _statusFor(visit, dob, givenByKey.keys.toSet());
-    final pastDue = !_dayOf(DateTime.now()).isBefore(due);
+    // Rows turn warning-tinted only once the visit's 14-day "due now" window
+    // has passed — matches the header's overdue logic.
+    final pastDue =
+        _dayOf(DateTime.now()).isAfter(due.add(const Duration(days: 14)));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

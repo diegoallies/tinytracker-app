@@ -32,7 +32,9 @@ class Immunisation {
       babyId: json['baby_id'] as String,
       userId: json['user_id'] as String,
       vaccineKey: json['vaccine_key'] as String,
-      givenOn: DateTime.parse(json['given_on'] as String),
+      // Column is enforced NOT NULL, but stay defensive about legacy rows.
+      givenOn: DateTime.parse(
+          (json['given_on'] ?? json['created_at']) as String),
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
     );
