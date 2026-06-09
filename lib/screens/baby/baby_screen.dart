@@ -49,11 +49,11 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
+          colorScheme: ColorScheme.light(
             primary: AppColors.primary,
             onPrimary: Colors.white,
             surface: Colors.white,
-            onSurface: AppColors.text,
+            onSurface: context.palette.text,
           ),
         ),
         child: child!,
@@ -178,14 +178,14 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                   ),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
                   'Change Baby Photo',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+                    color: context.palette.text,
                   ),
                 ),
               ),
@@ -317,13 +317,13 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     share.userName ?? share.userEmail ?? 'This user',
-                    style: const TextStyle(fontSize: 14, color: AppColors.muted),
+                    style: TextStyle(fontSize: 14, color: context.palette.muted),
                   ),
                   const SizedBox(height: 20),
                   _RoleOption(
@@ -485,26 +485,26 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'Invite Someone',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Create an invite link to share access to your baby\'s profile.',
-                    style: TextStyle(fontSize: 14, color: AppColors.muted),
+                    style: TextStyle(fontSize: 14, color: context.palette.muted),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Select Role',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -732,18 +732,18 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Baby Details',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: context.palette.text,
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
-                      style: TextStyle(fontSize: 15, color: AppColors.text),
+                      style: TextStyle(fontSize: 15, color: context.palette.text),
                       decoration: _inputDecoration('Baby\'s Name', Icons.child_care_rounded),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? 'Please enter a name' : null,
@@ -753,7 +753,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                       onTap: _selectDate,
                       child: AbsorbPointer(
                         child: TextFormField(
-                          style: TextStyle(fontSize: 15, color: AppColors.text),
+                          style: TextStyle(fontSize: 15, color: context.palette.text),
                           decoration: _inputDecoration(
                             'Date of Birth',
                             Icons.cake_rounded,
@@ -762,7 +762,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                                 ? AppDateUtils.formatDate(_selectedDob!)
                                 : 'Tap to select',
                             hintStyle: TextStyle(
-                              color: _selectedDob != null ? AppColors.text : AppColors.muted,
+                              color: _selectedDob != null ? context.palette.text : context.palette.muted,
                             ),
                           ),
                         ),
@@ -833,18 +833,18 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Edit Baby Details',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: context.palette.text,
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
-                      style: TextStyle(fontSize: 15, color: AppColors.text),
+                      style: TextStyle(fontSize: 15, color: context.palette.text),
                       decoration: _inputDecoration('Baby\'s Name', Icons.child_care_rounded),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? 'Please enter a name' : null,
@@ -854,7 +854,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                       onTap: _selectDate,
                       child: AbsorbPointer(
                         child: TextFormField(
-                          style: TextStyle(fontSize: 15, color: AppColors.text),
+                          style: TextStyle(fontSize: 15, color: context.palette.text),
                           decoration: _inputDecoration(
                             'Date of Birth',
                             Icons.cake_rounded,
@@ -863,7 +863,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                                 ? AppDateUtils.formatDate(_selectedDob!)
                                 : 'Tap to select',
                             hintStyle: TextStyle(
-                              color: _selectedDob != null ? AppColors.text : AppColors.muted,
+                              color: _selectedDob != null ? context.palette.text : context.palette.muted,
                             ),
                           ),
                         ),
@@ -941,16 +941,16 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                   const SizedBox(height: 16),
                   Text(
                     baby.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     age,
-                    style: TextStyle(fontSize: 16, color: AppColors.muted),
+                    style: TextStyle(fontSize: 16, color: context.palette.muted),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -986,12 +986,12 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Sharing',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.text,
+                            color: context.palette.text,
                           ),
                         ),
                         TextButton.icon(
@@ -1027,11 +1027,11 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                                 color: Colors.grey.shade300,
                               ),
                               const SizedBox(height: 8),
-                              const Text(
+                              Text(
                                 'No one else has access yet',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: AppColors.muted,
+                                  color: context.palette.muted,
                                 ),
                               ),
                             ],
@@ -1048,7 +1048,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: context.palette.surface,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -1072,17 +1072,17 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                                     children: [
                                       Text(
                                         share.userName ?? 'Unknown',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
-                                          color: AppColors.text,
+                                          color: context.palette.text,
                                         ),
                                       ),
                                       Text(
                                         share.userEmail ?? share.role.capitalize,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12,
-                                          color: AppColors.muted,
+                                          color: context.palette.muted,
                                         ),
                                       ),
                                     ],
@@ -1162,11 +1162,11 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Gender',
           style: TextStyle(
             fontSize: 13,
-            color: AppColors.muted,
+            color: context.palette.muted,
           ),
         ),
         const SizedBox(height: 8),
@@ -1184,7 +1184,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.surface,
+                      color: isSelected ? AppColors.primary : context.palette.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected ? AppColors.primary : Colors.grey.shade200,
@@ -1196,7 +1196,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.text,
+                          color: isSelected ? Colors.white : context.palette.text,
                         ),
                       ),
                     ),
@@ -1213,10 +1213,10 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: AppColors.muted, fontSize: 14),
-      prefixIcon: Icon(icon, color: AppColors.muted, size: 20),
+      labelStyle: TextStyle(color: context.palette.muted, fontSize: 14),
+      prefixIcon: Icon(icon, color: context.palette.muted, size: 20),
       filled: true,
-      fillColor: AppColors.surface,
+      fillColor: context.palette.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -1276,14 +1276,14 @@ class _InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.text),
+          Icon(icon, size: 16, color: context.palette.text),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: AppColors.text,
+              color: context.palette.text,
             ),
           ),
         ],
@@ -1343,15 +1343,15 @@ class _RoleOption extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                   ),
                   Text(
                     description,
-                    style: TextStyle(fontSize: 12, color: AppColors.muted),
+                    style: TextStyle(fontSize: 12, color: context.palette.muted),
                   ),
                 ],
               ),
@@ -1505,11 +1505,11 @@ class _PhotoSourceTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: AppColors.text,
+                color: context.palette.text,
               ),
             ),
             const Spacer(),
-            Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            Icon(Icons.chevron_right_rounded, color: context.palette.muted),
           ],
         ),
       ),

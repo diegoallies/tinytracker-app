@@ -514,18 +514,18 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                     ),
                   ),
                 ),
-                const Text(
+                Text(
                   'Log Past Sleep',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+                    color: ctx.palette.text,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Record a completed sleep session',
-                  style: TextStyle(fontSize: 13, color: AppColors.muted),
+                  style: TextStyle(fontSize: 13, color: ctx.palette.muted),
                 ),
                 const SizedBox(height: 20),
 
@@ -683,16 +683,16 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                 ),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+                    color: ctx.palette.text,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 13, color: AppColors.muted),
+                  style: TextStyle(fontSize: 13, color: ctx.palette.muted),
                 ),
                 const SizedBox(height: 20),
                 _SleepPickerTile(
@@ -954,7 +954,7 @@ class _SleepPickerTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -974,9 +974,9 @@ class _SleepPickerTile extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.muted,
+                        color: context.palette.muted,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.3,
                       ),
@@ -984,10 +984,10 @@ class _SleepPickerTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: context.palette.text,
                       ),
                     ),
                   ],
@@ -995,7 +995,7 @@ class _SleepPickerTile extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.muted.withValues(alpha: 0.6),
+                color: context.palette.muted.withValues(alpha: 0.6),
               ),
             ],
           ),
