@@ -24,6 +24,15 @@ Find it all under **More → Care Pack**. Feeding now has quality stars + a spit
 
 **It got prettier.** Design token system, full Material 3 component theme (dialogs, sheets, snackbars, switches…), one premium confirmation dialog everywhere, animated login/register with password toggle + working forgot-password, settings screen rebuilt with sections, dark-mode correctness throughout.
 
+## Round 2 (after you sent the token)
+
+- **Trends** (More → Trends): 14-day charts for feeding, sleep, nappies and reflux with week-over-week "improving/worsening" chips
+- **Doctor visit report** (Export screen): one tap → clinical 14-day PDF of reflux, digestion, feeding and meds for the paediatrician
+- **Immunisations** (More → Immunisations): the full SA EPI schedule with due/overdue dates from his birth date — table created live with your token
+- **Invite links now actually open the app** — sending an invite opens the share sheet with a ready WhatsApp message; tapping the link on the other phone joins automatically
+- **Friday 2pm reminder** for the weekly report (toggle in Settings → Reminders)
+- AI insights now see the reflux/digestion data, so expect insights about his tummy, not just feeds
+
 ## Where to look
 
 - `docs/CHANGELOG-claude.md` — every change, commit by commit
