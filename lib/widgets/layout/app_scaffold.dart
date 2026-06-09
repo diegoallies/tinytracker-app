@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../common/offline_banner.dart';
 import '../common/quick_log_fab.dart';
 import 'bottom_nav_bar.dart';
 
@@ -14,7 +15,12 @@ class AppScaffold extends StatelessWidget {
     final showFab = location.startsWith('/dashboard') || location == '/';
 
     return Scaffold(
-      body: child,
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: child),
+        ],
+      ),
       bottomNavigationBar: const BottomNavBar(),
       floatingActionButton: showFab ? const QuickLogFAB() : null,
     );

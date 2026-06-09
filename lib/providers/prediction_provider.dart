@@ -22,7 +22,8 @@ final nextFeedingPredictionProvider =
         .select('logged_at')
         .eq('baby_id', baby.id)
         .gte('logged_at', since.toUtc().toIso8601String())
-        .order('logged_at', ascending: true)
+        // Descending so the limit drops the OLDEST events when over the cap.
+        .order('logged_at', ascending: false)
         .limit(120);
 
     final times = data
@@ -54,7 +55,8 @@ final nextNapPredictionProvider =
         .eq('baby_id', baby.id)
         .not('end_time', 'is', null)
         .gte('start_time', since.toUtc().toIso8601String())
-        .order('start_time', ascending: true)
+        // Descending so the limit drops the OLDEST sessions when over the cap.
+        .order('start_time', ascending: false)
         .limit(80);
 
     final sessions = data

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../services/supabase_service.dart';
@@ -20,12 +22,88 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
   List<Map<String, dynamic>> _invites = [];
   bool _isLoading = true;
   bool _hasError = false;
+  bool _isRedeeming = false;
   final Set<String> _acceptingIds = {};
+  final TextEditingController _codeController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadInvites();
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  /// Accepts an invite from a pasted link/code, e.g.
+  /// `tinytracker://invite/abc123` or just `abc123`.
+  Future<void> _redeemCode() async {
+    final raw = _codeController.text.trim();
+    if (raw.isEmpty) return;
+    final token = raw.contains('/') ? raw.split('/').last : raw;
+
+    setState(() => _isRedeeming = true);
+    try {
+      final result = await _acceptByToken(token);
+      if (!mounted) return;
+      _codeController.clear();
+      ref.invalidate(babyProvider);
+      final babyName = (result?['baby_name'] as String?) ?? 'the baby';
+      context.showSuccessSnackBar('You now have access to $babyName\'s profile!');
+      await _loadInvites();
+    } catch (e) {
+      if (mounted) {
+        context.showErrorSnackBar(
+          'That invite link didn’t work — it may be expired or already used.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRedeeming = false);
+    }
+  }
+
+  /// Prefers the server-side accept_invite RPC (atomic, validates the token,
+  /// uses the inviter-chosen role). Falls back to the legacy client-side flow
+  /// until the DB migration that creates the RPC has been applied.
+  Future<Map<String, dynamic>?> _acceptByToken(String token) async {
+    final client = SupabaseService.client;
+    try {
+      final result = await client
+          .rpc('accept_invite', params: {'invite_token': token});
+      return (result as Map?)?.cast<String, dynamic>();
+    } on PostgrestException catch (e) {
+      final missingFn = e.code == '42883' || e.code == 'PGRST202';
+      if (!missingFn) rethrow;
+    }
+
+    // Legacy fallback (pre-migration policies allow this).
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    final invite = await client
+        .from('baby_invites')
+        .select('id, baby_id, role, babies:baby_id(name)')
+        .eq('token', token)
+        .isFilter('used_by', null)
+        .gte('expires_at', DateTime.now().toUtc().toIso8601String())
+        .single();
+    await client.from('baby_shares').insert({
+      'baby_id': invite['baby_id'],
+      'user_id': userId,
+      'role': invite['role'],
+    });
+    await client.from('baby_invites').update({
+      'used_by': userId,
+      'used_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', invite['id']);
+    final babies = invite['babies'];
+    return {
+      'baby_id': invite['baby_id'],
+      'baby_name': babies is Map ? babies['name'] : null,
+      'role': invite['role'],
+    };
   }
 
   Future<void> _loadInvites() async {
@@ -44,11 +122,13 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
         return;
       }
 
-      // Fetch pending invites that haven't expired and haven't been accepted
+      // Fetch pending invites that haven't expired and haven't been used.
+      // (The table has no 'status' column — an invite is pending while
+      // used_by is null.)
       final response = await SupabaseService.client
           .from('baby_invites')
           .select('*, babies:baby_id(name)')
-          .eq('status', 'pending')
+          .isFilter('used_by', null)
           .gte('expires_at', DateTime.now().toUtc().toIso8601String())
           .order('created_at', ascending: false);
 
@@ -74,24 +154,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
     setState(() => _acceptingIds.add(inviteId));
 
     try {
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) throw Exception('Not authenticated');
-
-      final babyId = invite['baby_id'] as String;
-      final role = invite['role'] as String;
-
-      // Create the baby_shares entry
-      await SupabaseService.client.from('baby_shares').insert({
-        'baby_id': babyId,
-        'user_id': userId,
-        'role': role,
-      });
-
-      // Mark invite as accepted
-      await SupabaseService.client
-          .from('baby_invites')
-          .update({'status': 'accepted'})
-          .eq('id', inviteId);
+      await _acceptByToken(invite['token'] as String);
 
       // Refresh the baby provider to pick up the new share
       ref.invalidate(babyProvider);
@@ -206,26 +269,83 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
       );
     }
 
-    if (_invites.isEmpty) {
-      return const Center(
-        child: EmptyState(
-          icon: Icons.mail_outline_rounded,
-          title: 'No Pending Invites',
-          description: 'When someone shares a baby profile with you, the invite will appear here.',
-        ),
-      );
-    }
-
     return RefreshIndicator(
       onRefresh: _loadInvites,
       color: AppColors.primary,
-      child: ListView.builder(
+      child: ListView(
         padding: const EdgeInsets.all(20),
-        itemCount: _invites.length,
-        itemBuilder: (context, index) {
-          final invite = _invites[index];
-          return _buildInviteCard(invite);
-        },
+        children: [
+          _buildRedeemCard(),
+          const SizedBox(height: AppSpacing.md),
+          if (_invites.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: AppSpacing.xxl),
+              child: EmptyState(
+                icon: Icons.mail_outline_rounded,
+                title: 'No Pending Invites',
+                description:
+                    'Got an invite link? Paste it above to join. Invites you’ve sent will appear here.',
+              ),
+            )
+          else
+            ..._invites.map(_buildInviteCard),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRedeemCard() {
+    return AnimatedCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Have an invite link?',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Paste the link or code someone shared with you.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _codeController,
+                  decoration: const InputDecoration(
+                    hintText: 'tinytracker://invite/…',
+                    isDense: true,
+                  ),
+                  autocorrect: false,
+                  onSubmitted: (_) => _redeemCode(),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isRedeeming ? null : _redeemCode,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(80, 48),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  ),
+                  child: _isRedeeming
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('Join'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

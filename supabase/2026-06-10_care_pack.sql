@@ -3,8 +3,9 @@
 -- Digitises the Allies Family Baby Care Tracking & Reporting Pack (paper).
 --
 -- Idempotent: safe to re-run. No destructive statements.
--- Apply AFTER (or together with) 2026-06-09_production_upgrade.sql, which
--- defines the public.user_has_baby_access(uuid) RLS helper this file reuses.
+-- Apply AFTER 2026-06-09_production_upgrade.sql. Requires the
+-- public.user_has_baby_access(uuid) helper (defined in fix_rls_and_sharing.sql,
+-- already live in production).
 -- ============================================================================
 
 

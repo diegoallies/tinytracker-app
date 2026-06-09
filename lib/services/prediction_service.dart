@@ -118,8 +118,8 @@ class PredictionService {
   static double _confidence(List<Duration> sample, Duration typical) {
     if (typical.inMinutes <= 0) return 0;
     final sorted = [...sample]..sort();
-    final q1 = sorted[(sorted.length * 0.25).floor()];
-    final q3 = sorted[((sorted.length - 1) * 0.75).floor()];
+    final q1 = sorted[((sorted.length - 1) * 0.25).floor()];
+    final q3 = sorted[((sorted.length - 1) * 0.75).ceil()];
     final spreadRatio =
         (q3 - q1).inMinutes.abs() / typical.inMinutes; // 0 = perfectly regular
     final sizeScore = (sample.length / 8).clamp(0.0, 1.0);

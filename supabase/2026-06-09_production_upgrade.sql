@@ -20,15 +20,11 @@ alter table public.sleeps add column if not exists wake_count integer;
 -- ============================================================
 -- 2. ai_cache: make cache writes work again
 -- ============================================================
--- lib/services/ai_service.dart upserts:
---   { baby_id, cache_key, ai_type, response, cached_date: 'YYYY-MM-DD-am|pm', created_at }
--- Live table problems (every write currently fails inside a silent try/catch —
--- the newest cached row is from 2026-03-09):
---   a) `ai_type` column does not exist            -> PGRST204 schema error
---   b) `user_id` is NOT NULL with no default, and the app does not send it
---   c) `cached_date` is DATE but the app sends 'YYYY-MM-DD-am' (invalid date)
+-- The app code has since been fixed (commit 38e2e6a) to match the live
+-- schema: it now sends user_id, a real DATE in cached_date, and no ai_type.
+-- The statements below are belt-and-braces hardening + the read index.
 
--- a) add the column the app writes
+-- a) optional metadata column (no longer required by the app)
 alter table public.ai_cache add column if not exists ai_type text;
 
 -- b) populate user_id automatically from the authenticated session
@@ -145,29 +141,86 @@ begin
   end loop;
 end $$;
 
--- baby_invites: creator manages; any authenticated user may read by token
--- (needed to preview/accept an invite) and mark it used.
+-- baby_invites: creator manages their invites; acceptance goes through a
+-- SECURITY DEFINER RPC so tokens are never readable by other accounts.
+-- (A `using (true)` select policy would let any logged-in user harvest
+-- tokens and grant themselves access — including owner role.)
 alter table public.baby_invites enable row level security;
 
 drop policy if exists "members create invites" on public.baby_invites;
 drop policy if exists "authenticated read invites" on public.baby_invites;
 drop policy if exists "accept invite" on public.baby_invites;
+drop policy if exists "read own invites" on public.baby_invites;
 
 create policy "members create invites"
 on public.baby_invites for insert
 to authenticated
 with check ( public.user_has_baby_access(baby_id) and invited_by = auth.uid() );
 
-create policy "authenticated read invites"
+create policy "read own invites"
 on public.baby_invites for select
 to authenticated
-using ( true );  -- token is the secret; row exposure is limited to ids/role
+using (
+  invited_by = auth.uid()
+  or used_by = auth.uid()
+  or public.user_has_baby_access(baby_id)
+);
 
-create policy "accept invite"
-on public.baby_invites for update
+-- Acceptance: validates the token, creates the share with the role the
+-- INVITER chose (never client-supplied), and marks the invite used —
+-- atomically, server-side.
+create or replace function public.accept_invite(invite_token text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  inv public.baby_invites%rowtype;
+  baby_name text;
+begin
+  if auth.uid() is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  select * into inv
+    from public.baby_invites
+   where token = invite_token
+     and used_by is null
+     and expires_at > now()
+   for update;
+
+  if not found then
+    raise exception 'Invite not found, already used, or expired';
+  end if;
+
+  if not exists (
+    select 1 from public.baby_shares
+     where baby_id = inv.baby_id and user_id = auth.uid()
+  ) then
+    insert into public.baby_shares (baby_id, user_id, role)
+    values (inv.baby_id, auth.uid(), inv.role);
+  end if;
+
+  update public.baby_invites
+     set used_by = auth.uid(), used_at = now()
+   where id = inv.id;
+
+  select name into baby_name from public.babies where id = inv.baby_id;
+  return jsonb_build_object(
+    'baby_id', inv.baby_id, 'baby_name', baby_name, 'role', inv.role);
+end $$;
+
+revoke all on function public.accept_invite(text) from public;
+grant execute on function public.accept_invite(text) to authenticated;
+
+-- Close the self-insert hole ("or user_id = auth.uid()" from
+-- fix_rls_recursion.sql) now that acceptance is server-side.
+drop policy if exists "owner inserts shares" on public.baby_shares;
+create policy "owner inserts shares"
+on public.baby_shares for insert
 to authenticated
-using ( used_by is null or used_by = auth.uid() )
-with check ( used_by = auth.uid() );
+with check ( public.is_baby_owner(baby_id) );
 
 
 -- ============================================================

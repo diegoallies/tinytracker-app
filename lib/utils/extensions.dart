@@ -38,7 +38,11 @@ extension ContextExtensions on BuildContext {
             ? SnackBarAction(
                 label: actionLabel,
                 textColor: color,
-                onPressed: onAction ?? () {},
+                // The snackbar outlives the screen that showed it; never run
+                // a retry against a disposed State.
+                onPressed: () {
+                  if (mounted) onAction?.call();
+                },
               )
             : null,
       ),
