@@ -80,6 +80,27 @@ Diego's family runs a paper "Baby Care Tracking & Reporting Pack" with the nanny
 ### 12. Docs
 - README rewritten (features, setup, architecture). `docs/GOOD-MORNING-DIEGO.md` — morning handoff with the one-time SQL instructions up top.
 
+## Round 2 (after Diego applied the migrations + provided a Management API token)
+
+### 13. Hands-free database access
+- Diego's Personal Access Token lets Claude run SQL directly via the Management API. First use: `supabase/2026-06-10_immunisations.sql` written AND applied live the same minute.
+
+### 14. Trends screen (`/trends`)
+- 14-day charts: feeds/day with avg-ml stat, sleep minutes with longest stretch, stacked wet/dirty nappies, reflux events colored by max severity. Week-over-week delta chips that know which direction is "better" per domain.
+
+### 15. Doctor visit report
+- One tap on the Export screen → clinical A4 PDF of the last 14 days: reflux events table with severity legend, digestion (stool type distribution, cramps/gas days), feeding summary, temperature & medication log. Built for the paediatrician.
+
+### 16. Immunisations tracker (`/immunisations`)
+- Full SA EPI schedule (Birth → 18 months), due/overdue computed from his DOB, tap-to-mark with date + notes, undo, progress card. New `immunisations` table applied live.
+
+### 17. Invite links that actually work
+- `tinytracker://invite/<token>` now opens the app (iOS + Android deep links), survives cold start through the splash flow, and auto-redeems on arrival. Invite creation opens the share sheet with a friendly message (clipboard kept as backup). Tokens now generated with `Random.secure()` instead of guessable timestamp math.
+
+### 18. Friday automation + smarter AI
+- Optional Friday 14:00 reminder: "Weekly report time — most of it is already filled in." (Settings → Reminders.)
+- AI insights now receive reflux, digestion and feed-quality summaries from the care-pack data, with a prompt nudge that reflux/digestion trends matter most to this family.
+
 ## Verification
 - `flutter analyze`: 0 issues. `flutter test`: 9/9 green. `flutter build apk --debug`: builds.
-- Two adversarial review rounds over the night's diff; every finding fixed same-night.
+- Three adversarial review rounds over the night's diffs; every finding fixed same-night.

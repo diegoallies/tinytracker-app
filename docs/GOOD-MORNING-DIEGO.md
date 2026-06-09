@@ -1,16 +1,6 @@
 # Good morning Diego ☀️
 
-The overnight overhaul is done. Everything is committed and pushed to `main`. Here's the one thing I need from you, then the tour.
-
-## ⚡ Do this first (60 seconds)
-
-I couldn't run DDL against Supabase from here (the service role key can't execute SQL — that needs the dashboard). Two idempotent migration files are waiting:
-
-1. Open the SQL editor: https://supabase.com/dashboard/project/ggbjcjmksxxkbjaxxogv/sql/new
-2. Paste + run `supabase/2026-06-09_production_upgrade.sql`
-3. Paste + run `supabase/2026-06-10_care_pack.sql`
-
-Until then the app still works fine — the five new Care Pack screens just show a "database upgrade pending" card, and feed quality / stool type silently skip saving. The moment the SQL runs, everything lights up. Both files are safe to re-run.
+The overnight overhaul is done. Everything is committed and pushed to `main`, **all database migrations are applied** (you ran the first two; I applied the third myself with the token you gave me), and the app builds. Nothing left to run — pull and go.
 
 ## What's new
 
