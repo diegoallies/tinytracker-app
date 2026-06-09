@@ -18,6 +18,7 @@ import '../../widgets/common/loading_skeleton.dart';
 import '../../widgets/common/night_mode_toggle.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/ai/smart_insights.dart';
+import '../../widgets/dashboard/next_up_card.dart';
 import '../../widgets/dashboard/weekly_summary_card.dart';
 import '../../widgets/dashboard/pattern_badges_widget.dart';
 import '../../providers/notification_provider.dart';
@@ -250,6 +251,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             loading: () => const SizedBox.shrink(),
             error: (_, _) => const SizedBox.shrink(),
           ),
+          const SizedBox(height: 12),
+
+          // Pattern-based predictions
+          const NextUpCard(),
           const SizedBox(height: 16),
 
           // Stats cards
