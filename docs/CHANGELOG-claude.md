@@ -101,6 +101,18 @@ Diego's family runs a paper "Baby Care Tracking & Reporting Pack" with the nanny
 - Optional Friday 14:00 reminder: "Weekly report time — most of it is already filled in." (Settings → Reminders.)
 - AI insights now receive reflux, digestion and feed-quality summaries from the care-pack data, with a prompt nudge that reflux/digestion trends matter most to this family.
 
+### 19. Offline-first logging
+- Feeds and nappies logged without signal park in a local Hive queue and sync automatically when connectivity returns (and on app start). The banner shows "N saved locally" offline and "Syncing N entries…" once back online. Server-rejected entries are dropped so the queue can't poison itself. 4 unit tests.
+
+### 20. CI + review round 3 fixes
+- GitHub Actions: analyze + test on every push.
+- Review round 3 caught: **Android scheduled notifications never fired at all** (missing plugin receivers in the manifest — pre-existing since the app's first commit; fixed), the Friday reminder would have fired at 16:00 SAST (UTC anchoring; fixed), and invite links tapped while logged out lost the token (now parked and resumed after sign-in). Plus: PDF em-dash tofu boxes, an invites auto-redeem race, immunisations overdue-window mismatch, `given_on` made NOT NULL live.
+
+### 21. True end-to-end verification
+- Created an isolated `smoketest@tinytrack.dev` account with a seeded test baby ("Testy": feeds, sleeps, nappies, reflux events, journal) so testing never touches family data.
+- New `integration_test/smoke_test.dart`: boots the real app on an Android emulator against the live backend, signs in, and walks every tab + all 16 feature screens asserting clean renders.
+- Stood up the test rig itself on this machine (Android system image + AVD; the iOS simulator service is broken OS-side).
+
 ## Verification
-- `flutter analyze`: 0 issues. `flutter test`: 9/9 green. `flutter build apk --debug`: builds.
-- Three adversarial review rounds over the night's diffs; every finding fixed same-night.
+- `flutter analyze`: 0 issues. `flutter test`: 13/13 green. `flutter build apk --debug`: builds.
+- End-to-end smoke test on a live emulator + three adversarial review rounds; every finding fixed same-night.
