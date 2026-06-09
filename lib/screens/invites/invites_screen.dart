@@ -8,6 +8,7 @@ import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../widgets/common/animated_card.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
@@ -179,6 +180,28 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
     }
   }
 
+  /// Revokes (deletes) an invite the current user sent, after confirmation.
+  Future<void> _revokeInvite(Map<String, dynamic> invite) async {
+    final confirmed = await showDeleteDialog(context, what: 'invite');
+    if (!confirmed || !mounted) return;
+
+    try {
+      await SupabaseService.client
+          .from('baby_invites')
+          .delete()
+          .eq('id', invite['id'] as String);
+      if (!mounted) return;
+      context.showSuccessSnackBar('Invite revoked');
+      await _loadInvites();
+    } catch (e) {
+      if (mounted) {
+        context.showErrorSnackBar(
+          'Couldn’t revoke the invite. Check your connection and try again.',
+        );
+      }
+    }
+  }
+
   String _getBabyName(Map<String, dynamic> invite) {
     final babies = invite['babies'];
     if (babies is Map && babies['name'] != null) {
@@ -269,6 +292,11 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
       );
     }
 
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    final incoming =
+        _invites.where((i) => i['invited_by'] != userId).toList();
+    final sent = _invites.where((i) => i['invited_by'] == userId).toList();
+
     return RefreshIndicator(
       onRefresh: _loadInvites,
       color: AppColors.primary,
@@ -287,8 +315,20 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
                     'Got an invite link? Paste it above to join. Invites you’ve sent will appear here.',
               ),
             )
-          else
-            ..._invites.map(_buildInviteCard),
+          else ...[
+            ...incoming.map(_buildInviteCard),
+            if (sent.isNotEmpty) ...[
+              if (incoming.isNotEmpty) const SizedBox(height: AppSpacing.md),
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Text(
+                  'Invites you’ve sent',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              ...sent.map(_buildSentInviteCard),
+            ],
+          ],
         ],
       ),
     );
@@ -493,6 +533,105 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
                           ),
                         ),
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A pending invite the current user sent: no Accept button (accepting it
+  /// would burn the invite), just details and a revoke action.
+  Widget _buildSentInviteCard(Map<String, dynamic> invite) {
+    final babyName = _getBabyName(invite);
+    final role = invite['role'] as String? ?? 'viewer';
+    final expiresAt = invite['expires_at'] != null
+        ? DateTime.tryParse(invite['expires_at'] as String)
+        : null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AnimatedCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.pastelPurple,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.child_care_rounded,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      babyName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: context.palette.text,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _roleColor(role),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_roleIcon(role),
+                                  size: 12, color: _roleIconColor(role)),
+                              const SizedBox(width: 4),
+                              Text(
+                                role.capitalize,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _roleIconColor(role),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (expiresAt != null)
+                          Text(
+                            'Expires ${AppDateUtils.formatDate(expiresAt)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.palette.muted,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.red.shade300,
+                ),
+                tooltip: 'Revoke invite',
+                onPressed: () => _revokeInvite(invite),
               ),
             ],
           ),

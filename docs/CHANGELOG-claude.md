@@ -65,3 +65,21 @@ Diego's family runs a paper "Baby Care Tracking & Reporting Pack" with the nanny
 - Global offline banner (connectivity_plus was an unused dependency — now wired): amber strip across the shell while offline.
 - Dashboard "Next up" card: predicted next feeding + nap times with overdue state.
 - Premium login screen: real logo, entrance animations, password visibility toggle, working forgot-password flow, autofill hints, email validation.
+
+### 10. Hardening round (validation, settings, Android build)
+- Sanity bounds everywhere: weight 0.5–30 kg, height 30–130 cm, head 25–60 cm, temperature 30–43 °C, bottle 1–500 ml, breast duration ≤ 120 min, future-time guards on every backdating sheet. Numeric fields get digit/decimal input formatters.
+- Settings screen rebuilt: grouped sections (Appearance / Reminders / Feeding / About), dark-mode-correct, Care Guide link, version row.
+- **The Android build was broken before tonight** (flutter_local_notifications needs core library desugaring) — fixed; debug APK builds clean.
+- Premium register screen to match login.
+
+### 11. Review round 2 — fixes (adversarial review of the Care Pack code)
+- **Accepting your own sent invite no longer possible** — sent invites now render in their own "Invites you've sent" section with revoke instead of an Accept button (accepting one would have burned it for the real recipient).
+- Pre-migration column retry now only fires on genuine missing-column errors (no duplicate-insert risk on flaky networks, no silent data drops on constraint violations).
+- Weekly report metrics can't go stale (autoDispose provider), week math is DST-safe, mounted guards after every awaited save in the new screens, feed-quality UI is dark-mode correct, hydration keys are baby-aware (switching babies mid-edit re-hydrates), reminder scheduling failures can't masquerade as failed saves, login disposes the reset-password controller and tells password managers to save credentials, offline banner no longer double-pads the status bar.
+
+### 12. Docs
+- README rewritten (features, setup, architecture). `docs/GOOD-MORNING-DIEGO.md` — morning handoff with the one-time SQL instructions up top.
+
+## Verification
+- `flutter analyze`: 0 issues. `flutter test`: 9/9 green. `flutter build apk --debug`: builds.
+- Two adversarial review rounds over the night's diff; every finding fixed same-night.

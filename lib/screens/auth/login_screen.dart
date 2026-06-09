@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/design_tokens.dart';
@@ -36,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final auth = AuthService();
       await auth.signIn(email: email, password: _passwordController.text);
+      TextInput.finishAutofillContext();
       Haptics.mediumTap();
       if (mounted) context.go('/dashboard');
     } catch (e) {
@@ -94,6 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+    controller.dispose();
 
     if (email == null || email.isEmpty || !mounted) return;
     final ok = await AuthService().resetPassword(email);

@@ -67,6 +67,11 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
 
   String _weekKey(DateTime d) => '${d.year}-${d.month}-${d.day}';
 
+  /// Hydration key for the form: includes the selected baby so switching
+  /// babies while the screen is open re-hydrates with the new baby's report.
+  String get _hydrationKey =>
+      '${ref.read(selectedBabyProvider)?.id}|${_weekKey(_weekStart)}';
+
   DateTime get _weekEnd => _weekStart.add(const Duration(days: 6));
 
   bool get _isCurrentWeek =>
@@ -127,7 +132,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
 
   void _hydrate(WeeklyCareReport? report) {
     setState(() {
-      _hydratedKey = _weekKey(_weekStart);
+      _hydratedKey = _hydrationKey;
       _clearForm();
       if (report == null) return;
       _milestoneChecks.addAll(report.milestoneChecks);
@@ -454,9 +459,9 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
     final stage = _resolveStage(baby, report);
 
     // Prefill the form once the saved report (or its absence) is known.
-    if (reportAsync.hasValue && _hydratedKey != _weekKey(_weekStart)) {
+    if (reportAsync.hasValue && _hydratedKey != _hydrationKey) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _hydratedKey != _weekKey(_weekStart)) {
+        if (mounted && _hydratedKey != _hydrationKey) {
           _hydrate(ref.read(weeklyReportProvider(_weekStart)).valueOrNull);
         }
       });

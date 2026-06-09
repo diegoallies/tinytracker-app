@@ -75,6 +75,7 @@ class _RefluxScreenState extends ConsumerState<RefluxScreen> {
         notes: _notesController.text.trim(),
       );
 
+      if (!mounted) return;
       ref.invalidate(recentRefluxEventsProvider);
       setState(() {
         _severity = 1;
@@ -105,8 +106,9 @@ class _RefluxScreenState extends ConsumerState<RefluxScreen> {
   Future<void> _delete(String id) async {
     try {
       await RefluxActions.delete(id);
+      if (!mounted) return;
       ref.invalidate(recentRefluxEventsProvider);
-      if (mounted) context.showSuccessSnackBar('Reflux event deleted');
+      context.showSuccessSnackBar('Reflux event deleted');
     } catch (e) {
       if (mounted) {
         context.showErrorSnackBar(

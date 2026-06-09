@@ -70,6 +70,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         loggedAt: _loggedAt,
       );
 
+      if (!mounted) return;
       ref.invalidate(recentDiapersProvider);
       ref.invalidate(todayDiaperStatsProvider);
       ref.invalidate(lastDiaperAtProvider);
@@ -166,7 +167,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
     if (picked.isAfter(DateTime.now())) {
       Haptics.lightTap();
       if (mounted) {
-        context.showSuccessSnackBar('Cannot log a future time');
+        context.showErrorSnackBar('Can’t log a time in the future.');
       }
       return;
     }

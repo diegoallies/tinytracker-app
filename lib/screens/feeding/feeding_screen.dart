@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
@@ -69,7 +70,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
   void _adjustAmount(int delta) {
     Haptics.lightTap();
     final current = int.tryParse(_amountController.text) ?? 0;
-    final next = (current + delta).clamp(0, 999);
+    final next = (current + delta).clamp(0, 500);
     _amountController.text = next.toString();
   }
 
@@ -87,6 +88,21 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     if (_isBreastFeeding && (_durationMinutes == null || _durationMinutes! <= 0)) {
       context.showErrorSnackBar('Pick a duration first.');
       return;
+    }
+
+    if (_isBreastFeeding && _durationMinutes! > 120) {
+      context.showErrorSnackBar(
+          'That duration looks off — please enter 1–120 minutes.');
+      return;
+    }
+
+    if (_isBottle) {
+      final amount = int.tryParse(_amountController.text);
+      if (amount == null || amount < 1 || amount > 500) {
+        context.showErrorSnackBar(
+            'That amount looks off — please enter 1–500 ml.');
+        return;
+      }
     }
 
     setState(() => _isSaving = true);
@@ -116,6 +132,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         );
       }
 
+      if (!mounted) return;
       ref.invalidate(recentFeedingsProvider);
 
       setState(() {
@@ -199,7 +216,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     final picked = DateTime(
         baseDate.year, baseDate.month, baseDate.day, time.hour, time.minute);
     if (picked.isAfter(DateTime.now())) {
-      if (mounted) context.showSuccessSnackBar('Cannot log a future time');
+      if (mounted) context.showErrorSnackBar('Can’t log a time in the future.');
       return;
     }
     Haptics.selectionClick();
@@ -260,6 +277,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
               autofocus: true,
               textAlign: TextAlign.center,
               style: const TextStyle(
@@ -337,6 +358,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
               autofocus: true,
               textAlign: TextAlign.center,
               style: const TextStyle(
@@ -659,6 +684,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                   child: TextField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(3),
+                    ],
                     textAlign: TextAlign.center,
                     onChanged: (_) => setState(() {}),
                     style: const TextStyle(
@@ -928,18 +957,18 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'How did the feed go?',
               style: TextStyle(
-                color: AppColors.text,
+                color: context.palette.text,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Optional — tap a star again to clear',
-              style: TextStyle(color: AppColors.muted, fontSize: 12),
+              style: TextStyle(color: context.palette.muted, fontSize: 12),
             ),
             const SizedBox(height: 8),
             Row(
@@ -959,7 +988,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                         size: 32,
                         color: _feedQuality != null && star <= _feedQuality!
                             ? AppColors.warning
-                            : AppColors.muted.withValues(alpha: 0.3),
+                            : context.palette.muted.withValues(alpha: 0.3),
                       ),
                     ),
                   ),
@@ -1748,12 +1777,12 @@ class _SpitupChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.warning.withValues(alpha: 0.15)
-              : AppColors.surface,
+              : context.palette.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected
                 ? AppColors.warning
-                : AppColors.muted.withValues(alpha: 0.3),
+                : context.palette.muted.withValues(alpha: 0.3),
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -1763,13 +1792,13 @@ class _SpitupChip extends StatelessWidget {
             Icon(
               Icons.water_drop_outlined,
               size: 16,
-              color: selected ? AppColors.warning : AppColors.muted,
+              color: selected ? AppColors.warning : context.palette.muted,
             ),
             const SizedBox(width: 6),
             Text(
               'Spit-up after feed',
               style: TextStyle(
-                color: selected ? AppColors.warning : AppColors.text,
+                color: selected ? AppColors.warning : context.palette.text,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: 13,
               ),

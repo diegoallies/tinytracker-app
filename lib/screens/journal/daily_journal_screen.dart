@@ -52,7 +52,7 @@ class DailyJournalScreen extends ConsumerStatefulWidget {
 
 class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
   DateTime _date = _dayOf(DateTime.now());
-  DateTime? _populatedFor;
+  String? _populatedFor;
 
   String? _mood;
   int? _cramps;
@@ -142,12 +142,13 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
   @override
   Widget build(BuildContext context) {
     final journalAsync = ref.watch(journalForDateProvider(_date));
+    final hydrationKey = '${ref.watch(selectedBabyProvider)?.id}|$_date';
 
-    // Prefill once per selected day, synchronously so this build uses it.
-    if (_populatedFor != _date &&
+    // Prefill once per selected baby + day, synchronously so this build uses it.
+    if (_populatedFor != hydrationKey &&
         journalAsync.hasValue &&
         !journalAsync.isLoading) {
-      _populatedFor = _date;
+      _populatedFor = hydrationKey;
       _applyJournal(journalAsync.valueOrNull);
     }
 
@@ -176,7 +177,7 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
             children: [
               _buildDateSelector(),
               const SizedBox(height: AppSpacing.md),
-              ..._buildBody(journalAsync),
+              ..._buildBody(journalAsync, hydrationKey),
               const SizedBox(height: AppSpacing.xl),
             ],
           ),
@@ -185,7 +186,8 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
     );
   }
 
-  List<Widget> _buildBody(AsyncValue<DailyJournal?> journalAsync) {
+  List<Widget> _buildBody(
+      AsyncValue<DailyJournal?> journalAsync, String hydrationKey) {
     if (journalAsync.hasError) {
       final error = journalAsync.error;
       return [
@@ -210,7 +212,7 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
       ];
     }
 
-    if (_populatedFor != _date) {
+    if (_populatedFor != hydrationKey) {
       return const [
         CardSkeleton(),
         SizedBox(height: AppSpacing.md),

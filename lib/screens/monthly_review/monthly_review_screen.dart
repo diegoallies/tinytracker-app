@@ -53,6 +53,11 @@ class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
 
   String _monthKey(DateTime d) => '${d.year}-${d.month}';
 
+  /// Hydration key for the form: includes the selected baby so switching
+  /// babies while the screen is open re-hydrates with the new baby's review.
+  String get _hydrationKey =>
+      '${ref.read(selectedBabyProvider)?.id}|${_monthKey(_month)}';
+
   bool get _isCurrentMonth {
     final now = DateTime.now();
     return _month.year == now.year && _month.month == now.month;
@@ -87,7 +92,7 @@ class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
 
   void _hydrate(MonthlyReview? review) {
     setState(() {
-      _hydratedKey = _monthKey(_month);
+      _hydratedKey = _hydrationKey;
       _checklist.clear();
       _commentsCtrl.clear();
       if (review == null) return;
@@ -151,9 +156,9 @@ class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
     final reviewAsync = ref.watch(monthlyReviewProvider(_month));
     final stage = _resolveStage(baby, reviewAsync.valueOrNull);
 
-    if (reviewAsync.hasValue && _hydratedKey != _monthKey(_month)) {
+    if (reviewAsync.hasValue && _hydratedKey != _hydrationKey) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _hydratedKey != _monthKey(_month)) {
+        if (mounted && _hydratedKey != _hydrationKey) {
           _hydrate(ref.read(monthlyReviewProvider(_month)).valueOrNull);
         }
       });
