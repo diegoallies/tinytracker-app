@@ -4,6 +4,7 @@ import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/feeding_provider.dart';
 import '../../providers/feeding_timer_provider.dart';
+import '../../providers/feeding_settings_provider.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
@@ -28,9 +29,16 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  static const _feedTypes = [
+  // All feed types - breast options filtered by showBreastFeedingProvider
+  static const _allFeedTypes = [
     ('breast_left', 'Left Breast', Icons.woman),
     ('breast_right', 'Right Breast', Icons.woman),
+    ('bottle', 'Bottle', Icons.baby_changing_station),
+    ('solids', 'Solids', Icons.restaurant),
+  ];
+
+  // Bottle-only feed types (default)
+  static const _bottleOnlyFeedTypes = [
     ('bottle', 'Bottle', Icons.baby_changing_station),
     ('solids', 'Solids', Icons.restaurant),
   ];
@@ -240,6 +248,9 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
   }
 
   Widget _buildTypeSelector() {
+    final showBreast = ref.watch(showBreastFeedingProvider);
+    final feedTypes = showBreast ? _allFeedTypes : _bottleOnlyFeedTypes;
+
     return AnimatedCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -262,7 +273,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen>
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
               childAspectRatio: 2.8,
-              children: _feedTypes.map((type) {
+              children: feedTypes.map((type) {
                 final currentType = ref.read(feedingTimerProvider).selectedType;
                 final isSelected = currentType == type.$1;
                 return GestureDetector(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/feeding_settings_provider.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/night_mode_toggle.dart';
 
@@ -80,6 +81,7 @@ class MoreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reminderEnabled = ref.watch(feedingReminderEnabledProvider);
     final reminderInterval = ref.watch(feedingReminderIntervalProvider);
+    final showBreastFeeding = ref.watch(showBreastFeedingProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -234,6 +236,60 @@ class MoreScreen extends ConsumerWidget {
                           ],
                         ),
                       ],
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Breast feeding toggle
+              AnimatedCard(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.pastelPurple,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.woman_rounded,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Breast Feeding',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            Text(
+                              'Show breast feeding options',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch.adaptive(
+                        value: showBreastFeeding,
+                        onChanged: (_) => ref.read(showBreastFeedingProvider.notifier).toggle(),
+                        activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                        activeThumbColor: AppColors.primary,
+                      ),
                     ],
                   ),
                 ),

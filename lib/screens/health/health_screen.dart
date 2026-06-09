@@ -9,6 +9,13 @@ import '../../widgets/common/empty_state.dart';
 
 enum HealthTab { temperature, medication }
 
+/// Provider to check if user can administer meds (owner or parent role)
+final canAdministerMedsProvider = Provider<bool>((ref) {
+  final babyState = ref.watch(babyProvider);
+  // Only owner or parent role can administer meds (not logger/nanny/viewer)
+  return babyState.isOwner || babyState.role == 'parent';
+});
+
 class HealthScreen extends ConsumerStatefulWidget {
   const HealthScreen({super.key});
 
@@ -18,7 +25,8 @@ class HealthScreen extends ConsumerStatefulWidget {
 
 class _HealthScreenState extends ConsumerState<HealthScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
+  bool? _lastCanAdministerMeds;
 
   final _tempController = TextEditingController();
   final _medicationController = TextEditingController();
@@ -31,13 +39,24 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() => setState(() {}));
+    // TabController will be initialized in build based on role
+  }
+
+  void _initTabController(bool canAdministerMeds) {
+    if (_lastCanAdministerMeds != canAdministerMeds || _tabController == null) {
+      _tabController?.dispose();
+      _tabController = TabController(
+        length: canAdministerMeds ? 2 : 1,
+        vsync: this,
+      );
+      _tabController!.addListener(() => setState(() {}));
+      _lastCanAdministerMeds = canAdministerMeds;
+    }
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     _tempController.dispose();
     _medicationController.dispose();
     _dosageController.dispose();
@@ -157,6 +176,10 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
   @override
   Widget build(BuildContext context) {
     final healthLogs = ref.watch(healthLogsProvider);
+    final canAdministerMeds = ref.watch(canAdministerMedsProvider);
+
+    // Initialize/update tab controller based on role
+    _initTabController(canAdministerMeds);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8FC),
@@ -203,58 +226,83 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
   }
 
   Widget _buildInputCard() {
+    final canAdministerMeds = ref.watch(canAdministerMedsProvider);
+
     return AnimatedCard(
       child: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFAF8FC),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: const Color(0xFF9B72CF),
-                borderRadius: BorderRadius.circular(10),
+          // Only show tabs if user can administer meds
+          if (canAdministerMeds)
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAF8FC),
+                borderRadius: BorderRadius.circular(12),
               ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerHeight: 0,
-              labelColor: Colors.white,
-              unselectedLabelColor: const Color(0xFF8B85A0),
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-              padding: const EdgeInsets.all(4),
-              tabs: const [
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.thermostat, size: 18),
-                      SizedBox(width: 6),
-                      Text('Temperature'),
-                    ],
-                  ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: const Color(0xFF9B72CF),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.medication, size: 18),
-                      SizedBox(width: 6),
-                      Text('Medication'),
-                    ],
-                  ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerHeight: 0,
+                labelColor: Colors.white,
+                unselectedLabelColor: const Color(0xFF8B85A0),
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
-              ],
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+                padding: const EdgeInsets.all(4),
+                tabs: const [
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.thermostat, size: 18),
+                        SizedBox(width: 6),
+                        Text('Temperature'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.medication, size: 18),
+                        SizedBox(width: 6),
+                        Text('Medication'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            // Header for non-parents (temperature only)
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.thermostat, size: 20, color: Color(0xFF9B72CF)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Temperature',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D2640),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -270,7 +318,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                       ),
                     );
                   },
-                  child: _tabController.index == 0
+                  child: (!canAdministerMeds || _tabController?.index == 0)
                       ? _buildTemperatureInput()
                       : _buildMedicationInput(),
                 ),
