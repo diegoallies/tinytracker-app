@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
 import '../config/env.dart';
@@ -10,21 +11,23 @@ class AiService {
 
     for (final model in models) {
       try {
-        final response = await http.post(
-          Uri.parse(AppConstants.groqApiUrl),
-          headers: {
-            'Authorization': 'Bearer ${Env.groqApiKey}',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'model': model,
-            'messages': [
-              {'role': 'user', 'content': prompt}
-            ],
-            'max_tokens': maxTokens ?? AppConstants.maxAiTokens,
-            'temperature': 0.7,
-          }),
-        );
+        final response = await http
+            .post(
+              Uri.parse(AppConstants.groqApiUrl),
+              headers: {
+                'Authorization': 'Bearer ${Env.groqApiKey}',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode({
+                'model': model,
+                'messages': [
+                  {'role': 'user', 'content': prompt}
+                ],
+                'max_tokens': maxTokens ?? AppConstants.maxAiTokens,
+                'temperature': 0.7,
+              }),
+            )
+            .timeout(const Duration(seconds: 25));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
@@ -48,40 +51,48 @@ class AiService {
     final client = SupabaseService.client;
     final now = DateTime.now();
     final period = now.hour < 18 ? 'am' : 'pm';
-    final cachedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}-$period';
-    final fullCacheKey = '$cacheKey-$cachedDate';
+    // `cached_date` is a real DATE column; the am/pm half-day window lives
+    // in the cache key only.
+    final cachedDate =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final fullCacheKey = '$cacheKey-$cachedDate-$period';
 
-    // Check cache
+    // Check cache. limit(1) instead of maybeSingle(): duplicate rows (e.g.
+    // two devices generating at once) must return a hit, not throw.
     try {
       final cached = await client
           .from('ai_cache')
           .select('response')
           .eq('baby_id', babyId)
           .eq('cache_key', fullCacheKey)
-          .maybeSingle();
+          .limit(1);
 
-      if (cached != null && cached['response'] != null) {
-        final response = cached['response'];
+      if (cached.isNotEmpty && cached.first['response'] != null) {
+        final response = cached.first['response'];
         if (response is String) return response;
         return jsonEncode(response);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ai_cache read failed: $e');
+    }
 
     // Generate
     final result = await _callGroq(promptBuilder(), maxTokens: maxTokens);
     if (result == null) return null;
 
-    // Store in cache
+    // Store in cache. user_id is NOT NULL in the live schema — omitting it
+    // made every write fail silently for months.
     try {
-      await client.from('ai_cache').upsert({
+      await client.from('ai_cache').insert({
         'baby_id': babyId,
+        'user_id': SupabaseService.userId,
         'cache_key': fullCacheKey,
-        'ai_type': cacheKey,
         'response': result,
         'cached_date': cachedDate,
-        'created_at': now.toUtc().toIso8601String(),
       });
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ai_cache write failed: $e');
+    }
 
     return result;
   }
