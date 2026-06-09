@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tinytrack_app/main.dart' as app;
+import 'package:tinytrack_app/widgets/layout/bottom_nav_bar.dart';
 
 const _email = 'smoketest@tinytrack.dev';
 const _password = 'TinyTrack-Smoke-2026!';
@@ -104,8 +105,15 @@ void main() {
     await shot(tester, 'dark_dashboard');
 
     // Bottom tabs (custom nav bar labels: Home/Feed/Diaper/Sleep/More).
+    // Scoped to the nav bar — a bare text match can hit same-named labels
+    // elsewhere on screen (e.g. the 'Feed' quick action) and silently no-op.
     Future<void> tapTab(String label) async {
-      await tester.tap(find.text(label).last, warnIfMissed: false);
+      final tab = find.descendant(
+        of: find.byType(BottomNavBar),
+        matching: find.text(label),
+      );
+      expect(tab, findsOneWidget, reason: 'nav tab $label should exist');
+      await tester.tap(tab, warnIfMissed: false);
       await settleABit(tester);
     }
 

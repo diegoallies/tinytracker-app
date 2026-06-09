@@ -299,22 +299,30 @@ class _FeatureCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              Text(
-                feature.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: context.palette.text,
+              // Two lines before ellipsizing — "Daily Journal" and
+              // "Immunisations" must never render as "Daily Jo…".
+              SizedBox(
+                height: 32,
+                child: Center(
+                  child: Text(
+                    feature.label,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.15,
+                      fontWeight: FontWeight.w600,
+                      color: context.palette.text,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
               Text(
                 feature.description,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   color: context.palette.muted,
                 ),
                 textAlign: TextAlign.center,
