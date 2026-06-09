@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../providers/feeding_settings_provider.dart';
 import '../../providers/notification_provider.dart';
@@ -7,6 +9,8 @@ import '../../widgets/common/night_mode_toggle.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  static const _appVersion = '1.0.0';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,7 +26,8 @@ class SettingsScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.gutter, AppSpacing.xs, AppSpacing.gutter, AppSpacing.xxl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -40,8 +45,8 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
 
-              const SizedBox(height: 24),
-              const _SectionHeader(title: 'Notifications'),
+              const SizedBox(height: AppSpacing.xl),
+              const _SectionHeader(title: 'Reminders'),
               _SettingsCard(
                 children: [
                   _SettingsRow(
@@ -55,9 +60,6 @@ class SettingsScreen extends ConsumerWidget {
                       onChanged: (_) => ref
                           .read(feedingReminderEnabledProvider.notifier)
                           .toggle(),
-                      activeTrackColor:
-                          AppColors.primary.withValues(alpha: 0.5),
-                      activeThumbColor: AppColors.primary,
                     ),
                   ),
                   if (reminderEnabled) ...[
@@ -91,7 +93,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
               const _SectionHeader(title: 'Feeding'),
               _SettingsCard(
                 children: [
@@ -106,24 +108,69 @@ class SettingsScreen extends ConsumerWidget {
                       onChanged: (_) => ref
                           .read(showBreastFeedingProvider.notifier)
                           .toggle(),
-                      activeTrackColor:
-                          AppColors.primary.withValues(alpha: 0.5),
-                      activeThumbColor: AppColors.primary,
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 32),
-              Center(
-                child: Text(
-                  'TinyTracker',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: context.palette.muted.withValues(alpha: 0.6),
-                    letterSpacing: 0.4,
+              const SizedBox(height: AppSpacing.xl),
+              const _SectionHeader(title: 'About'),
+              _SettingsCard(
+                children: [
+                  _SettingsRow(
+                    icon: Icons.menu_book_rounded,
+                    iconBg: AppColors.pastelBlue,
+                    iconColor: AppColors.info,
+                    title: 'Care Guide',
+                    subtitle: 'Tips, routines and emergency info',
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color: context.palette.muted,
+                    ),
+                    onTap: () => context.push('/care-guide'),
                   ),
+                  const _SettingsDivider(),
+                  _SettingsRow(
+                    icon: Icons.info_outline_rounded,
+                    iconBg: AppColors.pastelGreen,
+                    iconColor: AppColors.success,
+                    title: 'App Version',
+                    subtitle: 'TinyTracker',
+                    trailing: Text(
+                      _appVersion,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: context.palette.muted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.xxl),
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      'TinyTracker',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: context.palette.muted.withValues(alpha: 0.6),
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      'Made with love in Kimberley',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.palette.muted.withValues(alpha: 0.5),
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -163,15 +210,9 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        color: context.palette.card,
+        borderRadius: AppRadius.xlAll,
+        boxShadow: AppShadows.card(Theme.of(context).brightness),
       ),
       child: Column(children: children),
     );
@@ -185,6 +226,7 @@ class _SettingsRow extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget trailing;
+  final VoidCallback? onTap;
 
   const _SettingsRow({
     required this.icon,
@@ -193,11 +235,12 @@ class _SettingsRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.trailing,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
       child: Row(
         children: [
@@ -205,7 +248,7 @@ class _SettingsRow extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: iconBg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdAll,
             ),
             child: Icon(icon, color: iconColor, size: 20),
           ),
@@ -237,6 +280,17 @@ class _SettingsRow extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap == null) return row;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadius.xlAll,
+        child: row,
+      ),
+    );
   }
 }
 
@@ -247,7 +301,7 @@ class _SettingsDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 60, right: 16),
-      child: Container(height: 1, color: Colors.grey.shade100),
+      child: Container(height: 1, color: context.palette.border),
     );
   }
 }
@@ -271,7 +325,7 @@ class _IntervalChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: selected ? AppColors.primary : context.palette.surface,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppRadius.smAll,
           border: Border.all(
             color: selected
                 ? AppColors.primary

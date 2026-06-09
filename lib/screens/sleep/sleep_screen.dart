@@ -594,6 +594,14 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
       end = end.add(const Duration(days: 1));
     }
 
+    final now = DateTime.now();
+    if (start.isAfter(now) || end.isAfter(now)) {
+      if (mounted) {
+        context.showErrorSnackBar('Sleep times can’t be in the future.');
+      }
+      return;
+    }
+
     try {
       await SleepActions.logBackdated(
         babyId: baby.id,

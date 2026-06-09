@@ -34,11 +34,10 @@ Never _handle(Object e, StackTrace st, String where) {
   throw e; // ignore: only_throw_errors
 }
 
-DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-
 /// Monday of the week containing [d] (the pack's weeks run Mon–Sun).
+/// Day-component arithmetic, not Duration math — DST-safe.
 DateTime weekStartOf(DateTime d) =>
-    _dateOnly(d).subtract(Duration(days: d.weekday - 1));
+    DateTime(d.year, d.month, d.day - (d.weekday - 1));
 
 String _dateString(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -236,8 +235,8 @@ final pastWeeklyReportsProvider =
 /// Auto-computed metrics for the week containing [anchor], from data that is
 /// already logged in the app. The nanny no longer has to tally averages by
 /// hand — the report pre-fills itself.
-final weeklyMetricsProvider =
-    FutureProvider.family<Map<String, dynamic>, DateTime>((ref, anchor) async {
+final weeklyMetricsProvider = FutureProvider.autoDispose
+    .family<Map<String, dynamic>, DateTime>((ref, anchor) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return {};
 

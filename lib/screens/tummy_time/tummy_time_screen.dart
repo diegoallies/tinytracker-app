@@ -490,6 +490,14 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
       endTime.minute,
     );
 
+    // The sheet guarantees end > start, so checking end covers both.
+    if (end.isAfter(DateTime.now())) {
+      if (mounted) {
+        context.showErrorSnackBar('Tummy time can’t be in the future.');
+      }
+      return;
+    }
+
     try {
       await TummyTimeActions.logBackdated(
         babyId: baby.id,

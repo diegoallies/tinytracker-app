@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../models/baby_medication.dart';
@@ -113,6 +114,13 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
 
     if (isTemperatureTab && temp == null) {
       context.showErrorSnackBar('Please enter a valid temperature');
+      return;
+    }
+
+    // Sanity bounds — a real body temperature stays well inside this range.
+    if (isTemperatureTab && temp != null && (temp < 30 || temp > 43)) {
+      context.showErrorSnackBar(
+          'That temperature looks off — please enter 30–43 °C.');
       return;
     }
 
@@ -360,6 +368,9 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
           controller: _tempController,
           keyboardType:
               const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}\.?\d{0,1}')),
+          ],
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             labelText: 'Temperature',

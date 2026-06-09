@@ -101,6 +101,9 @@ class DiaperActions {
             .insert({...payload, 'stool_type': stoolType});
         return;
       } on PostgrestException catch (e) {
+        // Only retry when the column genuinely doesn't exist yet — see
+        // feeding_provider.dart for the rationale.
+        if (e.code != '42703' && e.code != 'PGRST204') rethrow;
         debugPrint('diaper insert with stool_type failed (${e.code}), retrying without');
       }
     }

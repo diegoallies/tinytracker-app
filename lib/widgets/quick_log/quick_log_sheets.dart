@@ -16,7 +16,7 @@ class QuickLogSheets {
 
     final baby = ref.read(selectedBabyProvider);
     if (baby == null) {
-      context.showSnackBar('Please add a baby first', isError: true);
+      context.showErrorSnackBar('Please add a baby first');
       return;
     }
 
@@ -137,7 +137,9 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
       }
     } catch (e) {
       if (mounted) {
-        context.showSnackBar('Failed to log feeding: $e', isError: true);
+        context.showErrorSnackBar(
+          'Couldn’t log the feeding. Check your connection and try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -234,7 +236,9 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                onPressed: () => setState(() => _amountMl += 10),
+                onPressed: _amountMl < 500
+                    ? () => setState(() => _amountMl += 10)
+                    : null,
                 icon: const Icon(Icons.add_circle_outline),
                 color: AppColors.primary,
               ),
@@ -374,7 +378,9 @@ class _QuickLogDiaperSheetState extends ConsumerState<_QuickLogDiaperSheet> {
       }
     } catch (e) {
       if (mounted) {
-        context.showSnackBar('Failed to log diaper: $e', isError: true);
+        context.showErrorSnackBar(
+          'Couldn’t log the diaper. Check your connection and try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -521,7 +527,9 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
       }
     } catch (e) {
       if (mounted) {
-        context.showSnackBar('Failed to start sleep: $e', isError: true);
+        context.showErrorSnackBar(
+          'Couldn’t start the sleep session. Check your connection and try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -541,7 +549,9 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
       }
     } catch (e) {
       if (mounted) {
-        context.showSnackBar('Failed to stop sleep: $e', isError: true);
+        context.showErrorSnackBar(
+          'Couldn’t end the sleep session. Check your connection and try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
