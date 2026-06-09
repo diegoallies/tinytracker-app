@@ -168,12 +168,10 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Invites'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.text,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -278,18 +276,18 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
                       children: [
                         Text(
                           babyName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.text,
+                            color: context.palette.text,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'You\'ve been invited to track this baby',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.muted,
+                            color: context.palette.muted,
                           ),
                         ),
                       ],

@@ -19,13 +19,13 @@ class NightModeToggle extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isDark
               ? AppColors.primary.withValues(alpha: 0.2)
-              : AppColors.surface,
+              : context.palette.surface,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
           isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
           size: 20,
-          color: isDark ? AppColors.primary : AppColors.muted,
+          color: isDark ? AppColors.primary : context.palette.muted,
         ),
       ),
     );

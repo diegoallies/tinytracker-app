@@ -270,11 +270,8 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
     final photosAsync = ref.watch(photosProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Photos'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.text,
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(

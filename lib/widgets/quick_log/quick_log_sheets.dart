@@ -67,9 +67,9 @@ class _SheetContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.palette.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         left: 24,
@@ -144,12 +144,12 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
     return _SheetContainer(
       children: [
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Quick Log Feeding',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.text,
+            color: context.palette.text,
           ),
         ),
         const SizedBox(height: 16),
@@ -168,7 +168,7 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.pastelPurple
-                          : AppColors.surface,
+                          : context.palette.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color:
@@ -182,7 +182,7 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
                             size: 20,
                             color: isSelected
                                 ? AppColors.primary
-                                : AppColors.muted),
+                                : context.palette.muted),
                         const SizedBox(height: 4),
                         Text(
                           t.$2,
@@ -193,7 +193,7 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
                                 : FontWeight.w500,
                             color: isSelected
                                 ? AppColors.primary
-                                : AppColors.muted,
+                                : context.palette.muted,
                           ),
                         ),
                       ],
@@ -221,10 +221,10 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
               const SizedBox(width: 8),
               Text(
                 '$_amountMl ml',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.text,
+                  color: context.palette.text,
                 ),
               ),
               const SizedBox(width: 8),
@@ -306,12 +306,12 @@ class _QuickLogDiaperSheetState extends ConsumerState<_QuickLogDiaperSheet> {
     return _SheetContainer(
       children: [
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Quick Log Diaper',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.text,
+            color: context.palette.text,
           ),
         ),
         const SizedBox(height: 16),
@@ -329,7 +329,7 @@ class _QuickLogDiaperSheetState extends ConsumerState<_QuickLogDiaperSheet> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.pastelPurple
-                          : AppColors.surface,
+                          : context.palette.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color:
@@ -343,7 +343,7 @@ class _QuickLogDiaperSheetState extends ConsumerState<_QuickLogDiaperSheet> {
                             size: 24,
                             color: isSelected
                                 ? AppColors.primary
-                                : AppColors.muted),
+                                : context.palette.muted),
                         const SizedBox(height: 4),
                         Text(
                           t.$2,
@@ -354,7 +354,7 @@ class _QuickLogDiaperSheetState extends ConsumerState<_QuickLogDiaperSheet> {
                                 : FontWeight.w500,
                             color: isSelected
                                 ? AppColors.primary
-                                : AppColors.muted,
+                                : context.palette.muted,
                           ),
                         ),
                       ],
@@ -475,12 +475,12 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
     return _SheetContainer(
       children: [
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Quick Log Sleep',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.text,
+            color: context.palette.text,
           ),
         ),
         const SizedBox(height: 20),
@@ -517,11 +517,11 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
                         const Icon(Icons.nightlight_round,
                             size: 32, color: AppColors.primary),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Baby is sleeping',
                           style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.muted,
+                            color: context.palette.muted,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -564,17 +564,17 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
                   padding:
                       const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.palette.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
                       Icon(Icons.nightlight_round,
-                          size: 32, color: AppColors.muted),
-                      SizedBox(height: 8),
+                          size: 32, color: context.palette.muted),
+                      const SizedBox(height: 8),
                       Text(
                         'Baby is awake',
-                        style: TextStyle(fontSize: 14, color: AppColors.muted),
+                        style: TextStyle(fontSize: 14, color: context.palette.muted),
                       ),
                     ],
                   ),

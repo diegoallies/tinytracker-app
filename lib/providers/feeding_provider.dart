@@ -45,11 +45,12 @@ class FeedingActions {
     int? durationMinutes,
     int? amountMl,
     String? notes,
+    DateTime? loggedAt,
   }) async {
     final userId = SupabaseService.userId;
     if (userId == null) return;
 
-    final now = DateTime.now();
+    final ts = loggedAt ?? DateTime.now();
     await SupabaseService.client.from('feedings').insert({
       'baby_id': babyId,
       'user_id': userId,
@@ -57,13 +58,13 @@ class FeedingActions {
       'duration_minutes': durationMinutes,
       'amount_ml': amountMl,
       'notes': notes?.isNotEmpty == true ? notes : null,
-      'logged_at': now.toUtc().toIso8601String(),
+      'logged_at': ts.toUtc().toIso8601String(),
     });
 
-    // Reschedule feeding reminder
+    // Reschedule feeding reminder from the actual logged time
     final interval = await NotificationService.getReminderInterval();
     await NotificationService.scheduleFeedingReminder(
-      lastFeedTime: now,
+      lastFeedTime: ts,
       intervalMinutes: interval,
     );
   }

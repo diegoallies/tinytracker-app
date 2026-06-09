@@ -85,12 +85,10 @@ class MoreScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('More'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.text,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -98,20 +96,20 @@ class MoreScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Features',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.text,
+                  color: context.palette.text,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Everything you need to track your little one',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.muted,
+                  color: context.palette.muted,
                 ),
               ),
 
@@ -150,7 +148,7 @@ class MoreScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.muted.withValues(alpha:0.6),
+                        color: context.palette.muted.withValues(alpha:0.6),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -158,7 +156,7 @@ class MoreScreen extends ConsumerWidget {
                       'Made with care for tiny humans',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.muted.withValues(alpha:0.5),
+                        color: context.palette.muted.withValues(alpha:0.5),
                       ),
                     ),
                   ],
@@ -204,10 +202,10 @@ class _FeatureCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 feature.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.text,
+                  color: context.palette.text,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -216,9 +214,9 @@ class _FeatureCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 feature.description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.muted,
+                  color: context.palette.muted,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,

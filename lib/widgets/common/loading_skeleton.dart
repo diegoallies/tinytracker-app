@@ -39,7 +39,7 @@ class CardSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: context.palette.card,
         borderRadius: BorderRadius.circular(20),
       ),
       child: const Column(

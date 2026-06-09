@@ -32,12 +32,13 @@ class BottomNavBar extends ConsumerWidget {
     final current = _currentIndex(location);
     final profile = ref.watch(profileProvider);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: context.palette.card,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),

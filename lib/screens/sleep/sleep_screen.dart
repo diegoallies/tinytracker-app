@@ -190,18 +190,15 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
     final recentSleeps = ref.watch(recentSleepsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'Sleep',
           style: TextStyle(
-            color: AppColors.text,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
@@ -212,7 +209,6 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
         child: RefreshIndicator(
           onRefresh: _onRefresh,
           color: AppColors.primary,
-          backgroundColor: AppColors.card,
           child: ListView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -243,7 +239,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
           child: Center(
             child: Text(
               'Failed to load sleep status',
-              style: TextStyle(color: AppColors.muted),
+              style: TextStyle(color: context.palette.muted),
             ),
           ),
         ),
@@ -271,7 +267,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                   size: 48,
                   color: isActive
                       ? AppColors.primary
-                      : AppColors.muted.withValues(alpha:0.5),
+                      : context.palette.muted.withValues(alpha:0.5),
                 ),
                 const SizedBox(height: 20),
                 if (isActive)
@@ -288,20 +284,20 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                     ),
                   )
                 else
-                  const Text(
+                  Text(
                     'Not sleeping',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.muted,
+                      color: context.palette.muted,
                     ),
                   ),
                 if (isActive) ...[
                   const SizedBox(height: 8),
                   Text(
                     'Started at ${AppDateUtils.formatTime(session.startTime as DateTime)}',
-                    style: const TextStyle(
-                      color: AppColors.muted,
+                    style: TextStyle(
+                      color: context.palette.muted,
                       fontSize: 14,
                     ),
                   ),
@@ -370,10 +366,10 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Recent Sleep Sessions',
           style: TextStyle(
-            color: AppColors.text,
+            color: context.palette.text,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),

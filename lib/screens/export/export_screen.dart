@@ -407,11 +407,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         _feedingsCount + _diapersCount + _sleepCount + _growthCount + _healthCount;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Export'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.text,
         elevation: 0,
       ),
       body: SafeArea(

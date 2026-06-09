@@ -19,9 +19,10 @@ class BabyState {
     this.loading = true,
   });
 
-  bool get canLog => role == 'owner' || role == 'logger';
+  bool get canLog => role == 'owner' || role == 'logger' || role == 'parent';
   bool get isOwner => role == 'owner';
   bool get isViewer => role == 'viewer';
+  bool get canLogMeds => role == 'owner' || role == 'parent';
 
   BabyState copyWith({
     Baby? selectedBaby,
@@ -49,6 +50,7 @@ class BabyNotifier extends StateNotifier<BabyState> {
     final userId = SupabaseService.userId;
     if (userId == null) return;
 
+    if (!mounted) return;
     state = state.copyWith(loading: true);
 
     try {
@@ -72,6 +74,7 @@ class BabyNotifier extends StateNotifier<BabyState> {
         }
       }
 
+      if (!mounted) return;
       state = state.copyWith(
         babies: babies,
         selectedBaby: babies.isNotEmpty
@@ -84,6 +87,7 @@ class BabyNotifier extends StateNotifier<BabyState> {
         loading: false,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(loading: false);
     }
   }
@@ -147,7 +151,41 @@ class BabyNotifier extends StateNotifier<BabyState> {
     if (gender != null) updates['gender'] = gender;
     if (photoUrl != null) updates['photo_url'] = photoUrl;
 
-    await _client.from('babies').update(updates).eq('id', babyId);
+    final rows = await _client
+        .from('babies')
+        .update(updates)
+        .eq('id', babyId)
+        .select();
+
+    if (rows.isEmpty) {
+      throw StateError(
+        'Update returned no rows — check RLS on babies table for user ${SupabaseService.userId}',
+      );
+    }
+
+    final updated = Baby.fromJson(rows.first);
+
+    if (photoUrl != null && updated.photoUrl != photoUrl) {
+      throw StateError(
+        'photo_url did not persist — column may be missing or blocked by RLS',
+      );
+    }
+
+    if (!mounted) return;
+
+    // Optimistically apply the saved row so UI flips immediately, without
+    // waiting for the full loadBabies() round-trip.
+    final newBabies = state.babies
+        .map((b) => b.id == updated.id ? updated : b)
+        .toList();
+    state = state.copyWith(
+      babies: newBabies,
+      selectedBaby: state.selectedBaby?.id == updated.id
+          ? updated
+          : state.selectedBaby,
+    );
+
+    // Background refresh so anything else (role, new babies) stays in sync.
     await loadBabies();
   }
 
@@ -191,6 +229,20 @@ class BabyNotifier extends StateNotifier<BabyState> {
 
   Future<void> removeShare(String shareId) async {
     await _client.from('baby_shares').delete().eq('id', shareId);
+  }
+
+  Future<void> updateShareRole(String shareId, String role) async {
+    final rows = await _client
+        .from('baby_shares')
+        .update({'role': role})
+        .eq('id', shareId)
+        .select();
+
+    if (rows.isEmpty) {
+      throw StateError(
+        'Role update returned no rows — only owners can change roles',
+      );
+    }
   }
 }
 

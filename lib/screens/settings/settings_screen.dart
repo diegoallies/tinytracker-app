@@ -15,12 +15,10 @@ class SettingsScreen extends ConsumerWidget {
     final showBreastFeeding = ref.watch(showBreastFeedingProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Settings'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.text,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

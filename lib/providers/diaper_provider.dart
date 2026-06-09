@@ -52,12 +52,29 @@ final todayDiaperStatsProvider = FutureProvider<Map<String, int>>((ref) async {
   return {'wet': wet, 'dirty': dirty, 'both': both};
 });
 
+final lastDiaperAtProvider = FutureProvider<DateTime?>((ref) async {
+  final baby = ref.watch(selectedBabyProvider);
+  if (baby == null) return null;
+
+  final data = await SupabaseService.client
+      .from('diapers')
+      .select('logged_at')
+      .eq('baby_id', baby.id)
+      .order('logged_at', ascending: false)
+      .limit(1)
+      .maybeSingle();
+
+  if (data == null) return null;
+  return DateTime.parse(data['logged_at'] as String);
+});
+
 class DiaperActions {
   static Future<void> logDiaper({
     required String babyId,
     required String type,
     String? color,
     String? notes,
+    DateTime? loggedAt,
   }) async {
     final userId = SupabaseService.userId;
     if (userId == null) return;
@@ -68,7 +85,7 @@ class DiaperActions {
       'type': type,
       'color': (type == 'dirty' || type == 'both') ? color : null,
       'notes': notes?.isNotEmpty == true ? notes : null,
-      'logged_at': DateTime.now().toUtc().toIso8601String(),
+      'logged_at': (loggedAt ?? DateTime.now()).toUtc().toIso8601String(),
     });
   }
 

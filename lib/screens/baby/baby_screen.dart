@@ -277,6 +277,140 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
     }
   }
 
+  Future<void> _showChangeRoleSheet(BabyShare share, String babyId) async {
+    if (share.isOwner) return;
+    String selectedRole = share.role;
+
+    final newRole = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                16,
+                24,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Change Role',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    share.userName ?? share.userEmail ?? 'This user',
+                    style: const TextStyle(fontSize: 14, color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 20),
+                  _RoleOption(
+                    label: 'Nanny / Caregiver',
+                    description: 'Can log feedings, diapers, sleep (no meds)',
+                    icon: Icons.child_care_rounded,
+                    color: AppColors.pastelPink,
+                    iconColor: const Color(0xFFbf5b8c),
+                    isSelected: selectedRole == 'logger',
+                    onTap: () => setSheetState(() => selectedRole = 'logger'),
+                  ),
+                  const SizedBox(height: 8),
+                  _RoleOption(
+                    label: 'Family Member',
+                    description: 'Can add entries and give medication',
+                    icon: Icons.family_restroom_rounded,
+                    color: AppColors.pastelBlue,
+                    iconColor: const Color(0xFF5b8cbf),
+                    isSelected: selectedRole == 'parent',
+                    onTap: () => setSheetState(() => selectedRole = 'parent'),
+                  ),
+                  const SizedBox(height: 8),
+                  _RoleOption(
+                    label: 'Viewer',
+                    description: 'Can only view entries',
+                    icon: Icons.visibility_rounded,
+                    color: AppColors.pastelGreen,
+                    iconColor: const Color(0xFF5bbf8c),
+                    isSelected: selectedRole == 'viewer',
+                    onTap: () => setSheetState(() => selectedRole = 'viewer'),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: selectedRole == share.role
+                          ? null
+                          : () => Navigator.pop(context, selectedRole),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Save Role',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    if (newRole == null || newRole == share.role) return;
+
+    try {
+      await ref.read(babyProvider.notifier).updateShareRole(share.id, newRole);
+      await _loadShares(babyId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Role updated'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update role: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _removeShare(String shareId, String babyId) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -546,12 +680,10 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
     final baby = babyState.selectedBaby;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Baby'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.text,
         actions: [
           if (baby != null)
             IconButton(
@@ -956,21 +1088,39 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                                     ],
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _roleColor(share.role),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    share.role.capitalize,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: _roleIconColor(share.role),
+                                GestureDetector(
+                                  onTap: share.isOwner
+                                      ? null
+                                      : () => _showChangeRoleSheet(share, baby.id),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _roleColor(share.role),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          share.role.capitalize,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: _roleIconColor(share.role),
+                                          ),
+                                        ),
+                                        if (!share.isOwner) ...[
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.unfold_more_rounded,
+                                            size: 12,
+                                            color: _roleIconColor(share.role),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
                                 ),

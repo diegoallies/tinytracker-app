@@ -49,7 +49,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -77,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.text,
+                  color: context.palette.text,
                 ),
               ),
               const SizedBox(height: 8),
@@ -85,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Sign in to continue tracking',
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.muted,
+                  color: context.palette.muted,
                 ),
               ),
               const SizedBox(height: 40),
@@ -131,10 +130,10 @@ class _LoginScreenState extends State<LoginScreen> {
               TextButton(
                 onPressed: () => context.go('/register'),
                 child: RichText(
-                  text: const TextSpan(
+                  text: TextSpan(
                     text: "Don't have an account? ",
-                    style: TextStyle(color: AppColors.muted),
-                    children: [
+                    style: TextStyle(color: context.palette.muted),
+                    children: const [
                       TextSpan(
                         text: 'Register',
                         style: TextStyle(

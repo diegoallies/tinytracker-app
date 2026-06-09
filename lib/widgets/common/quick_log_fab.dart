@@ -141,7 +141,7 @@ class _QuickLogFABState extends State<QuickLogFAB>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.card,
+                color: context.palette.card,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
@@ -153,10 +153,10 @@ class _QuickLogFABState extends State<QuickLogFAB>
               ),
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.text,
+                  color: context.palette.text,
                 ),
               ),
             ),

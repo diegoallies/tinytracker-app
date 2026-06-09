@@ -124,12 +124,12 @@ class _SmartInsightsState extends State<SmartInsights> {
                 const SizedBox(width: 8),
                 Text(
                   'AI Insights',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.text),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: context.palette.text),
                 ),
                 const Spacer(),
                 GestureDetector(
                   onTap: _fetchInsights,
-                  child: Icon(Icons.refresh_rounded, size: 18, color: AppColors.muted),
+                  child: Icon(Icons.refresh_rounded, size: 18, color: context.palette.muted),
                 ),
               ],
             ),
@@ -146,7 +146,7 @@ class _SmartInsightsState extends State<SmartInsights> {
                   Expanded(
                     child: Text(
                       _insights[_currentIndex],
-                      style: TextStyle(fontSize: 14, color: AppColors.text, height: 1.4),
+                      style: TextStyle(fontSize: 14, color: context.palette.text, height: 1.4),
                     ),
                   ),
                 ],

@@ -1,8 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tummy_time.dart';
 import '../services/supabase_service.dart';
 import '../utils/date_utils.dart';
 import 'baby_provider.dart';
+
+/// Daily tummy time goal in minutes. Owner-configurable, stored in SharedPreferences.
+final tummyTimeGoalProvider =
+    StateNotifierProvider<TummyTimeGoalNotifier, int>((ref) {
+  return TummyTimeGoalNotifier();
+});
+
+class TummyTimeGoalNotifier extends StateNotifier<int> {
+  TummyTimeGoalNotifier() : super(30) {
+    _load();
+  }
+
+  static const _key = 'tummy_time_goal_minutes';
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getInt(_key) ?? 30;
+  }
+
+  Future<void> setGoal(int minutes) async {
+    state = minutes;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_key, minutes);
+  }
+}
 
 final activeTummyTimeProvider = FutureProvider.autoDispose<TummyTime?>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
@@ -80,5 +106,30 @@ class TummyTimeActions {
 
   static Future<void> delete(String id) async {
     await SupabaseService.client.from('tummy_times').delete().eq('id', id);
+  }
+
+  /// Insert a completed session with explicit start/end times (for backdating).
+  static Future<TummyTime?> logBackdated({
+    required String babyId,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final userId = SupabaseService.userId;
+    if (userId == null) return null;
+
+    final duration = end.difference(start).inMinutes;
+    if (duration <= 0) {
+      throw ArgumentError('End time must be after start time');
+    }
+
+    final data = await SupabaseService.client.from('tummy_times').insert({
+      'baby_id': babyId,
+      'user_id': userId,
+      'start_time': start.toUtc().toIso8601String(),
+      'end_time': end.toUtc().toIso8601String(),
+      'duration_minutes': duration,
+    }).select().single();
+
+    return TummyTime.fromJson(data);
   }
 }

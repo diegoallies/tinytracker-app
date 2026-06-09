@@ -78,7 +78,6 @@ class PatternBadgesWidget extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -102,7 +101,7 @@ class _BadgeChip extends StatelessWidget {
         width: 90,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: context.palette.card,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: bgColor, width: 2),
           boxShadow: [
@@ -164,12 +163,12 @@ void _showBadgeDetail(BuildContext context, PatternBadge badge) {
             const SizedBox(height: 16),
             Text(
               badge.title,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.palette.text),
             ),
             const SizedBox(height: 8),
             Text(
               badge.description,
-              style: TextStyle(fontSize: 14, color: AppColors.muted),
+              style: TextStyle(fontSize: 14, color: context.palette.muted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -231,7 +230,7 @@ class _AllBadgesSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.muted.withValues(alpha: 0.3),
+                    color: context.palette.muted.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -247,13 +246,13 @@ class _AllBadgesSheet extends StatelessWidget {
                   controller: scrollController,
                   children: [
                     if (earned.isNotEmpty) ...[
-                      Text('Earned', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.muted)),
+                      Text('Earned', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: context.palette.muted)),
                       const SizedBox(height: 8),
                       ...earned.map((b) => _BadgeListTile(badge: b, isLocked: false)),
                       const SizedBox(height: 20),
                     ],
                     if (locked.isNotEmpty) ...[
-                      Text('Locked', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.muted)),
+                      Text('Locked', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: context.palette.muted)),
                       const SizedBox(height: 8),
                       ...locked.map((b) => _BadgeListTile(badge: b, isLocked: true)),
                     ],
@@ -281,7 +280,7 @@ class _BadgeListTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isLocked ? AppColors.surface : AppColors.card,
+          color: isLocked ? context.palette.surface : context.palette.card,
           borderRadius: BorderRadius.circular(16),
           border: isLocked ? null : Border.all(color: _categoryColor(badge.category), width: 1.5),
         ),
@@ -291,14 +290,14 @@ class _BadgeListTile extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isLocked
-                    ? AppColors.muted.withValues(alpha: 0.1)
+                    ? context.palette.muted.withValues(alpha: 0.1)
                     : _categoryColor(badge.category).withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 isLocked ? Icons.lock_rounded : badge.icon,
                 size: 22,
-                color: isLocked ? AppColors.muted : _categoryIconColor(badge.category),
+                color: isLocked ? context.palette.muted : _categoryIconColor(badge.category),
               ),
             ),
             const SizedBox(width: 14),
@@ -311,14 +310,14 @@ class _BadgeListTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isLocked ? AppColors.muted : AppColors.text,
+                      color: isLocked ? context.palette.muted : context.palette.text,
                     ),
                   ),
                   Text(
                     badge.description,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isLocked ? AppColors.muted.withValues(alpha: 0.7) : AppColors.muted,
+                      color: isLocked ? context.palette.muted.withValues(alpha: 0.7) : context.palette.muted,
                     ),
                   ),
                 ],

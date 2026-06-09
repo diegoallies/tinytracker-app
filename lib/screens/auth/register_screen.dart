@@ -56,7 +56,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -78,18 +77,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Create Account',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.text,
+                  color: context.palette.text,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Start tracking your baby\'s journey',
-                style: TextStyle(fontSize: 16, color: AppColors.muted),
+                style: TextStyle(fontSize: 16, color: context.palette.muted),
               ),
               const SizedBox(height: 40),
               TextField(
@@ -135,10 +134,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextButton(
                 onPressed: () => context.go('/login'),
                 child: RichText(
-                  text: const TextSpan(
+                  text: TextSpan(
                     text: 'Already have an account? ',
-                    style: TextStyle(color: AppColors.muted),
-                    children: [
+                    style: TextStyle(color: context.palette.muted),
+                    children: const [
                       TextSpan(
                         text: 'Sign In',
                         style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),

@@ -29,7 +29,7 @@ class BabySelector extends ConsumerWidget {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.card,
+                color: isSelected ? AppColors.primary : context.palette.card,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected ? AppColors.primary : AppColors.pastelPurple,
@@ -40,7 +40,7 @@ class BabySelector extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : AppColors.text,
+                  color: isSelected ? Colors.white : context.palette.text,
                 ),
               ),
             ),

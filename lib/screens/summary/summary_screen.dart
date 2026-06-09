@@ -200,11 +200,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     final baby = ref.watch(selectedBabyProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Daily Summary'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.text,
         elevation: 0,
         actions: [
           IconButton(

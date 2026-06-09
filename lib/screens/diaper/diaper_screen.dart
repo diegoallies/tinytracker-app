@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/diaper_provider.dart';
@@ -22,6 +23,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
   String? _selectedColor;
   final TextEditingController _notesController = TextEditingController();
   bool _isSaving = false;
+  DateTime _loggedAt = DateTime.now();
 
   static const _diaperTypes = [
     ('wet', 'Wet', Icons.water_drop_outlined),
@@ -61,14 +63,17 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         notes: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
+        loggedAt: _loggedAt,
       );
 
       ref.invalidate(recentDiapersProvider);
       ref.invalidate(todayDiaperStatsProvider);
+      ref.invalidate(lastDiaperAtProvider);
 
       setState(() {
         _selectedColor = null;
         _notesController.clear();
+        _loggedAt = DateTime.now();
       });
 
       Haptics.mediumTap();
@@ -117,6 +122,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       await DiaperActions.deleteDiaper(diaperId);
       ref.invalidate(recentDiapersProvider);
       ref.invalidate(todayDiaperStatsProvider);
+      ref.invalidate(lastDiaperAtProvider);
       if (mounted) {
         context.showSuccessSnackBar('Diaper entry deleted');
       }
@@ -136,27 +142,82 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
     Haptics.lightTap();
     ref.invalidate(recentDiapersProvider);
     ref.invalidate(todayDiaperStatsProvider);
+    ref.invalidate(lastDiaperAtProvider);
     await ref.read(recentDiapersProvider.future);
+  }
+
+  Future<void> _pickDateTime() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _loggedAt,
+      firstDate: now.subtract(const Duration(days: 30)),
+      lastDate: now,
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: AppColors.text,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (date == null || !mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_loggedAt),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: AppColors.text,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (time == null) return;
+
+    final picked =
+        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (picked.isAfter(DateTime.now())) {
+      Haptics.lightTap();
+      if (mounted) {
+        context.showSuccessSnackBar('Cannot log a future time');
+      }
+      return;
+    }
+    Haptics.selectionClick();
+    setState(() => _loggedAt = picked);
+  }
+
+  void _setRelativeTime(Duration ago) {
+    Haptics.selectionClick();
+    setState(() => _loggedAt = DateTime.now().subtract(ago));
   }
 
   @override
   Widget build(BuildContext context) {
     final stats = ref.watch(todayDiaperStatsProvider);
+    final lastAt = ref.watch(lastDiaperAtProvider);
     final recentDiapers = ref.watch(recentDiapersProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'Diaper',
           style: TextStyle(
-            color: AppColors.text,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
@@ -167,12 +228,11 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         child: RefreshIndicator(
           onRefresh: _onRefresh,
           color: AppColors.primary,
-          backgroundColor: AppColors.card,
           child: ListView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             children: [
-              _buildTodayStats(stats),
+              _buildTodayStats(stats, lastAt),
               const SizedBox(height: 16),
               _buildTypeSelector(),
               const SizedBox(height: 16),
@@ -180,6 +240,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                 _buildColorPicker(),
                 const SizedBox(height: 16),
               ],
+              _buildTimeSelector(),
+              const SizedBox(height: 16),
               _buildNotesField(),
               const SizedBox(height: 20),
               _buildSaveButton(),
@@ -192,7 +254,10 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
     );
   }
 
-  Widget _buildTodayStats(AsyncValue<dynamic> stats) {
+  Widget _buildTodayStats(
+    AsyncValue<dynamic> stats,
+    AsyncValue<DateTime?> lastAt,
+  ) {
     return AnimatedCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -212,32 +277,219 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
             final wet = data['wet'] ?? 0;
             final dirty = data['dirty'] ?? 0;
             final both = data['both'] ?? 0;
+            final last = lastAt.asData?.value;
 
-            return Row(
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Today',
-                  style: TextStyle(
-                    color: AppColors.text,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+                Row(
+                  children: [
+                    const Text(
+                      'Today',
+                      style: TextStyle(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (last != null) _buildSinceLastBadge(last),
+                  ],
                 ),
-                const Spacer(),
-                _buildStatChip(
-                    Icons.water_drop_outlined, '$wet', 'Wet', Colors.blue),
-                const SizedBox(width: 12),
-                _buildStatChip(Icons.circle, '$dirty', 'Dirty',
-                    const Color(0xFF8B4513)),
-                const SizedBox(width: 12),
-                _buildStatChip(
-                    Icons.layers_outlined, '$both', 'Both', AppColors.primary),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildStatChip(
+                        Icons.water_drop_outlined, '$wet', 'Wet', Colors.blue),
+                    _buildStatChip(Icons.circle, '$dirty', 'Dirty',
+                        const Color(0xFF8B4513)),
+                    _buildStatChip(Icons.layers_outlined, '$both', 'Both',
+                        AppColors.primary),
+                  ],
+                ),
               ],
             );
           },
         ),
       ),
     );
+  }
+
+  Widget _buildSinceLastBadge(DateTime last) {
+    final diff = DateTime.now().difference(last);
+    final hours = diff.inHours;
+    final minutes = diff.inMinutes % 60;
+    final label = hours > 0 ? '${hours}h ${minutes}m' : '${diff.inMinutes}m';
+    final isOverdue = hours >= 3;
+    final color = isOverdue ? Colors.orange.shade700 : AppColors.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.schedule_rounded, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            'Last $label ago',
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeSelector() {
+    final now = DateTime.now();
+    final isNow = now.difference(_loggedAt).inSeconds.abs() < 60;
+    final isToday = _loggedAt.year == now.year &&
+        _loggedAt.month == now.month &&
+        _loggedAt.day == now.day;
+    final isYesterday = _loggedAt.year == now.year &&
+        _loggedAt.month == now.month &&
+        _loggedAt.day == now.day - 1;
+
+    final timeStr = DateFormat('h:mm a').format(_loggedAt);
+    String fullLabel;
+    if (isNow) {
+      fullLabel = 'Right now';
+    } else if (isToday) {
+      fullLabel = 'Today, $timeStr';
+    } else if (isYesterday) {
+      fullLabel = 'Yesterday, $timeStr';
+    } else {
+      fullLabel = DateFormat('EEE, MMM d • h:mm a').format(_loggedAt);
+    }
+
+    // A custom time is anything not matching one of the quick options.
+    final isQuickPick = isNow ||
+        _matchesAgo(const Duration(minutes: 15)) ||
+        _matchesAgo(const Duration(minutes: 30)) ||
+        _matchesAgo(const Duration(hours: 1)) ||
+        _matchesAgo(const Duration(hours: 2));
+    final isCustom = !isQuickPick;
+
+    return AnimatedCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'When did it happen?',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Quick pick or set a specific time',
+              style: TextStyle(
+                color: AppColors.muted,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Quick options — most-used live here.
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _TimePill(
+                  label: 'Now',
+                  selected: isNow,
+                  onTap: () => _setRelativeTime(Duration.zero),
+                ),
+                _TimePill(
+                  label: '15m ago',
+                  selected: _matchesAgo(const Duration(minutes: 15)),
+                  onTap: () =>
+                      _setRelativeTime(const Duration(minutes: 15)),
+                ),
+                _TimePill(
+                  label: '30m ago',
+                  selected: _matchesAgo(const Duration(minutes: 30)),
+                  onTap: () =>
+                      _setRelativeTime(const Duration(minutes: 30)),
+                ),
+                _TimePill(
+                  label: '1h ago',
+                  selected: _matchesAgo(const Duration(hours: 1)),
+                  onTap: () => _setRelativeTime(const Duration(hours: 1)),
+                ),
+                _TimePill(
+                  label: '2h ago',
+                  selected: _matchesAgo(const Duration(hours: 2)),
+                  onTap: () => _setRelativeTime(const Duration(hours: 2)),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(child: Divider(color: AppColors.muted.withValues(alpha: 0.2))),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    'OR',
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+                Expanded(child: Divider(color: AppColors.muted.withValues(alpha: 0.2))),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Separate, prominent custom-time tile.
+            _CustomTimeTile(
+              label: fullLabel,
+              selected: isCustom,
+              onTap: _pickDateTime,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool _matchesAgo(Duration target) {
+    final actual = DateTime.now().difference(_loggedAt);
+    return (actual - target).abs() < const Duration(seconds: 30);
+  }
+
+  String _itemTimeLabel(DateTime loggedAt) {
+    final now = DateTime.now();
+    final diff = now.difference(loggedAt);
+    if (diff.inHours < 6) return AppDateUtils.timeAgo(loggedAt);
+
+    final isToday = loggedAt.year == now.year &&
+        loggedAt.month == now.month &&
+        loggedAt.day == now.day;
+    final isYesterday = loggedAt.year == now.year &&
+        loggedAt.month == now.month &&
+        loggedAt.day == now.day - 1;
+    final time = DateFormat('h:mm a').format(loggedAt);
+    if (isToday) return 'Today, $time';
+    if (isYesterday) return 'Yesterday, $time';
+    return DateFormat('MMM d, h:mm a').format(loggedAt);
   }
 
   Widget _buildStatChip(
@@ -650,7 +902,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      AppDateUtils.timeAgo(loggedAt),
+                      _itemTimeLabel(loggedAt),
                       style: const TextStyle(
                         color: AppColors.muted,
                         fontSize: 13,
@@ -661,6 +913,147 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomTimeTile extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CustomTimeTile({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.12)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? AppColors.primary
+                : AppColors.muted.withValues(alpha: 0.3),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.primary
+                    : AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.event_rounded,
+                size: 20,
+                color: selected ? Colors.white : AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    selected ? 'Custom time' : 'Pick a specific date & time',
+                    style: TextStyle(
+                      color: selected ? AppColors.primary : AppColors.text,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TimePill extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TimePill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.15)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? AppColors.primary
+                : AppColors.muted.withValues(alpha: 0.3),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: selected ? AppColors.primary : AppColors.muted,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? AppColors.primary : AppColors.text,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
     );

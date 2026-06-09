@@ -1,6 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+class AppPalette extends ThemeExtension<AppPalette> {
+  final Color text;
+  final Color surface;
+  final Color card;
+  final Color muted;
+
+  const AppPalette({
+    required this.text,
+    required this.surface,
+    required this.card,
+    required this.muted,
+  });
+
+  static const light = AppPalette(
+    text: Color(0xFF2D2640),
+    surface: Color(0xFFFAF8FC),
+    card: Color(0xFFFFFFFF),
+    muted: Color(0xFF8B85A0),
+  );
+
+  static const dark = AppPalette(
+    text: Color(0xFFE8E4F0),
+    surface: Color(0xFF14111C),
+    card: Color(0xFF1F1A2B),
+    muted: Color(0xFF9A93AE),
+  );
+
+  @override
+  AppPalette copyWith({Color? text, Color? surface, Color? card, Color? muted}) {
+    return AppPalette(
+      text: text ?? this.text,
+      surface: surface ?? this.surface,
+      card: card ?? this.card,
+      muted: muted ?? this.muted,
+    );
+  }
+
+  @override
+  AppPalette lerp(ThemeExtension<AppPalette>? other, double t) {
+    if (other is! AppPalette) return this;
+    return AppPalette(
+      text: Color.lerp(text, other.text, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      card: Color.lerp(card, other.card, t)!,
+      muted: Color.lerp(muted, other.muted, t)!,
+    );
+  }
+}
+
+extension PaletteOnContext on BuildContext {
+  AppPalette get palette =>
+      Theme.of(this).extension<AppPalette>() ?? AppPalette.light;
+}
+
 class AppColors {
   static const Color primary = Color(0xFF9B72CF);
   static const Color primaryLight = Color(0xFFB794E0);
@@ -44,12 +98,14 @@ class AppTheme {
     final isDark = brightness == Brightness.dark;
     final base = isDark ? ThemeData.dark(useMaterial3: true) : ThemeData.light(useMaterial3: true);
 
-    final surface = isDark ? const Color(0xFF14111C) : const Color(0xFFFAF8FC);
-    final card = isDark ? const Color(0xFF1F1A2B) : const Color(0xFFFFFFFF);
-    final text = isDark ? const Color(0xFFE8E4F0) : const Color(0xFF2D2640);
-    final muted = isDark ? const Color(0xFF9A93AE) : const Color(0xFF8B85A0);
+    final palette = isDark ? AppPalette.dark : AppPalette.light;
+    final surface = palette.surface;
+    final card = palette.card;
+    final text = palette.text;
+    final muted = palette.muted;
 
     return base.copyWith(
+      extensions: [palette],
       scaffoldBackgroundColor: surface,
       colorScheme: ColorScheme(
         brightness: brightness,

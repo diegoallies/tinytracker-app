@@ -161,14 +161,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
                   'Change Profile Photo',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+                    color: context.palette.text,
                   ),
                 ),
               ),
@@ -287,7 +287,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profileAsync = ref.watch(profileProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Profile'),
@@ -441,7 +440,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.muted.withValues(alpha: 0.6),
+                            color: context.palette.muted.withValues(alpha: 0.6),
                             letterSpacing: 0.4,
                           ),
                         ),
@@ -686,19 +685,19 @@ class _StatPill extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.muted,
+                  color: context.palette.muted,
                   letterSpacing: 0.2,
                 ),
               ),
               const SizedBox(height: 1),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.text,
+                  color: context.palette.text,
                 ),
               ),
             ],
@@ -741,10 +740,10 @@ class _SectionCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: AppColors.text,
+                color: context.palette.text,
                 letterSpacing: -0.2,
               ),
             ),
@@ -835,7 +834,7 @@ class _ProfileField extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.muted.withValues(
+                    color: context.palette.muted.withValues(
                       alpha: dimmed ? 0.5 : 1.0,
                     ),
                     letterSpacing: 0.3,
@@ -849,10 +848,10 @@ class _ProfileField extends StatelessWidget {
                     keyboardType: keyboardType,
                     maxLines: maxLines,
                     enabled: !isSaving,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                     decoration: InputDecoration(
                       isDense: true,
@@ -860,7 +859,7 @@ class _ProfileField extends StatelessWidget {
                       hintText: hint,
                       hintStyle: TextStyle(
                         fontSize: 14,
-                        color: AppColors.muted.withValues(alpha: 0.5),
+                        color: context.palette.muted.withValues(alpha: 0.5),
                         fontWeight: FontWeight.w400,
                       ),
                       border: const UnderlineInputBorder(
@@ -891,9 +890,9 @@ class _ProfileField extends StatelessWidget {
                         fontWeight: hasValue ? FontWeight.w500 : FontWeight.w400,
                         color: hasValue
                             ? (dimmed
-                                ? AppColors.text.withValues(alpha: 0.5)
-                                : AppColors.text)
-                            : AppColors.muted.withValues(
+                                ? context.palette.text.withValues(alpha: 0.5)
+                                : context.palette.text)
+                            : context.palette.muted.withValues(
                                 alpha: dimmed ? 0.5 : 0.7,
                               ),
                       ),
@@ -964,7 +963,7 @@ class _EditActions extends StatelessWidget {
         children: [
           _IconButton(
             icon: Icons.close_rounded,
-            color: AppColors.muted,
+            color: context.palette.muted,
             background: Colors.grey.shade100,
             onTap: onCancel,
             tooltip: 'Cancel',
@@ -985,7 +984,7 @@ class _EditActions extends StatelessWidget {
       icon: Icons.edit_rounded,
       color: enabled
           ? AppColors.primary
-          : AppColors.muted.withValues(alpha: 0.4),
+          : context.palette.muted.withValues(alpha: 0.4),
       background: enabled
           ? AppColors.pastelPurple.withValues(alpha: 0.5)
           : Colors.grey.shade100,
@@ -1112,11 +1111,11 @@ class _AccountActionsCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      Text(
                         'You\'ll need to log in again',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],
@@ -1134,7 +1133,7 @@ class _AccountActionsCard extends StatelessWidget {
                 else
                   Icon(
                     Icons.chevron_right_rounded,
-                    color: AppColors.muted.withValues(alpha: 0.6),
+                    color: context.palette.muted.withValues(alpha: 0.6),
                   ),
               ],
             ),
@@ -1175,7 +1174,7 @@ class _PhotoSourceTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -1191,10 +1190,10 @@ class _PhotoSourceTile extends StatelessWidget {
               const SizedBox(width: 14),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.text,
+                  color: context.palette.text,
                 ),
               ),
             ],
