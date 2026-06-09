@@ -23,6 +23,7 @@ import '../screens/journal/daily_journal_screen.dart';
 import '../screens/weekly_report/weekly_report_screen.dart';
 import '../screens/monthly_review/monthly_review_screen.dart';
 import '../screens/care_guide/care_guide_screen.dart';
+import '../screens/immunisations/immunisations_screen.dart';
 import '../screens/more/more_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
@@ -245,6 +246,14 @@ final appRouter = GoRouter(
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: const CareGuideScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/immunisations',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const ImmunisationsScreen(),
             transitionsBuilder: _slideTransition,
           ),
         ),

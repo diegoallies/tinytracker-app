@@ -64,12 +64,90 @@ class _SmartInsightsState extends State<SmartInsights> {
         return;
       }
 
-      final weekData = {
+      final weekData = <String, dynamic>{
         'feedings': results[0],
         'diapers': results[1],
         'sleeps': results[2],
         'growth': results[3],
       };
+
+      // Care Pack extras (reflux, digestion, feed quality). These tables and
+      // columns ship with a later migration — each query is wrapped so a
+      // failure just leaves its key out of the payload, never breaks the call.
+      try {
+        final reflux = await client
+            .from('reflux_events')
+            .select('severity, painful_crying')
+            .eq('baby_id', widget.babyId)
+            .gte('logged_at', weekAgo);
+        if (reflux.isNotEmpty) {
+          weekData['reflux'] = {
+            'events_total': reflux.length,
+            'avg_per_day': (reflux.length / 7).toStringAsFixed(1),
+            'painful_count':
+                reflux.where((r) => r['painful_crying'] == true).length,
+            'worst_severity': reflux
+                .map((r) => (r['severity'] as num?)?.toInt() ?? 0)
+                .reduce((a, b) => a > b ? a : b),
+          };
+        }
+      } catch (_) {}
+
+      try {
+        final start = AppDateUtils.weekAgoStart();
+        final startDate =
+            '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
+        final journals = await client
+            .from('daily_journals')
+            .select('cramps, gas')
+            .eq('baby_id', widget.babyId)
+            .gte('journal_date', startDate);
+        final diapers = results[1] as List;
+        final digestion = <String, dynamic>{
+          'dirty_diapers':
+              diapers.where((d) => (d as Map)['type'] != 'wet').length,
+          'days_with_cramps_ge2': journals
+              .where((j) => ((j['cramps'] as num?)?.toInt() ?? 0) >= 2)
+              .length,
+          'days_with_gas_ge2': journals
+              .where((j) => ((j['gas'] as num?)?.toInt() ?? 0) >= 2)
+              .length,
+        };
+        // stool_type ships with a later diapers migration — its own guard so
+        // the rest of the digestion summary survives without it.
+        try {
+          final stools = await client
+              .from('diapers')
+              .select('stool_type')
+              .eq('baby_id', widget.babyId)
+              .gte('logged_at', weekAgo)
+              .not('stool_type', 'is', null);
+          digestion['stool_types_seen'] = stools
+              .map((d) => (d['stool_type'] as num).toInt())
+              .toSet()
+              .toList()
+            ..sort();
+        } catch (_) {}
+        weekData['digestion'] = digestion;
+      } catch (_) {}
+
+      try {
+        final feeds = await client
+            .from('feedings')
+            .select('quality, had_spitup')
+            .eq('baby_id', widget.babyId)
+            .gte('logged_at', weekAgo);
+        final qualities = [
+          for (final f in feeds)
+            if (f['quality'] != null) (f['quality'] as num).toDouble()
+        ];
+        weekData['feed_quality'] = {
+          if (qualities.isNotEmpty)
+            'avg_quality': (qualities.reduce((a, b) => a + b) / qualities.length)
+                .toStringAsFixed(1),
+          'spitup_count': feeds.where((f) => f['had_spitup'] == true).length,
+        };
+      } catch (_) {}
 
       final insights = await AiService.getInsights(
         babyId: widget.babyId,

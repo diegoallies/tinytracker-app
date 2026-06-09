@@ -125,6 +125,14 @@ class MoreScreen extends ConsumerWidget {
       color: Color(0xFFd5e8f5),
       iconColor: Color(0xFF5b8cbf),
     ),
+    _FeatureItem(
+      icon: Icons.vaccines_rounded,
+      label: 'Immunisations',
+      description: 'SA EPI schedule',
+      route: '/immunisations',
+      color: Color(0xFFd5f5e8),
+      iconColor: Color(0xFF5bbf8c),
+    ),
   ];
 
   @override

@@ -5,7 +5,31 @@ import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../providers/feeding_settings_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/common/night_mode_toggle.dart';
+
+final weeklyReportReminderEnabledProvider =
+    StateNotifierProvider<WeeklyReportReminderEnabledNotifier, bool>((ref) {
+  return WeeklyReportReminderEnabledNotifier();
+});
+
+class WeeklyReportReminderEnabledNotifier extends StateNotifier<bool> {
+  WeeklyReportReminderEnabledNotifier() : super(false) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await NotificationService.isWeeklyReportReminderEnabled();
+  }
+
+  Future<void> toggle() async {
+    state = !state;
+    await NotificationService.setWeeklyReportReminderEnabled(state);
+    if (state) {
+      await NotificationService.requestPermissions();
+    }
+  }
+}
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -16,6 +40,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reminderEnabled = ref.watch(feedingReminderEnabledProvider);
     final reminderInterval = ref.watch(feedingReminderIntervalProvider);
+    final weeklyReportReminderEnabled =
+        ref.watch(weeklyReportReminderEnabledProvider);
     final showBreastFeeding = ref.watch(showBreastFeedingProvider);
 
     return Scaffold(
@@ -90,6 +116,20 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                  const _SettingsDivider(),
+                  _SettingsRow(
+                    icon: Icons.assignment_rounded,
+                    iconBg: AppColors.pastelBlue,
+                    iconColor: AppColors.info,
+                    title: 'Weekly report (Fri 2pm)',
+                    subtitle: 'Nudge to finish and share the report',
+                    trailing: Switch.adaptive(
+                      value: weeklyReportReminderEnabled,
+                      onChanged: (_) => ref
+                          .read(weeklyReportReminderEnabledProvider.notifier)
+                          .toggle(),
+                    ),
+                  ),
                 ],
               ),
 

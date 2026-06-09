@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
+import '../../services/doctor_report_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
@@ -22,6 +23,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   int _selectedDays = 7;
   bool _isLoadingStats = false;
   bool _isGenerating = false;
+  bool _isGeneratingDoctorReport = false;
 
   int _feedingsCount = 0;
   int _diapersCount = 0;
@@ -328,6 +330,36 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     }
   }
 
+  Future<void> _generateDoctorReport() async {
+    final baby = ref.read(selectedBabyProvider);
+    if (baby == null) return;
+
+    setState(() => _isGeneratingDoctorReport = true);
+
+    try {
+      final pdfBytes = await DoctorReportService.build(baby: baby);
+
+      await Printing.sharePdf(
+        bytes: pdfBytes,
+        filename:
+            'tinytrack_doctor_report_${baby.name.toLowerCase().replaceAll(' ', '_')}.pdf',
+      );
+
+      if (mounted) {
+        context.showSuccessSnackBar('Doctor visit report generated!');
+      }
+    } catch (e) {
+      if (mounted) {
+        context.showErrorSnackBar(
+          'Couldn’t generate the doctor visit report. Please try again.',
+          onRetry: _generateDoctorReport,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGeneratingDoctorReport = false);
+    }
+  }
+
   pw.TableRow _pdfTableHeaderRow(List<String> cells) {
     return pw.TableRow(
       decoration: pw.BoxDecoration(
@@ -610,6 +642,108 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                                   ),
                                 ],
                               ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Doctor Visit Report
+                    AnimatedCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.local_hospital_rounded,
+                                  size: 20,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Doctor visit report',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: context.palette.text,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Last 14 days of reflux, digestion, feeding and meds — a clinical summary to bring to appointments.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: context.palette.muted,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 52,
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _isGeneratingDoctorReport
+                                    ? null
+                                    : _generateDoctorReport,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor:
+                                      AppColors.primary.withValues(alpha: 0.4),
+                                  disabledForegroundColor: Colors.white70,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: _isGeneratingDoctorReport
+                                    ? const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Generating...',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.picture_as_pdf_rounded,
+                                              size: 22),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            'Generate doctor report',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),

@@ -107,7 +107,7 @@ class AiService {
       babyId: babyId,
       cacheKey: 'insights',
       promptBuilder: () =>
-          'Here is a baby named $babyName\'s (gender: $gender) complete tracking data for the past week: ${jsonEncode(weekData)}. Generate 3 interesting, actionable insights about $babyName\'s patterns. Examples: sleep trends, feeding preferences, growth observations. Keep each insight to 1 sentence. Be warm and helpful. IMPORTANT: Use simple, mom-friendly language. For times use formats like "1:00 AM" or "around 3 PM". NEVER use ISO timestamps, timezone offsets, or computer date formats. Do not use dashes longer than a hyphen. Return ONLY a JSON array of 3 strings, no other text.',
+          'Here is a baby named $babyName\'s (gender: $gender) complete tracking data for the past week: ${jsonEncode(weekData)}. Generate 3 interesting, actionable insights about $babyName\'s patterns. Examples: sleep trends, feeding preferences, growth observations. The data may also include reflux and digestion records - insights about reflux trends or digestion changes are especially valuable to these parents, since their boy has reflux. Keep each insight to 1 sentence. Be warm and helpful. IMPORTANT: Use simple, mom-friendly language. For times use formats like "1:00 AM" or "around 3 PM". NEVER use ISO timestamps, timezone offsets, or computer date formats. Do not use dashes longer than a hyphen. Return ONLY a JSON array of 3 strings, no other text.',
     );
 
     if (result == null) return [];

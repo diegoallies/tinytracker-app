@@ -7,6 +7,8 @@ class NotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();
   static const _feedingChannelId = 'feeding_reminders';
   static const _feedingNotificationId = 1001;
+  static const _weeklyReportChannelId = 'weekly_report_reminders';
+  static const _weeklyReportNotificationId = 1002;
 
   static Future<void> initialize() async {
     tzdata.initializeTimeZones();
@@ -94,6 +96,78 @@ class NotificationService {
 
   static Future<void> cancelFeedingReminder() async {
     await _plugin.cancel(_feedingNotificationId);
+  }
+
+  /// Schedules a repeating reminder every Friday at 14:00 local time to
+  /// finish and share the weekly report.
+  static Future<void> scheduleWeeklyReportReminder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('weekly_report_reminder_enabled') ?? false;
+    if (!enabled) return;
+
+    // Replace any previously scheduled reminder.
+    await _plugin.cancel(_weeklyReportNotificationId);
+
+    // Next Friday 14:00 (day-component arithmetic keeps the hour DST-safe).
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledAt = tz.TZDateTime(tz.local, now.year, now.month,
+        now.day + (DateTime.friday - now.weekday) % 7, 14);
+    if (!scheduledAt.isAfter(now)) {
+      scheduledAt = tz.TZDateTime(
+          tz.local, scheduledAt.year, scheduledAt.month, scheduledAt.day + 7, 14);
+    }
+
+    const androidDetails = AndroidNotificationDetails(
+      _weeklyReportChannelId,
+      'Weekly Report Reminders',
+      channelDescription: 'Friday reminder to finish the weekly report',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _plugin.zonedSchedule(
+      _weeklyReportNotificationId,
+      'Weekly report time 📋',
+      'Most of it is already filled in from the week\'s logs — finish and share it with the parents.',
+      scheduledAt,
+      details,
+      // Inexact keeps us clear of the Android 12+ exact-alarm permission;
+      // the report nudge can be a couple of minutes off.
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      // Repeats every Friday at the same time.
+      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+    );
+  }
+
+  static Future<void> cancelWeeklyReportReminder() async {
+    await _plugin.cancel(_weeklyReportNotificationId);
+  }
+
+  static Future<bool> isWeeklyReportReminderEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('weekly_report_reminder_enabled') ?? false;
+  }
+
+  static Future<void> setWeeklyReportReminderEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('weekly_report_reminder_enabled', enabled);
+    if (enabled) {
+      await scheduleWeeklyReportReminder();
+    } else {
+      await cancelWeeklyReportReminder();
+    }
   }
 
   static Future<bool> isReminderEnabled() async {

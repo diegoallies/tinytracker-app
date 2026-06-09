@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../models/baby_share.dart';
@@ -529,11 +531,20 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       });
 
       final inviteLink = 'tinytracker://invite/$token';
+      final baby = ref.read(selectedBabyProvider);
+      final babyName = baby?.name ?? 'our baby';
 
+      // Clipboard as backup, then the system share sheet (WhatsApp etc.).
       await Clipboard.setData(ClipboardData(text: inviteLink));
+      await SharePlus.instance.share(ShareParams(
+        text: 'You’ve been invited to help track $babyName on TinyTrack! 🍼\n\n'
+            'Open this link on your phone (or paste it in the app under '
+            'More → Invites):\n$inviteLink\n\n'
+            'The link expires in 7 days.',
+      ));
 
       if (mounted) {
-        context.showSuccessSnackBar('Invite link copied to clipboard!');
+        context.showSuccessSnackBar('Invite created — link also copied to clipboard');
       }
     } catch (e) {
       if (mounted) {
@@ -546,10 +557,10 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
 
   String _generateRandomChars(int length) {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    final random = DateTime.now().microsecondsSinceEpoch;
+    final random = Random.secure();
     final buffer = StringBuffer();
     for (var i = 0; i < length; i++) {
-      buffer.write(chars[(random + i * 7) % chars.length]);
+      buffer.write(chars[random.nextInt(chars.length)]);
     }
     return buffer.toString();
   }
