@@ -5,8 +5,10 @@ import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/tummy_time_provider.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/swipe_to_dismiss.dart';
 
@@ -71,11 +73,9 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start session: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t start the session. Check your connection and try again.',
+          onRetry: _handleStart,
         );
       }
     } finally {
@@ -95,20 +95,13 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
       ref.invalidate(recentTummyTimesProvider);
       ref.invalidate(todayTummyTimeMinutesProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tummy time saved!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Tummy time saved!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to stop session: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t save the session. Check your connection and try again.',
+          onRetry: _handleStop,
         );
       }
     } finally {
@@ -117,27 +110,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
   }
 
   Future<bool?> _confirmDelete() {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Session'),
-        content: const Text(
-          'Are you sure you want to delete this tummy time session?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+    return showDeleteDialog(context, what: 'Session');
   }
 
   Future<void> _handleDelete(String id) async {
@@ -146,20 +119,12 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
       ref.invalidate(recentTummyTimesProvider);
       ref.invalidate(todayTummyTimeMinutesProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Session deleted'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Session deleted');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t delete the session. Check your connection and try again.',
         );
       }
     }
@@ -534,20 +499,12 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
       ref.invalidate(recentTummyTimesProvider);
       ref.invalidate(todayTummyTimeMinutesProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Session logged'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Session logged');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t save the session. Check your connection and try again.',
         );
       }
     }

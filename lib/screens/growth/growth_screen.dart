@@ -5,6 +5,7 @@ import '../../providers/baby_provider.dart';
 import '../../models/growth.dart';
 import '../../providers/growth_provider.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
 import '../../utils/who_growth_data.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
@@ -49,12 +50,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
     final head = double.tryParse(_headController.text);
 
     if (weight == null && height == null && head == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter at least one measurement'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      context.showErrorSnackBar('Please enter at least one measurement');
       return;
     }
 
@@ -81,24 +77,13 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
       setState(() => _showForm = false);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Growth measurement saved'),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar('Growth measurement saved');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: Colors.red,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t save the measurement. Check your connection and try again.',
+          onRetry: _saveGrowth,
         );
       }
     } finally {

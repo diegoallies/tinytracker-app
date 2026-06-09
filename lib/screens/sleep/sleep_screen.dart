@@ -8,6 +8,7 @@ import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/swipe_to_dismiss.dart';
 
@@ -97,11 +98,9 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start sleep: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t start the sleep timer. Check your connection and try again.',
+          onRetry: _startSleep,
         );
       }
     } finally {
@@ -123,11 +122,8 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to stop sleep: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t end the sleep session. Check your connection and try again.',
         );
       }
     } finally {
@@ -136,25 +132,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
   }
 
   Future<bool?> _confirmDelete() {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Sleep'),
-        content:
-            const Text('Are you sure you want to delete this sleep session?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+    return showDeleteDialog(context, what: 'Sleep Session');
   }
 
   Future<void> _deleteSleep(String sleepId) async {
@@ -167,11 +145,8 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t delete the sleep session. Check your connection and try again.',
         );
       }
     }
@@ -466,11 +441,8 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t start the sleep session. Check your connection and try again.',
         );
       }
     } finally {
@@ -635,11 +607,8 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t save the sleep session. Check your connection and try again.',
         );
       }
     }
@@ -765,12 +734,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
 
     if (picked.isAfter(DateTime.now())) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cannot start in the future'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        context.showErrorSnackBar('Can’t start in the future.');
       }
       return null;
     }

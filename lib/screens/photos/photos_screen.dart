@@ -8,6 +8,8 @@ import '../../providers/baby_provider.dart';
 import '../../models/photo.dart';
 import '../../providers/photo_provider.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
@@ -138,23 +140,14 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                                   ref.invalidate(photosProvider);
                                   if (ctx.mounted) Navigator.pop(ctx);
                                   if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content:
-                                            const Text('Photo uploaded!'),
-                                        backgroundColor: AppColors.primary,
-                                      ),
-                                    );
+                                    context.showSuccessSnackBar(
+                                        'Photo uploaded!');
                                   }
                                 }
                               } catch (e) {
                                 if (ctx.mounted) {
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                    SnackBar(
-                                      content:
-                                          Text('Upload failed: $e'),
-                                      backgroundColor: Colors.red.shade400,
-                                    ),
+                                  ctx.showErrorSnackBar(
+                                    'Couldn’t upload the photo. Check your connection and try again.',
                                   );
                                 }
                               } finally {
@@ -200,44 +193,20 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
   }
 
   Future<void> _handleDelete(Photo photo) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Photo'),
-        content: const Text(
-          'Are you sure you want to delete this photo? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await showDeleteDialog(context, what: 'Photo');
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     try {
       await PhotoActions.deletePhoto(photo);
       ref.invalidate(photosProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo deleted')),
-        );
+        context.showSuccessSnackBar('Photo deleted');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t delete the photo. Check your connection and try again.',
         );
       }
     }

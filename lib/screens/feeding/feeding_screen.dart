@@ -12,6 +12,7 @@ import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/swipe_to_dismiss.dart';
 import '../../widgets/medications/add_medication_dialog.dart';
@@ -77,22 +78,12 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     final canLogMeds = ref.read(babyProvider).canLogMeds;
 
     if (_addMeds && canLogMeds && _selectedMedication == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pick a medication'),
-          backgroundColor: Colors.orange.shade400,
-        ),
-      );
+      context.showErrorSnackBar('Pick a medication first.');
       return;
     }
 
     if (_isBreastFeeding && (_durationMinutes == null || _durationMinutes! <= 0)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pick a duration'),
-          backgroundColor: Colors.orange.shade400,
-        ),
-      );
+      context.showErrorSnackBar('Pick a duration first.');
       return;
     }
 
@@ -140,11 +131,9 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t save the feeding. Check your connection and try again.',
+          onRetry: _save,
         );
       }
     } finally {
@@ -153,25 +142,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
   }
 
   Future<bool?> _confirmDelete() {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Feeding'),
-        content: const Text('Are you sure you want to delete this feeding?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+    return showDeleteDialog(context, what: 'Feeding');
   }
 
   Future<void> _deleteFeeding(String feedingId) async {
@@ -183,11 +154,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t delete the feeding. Check your connection and try again.',
         );
       }
     }
@@ -1320,38 +1288,21 @@ class _MedicationPickerSheetState
   }
 
   Future<void> _deleteMedication(BabyMedication med) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Medication'),
-        content: Text('Remove "${med.name}" from the baby\'s medications?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteDialog(
+      context,
+      what: 'Medication',
+      message: 'Remove "${med.name}" from the baby\'s medications?',
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     try {
       await BabyMedicationActions.delete(med.id);
       ref.invalidate(babyMedicationsProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t delete the medication. Check your connection and try again.',
         );
       }
     }

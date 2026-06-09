@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../models/baby_medication.dart';
 import '../../providers/baby_medication_provider.dart';
+import '../../utils/extensions.dart';
 
 /// Dialog for adding a baby's daily/recurring medication.
 /// Returns the created [BabyMedication] via Navigator.pop on success.
@@ -39,11 +40,9 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t add the medication. Check your connection and try again.',
+          onRetry: _save,
         );
       }
     }

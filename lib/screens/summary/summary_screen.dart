@@ -5,6 +5,7 @@ import '../../providers/baby_provider.dart';
 import '../../services/ai_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
@@ -124,11 +125,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingStats = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load stats: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t load today’s stats. Check your connection and try again.',
+          onRetry: _loadStats,
         );
       }
     }

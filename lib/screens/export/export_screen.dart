@@ -7,6 +7,7 @@ import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
@@ -104,11 +105,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingStats = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load stats: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t load your stats. Check your connection and try again.',
+          onRetry: _loadStats,
         );
       }
     }
@@ -315,20 +314,13 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('PDF generated successfully!'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
+        context.showSuccessSnackBar('PDF generated successfully!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to generate PDF: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t generate the PDF. Please try again.',
+          onRetry: _generateAndSharePdf,
         );
       }
     } finally {

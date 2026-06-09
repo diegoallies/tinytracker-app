@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/milestone.dart';
 import '../../providers/milestone_provider.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/loading_skeleton.dart';
@@ -67,35 +68,12 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
       ref.invalidate(milestonesProvider);
 
       if (mounted && newAchieved) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.celebration, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${milestone.title} achieved!',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar('${milestone.title} achieved!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update: $e'),
-            backgroundColor: Colors.red,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t update the milestone. Check your connection and try again.',
         );
       }
     } finally {

@@ -103,22 +103,14 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
         });
 
         final babyName = _getBabyName(invite);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('You now have access to $babyName\'s profile!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar(
+            'You now have access to $babyName\'s profile!');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _acceptingIds.remove(inviteId));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to accept invite: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t accept the invite. Check your connection and try again.',
         );
       }
     }

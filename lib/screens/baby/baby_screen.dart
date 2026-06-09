@@ -11,6 +11,7 @@ import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../widgets/common/animated_card.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
@@ -67,12 +68,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
   Future<void> _createBaby() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a date of birth'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      context.showErrorSnackBar('Please select a date of birth');
       return;
     }
 
@@ -92,21 +88,12 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
           _selectedDob = null;
           _selectedGender = null;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Baby profile created!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Baby profile created!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create baby: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t create the baby profile. Check your connection and try again.',
         );
       }
     } finally {
@@ -131,21 +118,12 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
 
       if (mounted) {
         setState(() => _isEditing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Baby profile updated'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Baby profile updated');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t update the baby profile. Check your connection and try again.',
         );
       }
     } finally {
@@ -232,21 +210,12 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
             );
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Baby photo updated'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Baby photo updated');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to upload photo: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t upload the photo. Check your connection and try again.',
         );
       }
     } finally {
@@ -264,12 +233,8 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load shares: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t load shared access. Check your connection and try again.',
         );
       }
     } finally {
@@ -391,48 +356,28 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       await ref.read(babyProvider.notifier).updateShareRole(share.id, newRole);
       await _loadShares(babyId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Role updated'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Role updated');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update role: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t update the role. Check your connection and try again.',
         );
       }
     }
   }
 
   Future<void> _removeShare(String shareId, String babyId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Remove Access'),
-        content: const Text('Are you sure you want to remove this person\'s access?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Remove Access',
+      message: 'Are you sure you want to remove this person\'s access?',
+      confirmLabel: 'Remove',
+      destructive: true,
+      icon: Icons.person_remove_rounded,
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     try {
       final notifier = ref.read(babyProvider.notifier);
@@ -440,12 +385,8 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       await _loadShares(babyId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to remove share: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t remove access. Check your connection and try again.',
         );
       }
     }
@@ -592,21 +533,12 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       await Clipboard.setData(ClipboardData(text: inviteLink));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invite link copied to clipboard!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Invite link copied to clipboard!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create invite: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t create the invite. Check your connection and try again.',
         );
       }
     }

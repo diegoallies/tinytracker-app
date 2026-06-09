@@ -8,6 +8,8 @@ import '../../config/theme.dart';
 import '../../providers/profile_provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -83,13 +85,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final value = _controllerFor(field).text.trim();
 
     if (field == 'displayName' && value.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Display name cannot be empty'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.orange,
-        ),
-      );
+      context.showErrorSnackBar('Display name cannot be empty');
       return;
     }
 
@@ -110,13 +106,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _savingField = null;
           _snapshot.remove(field);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Saved'),
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        context.showSuccessSnackBar('Saved');
       }
     } catch (e) {
       if (mounted) {
@@ -125,12 +115,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() {
           _savingField = null;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t save your changes. Check your connection and try again.',
         );
       }
     }
@@ -216,21 +202,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ref.invalidate(profileProvider);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile photo updated'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Profile photo updated');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to upload photo: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t update your profile photo. Check your connection and try again.',
         );
       }
     } finally {
@@ -239,27 +216,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _logout() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Sign Out'),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      confirmLabel: 'Sign Out',
+      destructive: true,
+      icon: Icons.logout_rounded,
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     setState(() => _isLoggingOut = true);
 
@@ -271,12 +237,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoggingOut = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to sign out: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t sign out. Check your connection and try again.',
         );
       }
     }

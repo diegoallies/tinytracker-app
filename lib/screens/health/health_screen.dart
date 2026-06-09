@@ -7,7 +7,9 @@ import '../../providers/baby_provider.dart';
 import '../../models/health_log.dart';
 import '../../providers/health_provider.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/extensions.dart';
 import '../../widgets/common/animated_card.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/medications/add_medication_dialog.dart';
 
@@ -110,22 +112,12 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     final isTemperatureTab = _tabController!.index == 0;
 
     if (isTemperatureTab && temp == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid temperature'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      context.showErrorSnackBar('Please enter a valid temperature');
       return;
     }
 
     if (!isTemperatureTab && medication.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a medication name'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      context.showErrorSnackBar('Please enter a medication name');
       return;
     }
 
@@ -152,24 +144,13 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
       _notesController.clear();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Health log saved'),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar('Health log saved');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: Colors.red,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t save the health log. Check your connection and try again.',
+          onRetry: _saveHealth,
         );
       }
     } finally {
@@ -470,36 +451,19 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
   }
 
   Future<void> _deleteSavedMed(BabyMedication med) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete medication'),
-        content: Text('Remove "${med.name}" from saved medications?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteDialog(
+      context,
+      what: 'Medication',
+      message: 'Remove "${med.name}" from saved medications?',
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     try {
       await BabyMedicationActions.delete(med.id);
       ref.invalidate(babyMedicationsProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
+        context.showErrorSnackBar(
+          'Couldn’t delete the medication. Check your connection and try again.',
         );
       }
     }

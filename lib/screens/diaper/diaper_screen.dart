@@ -8,6 +8,7 @@ import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
+import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/swipe_to_dismiss.dart';
 
@@ -83,12 +84,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save diaper: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
-        );
+        context.showErrorSnackBar('Couldn’t save the diaper entry. Check your connection and try again.', onRetry: _save);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -96,25 +92,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
   }
 
   Future<bool?> _confirmDelete() {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Diaper'),
-        content:
-            const Text('Are you sure you want to delete this diaper entry?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+    return showDeleteDialog(context, what: 'diaper entry');
   }
 
   Future<void> _deleteDiaper(String diaperId) async {
