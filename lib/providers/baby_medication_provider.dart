@@ -16,7 +16,7 @@ final babyMedicationsProvider =
 
   return data
       .map<BabyMedication>(
-          (json) => BabyMedication.fromJson(json as Map<String, dynamic>))
+          (json) => BabyMedication.fromJson(json))
       .toList();
 });
 

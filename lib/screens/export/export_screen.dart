@@ -396,7 +396,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     final amount = feeding['amount_ml'] ?? feeding['amount_oz'];
     if (amount != null) return '${amount}ml';
     final duration = feeding['duration_minutes'];
-    if (duration != null) return '${duration} min';
+    if (duration != null) return '$duration min';
     return '-';
   }
 

@@ -819,7 +819,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: sleeps.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final sleep = sleeps[index];
                 return _buildSleepItem(sleep);

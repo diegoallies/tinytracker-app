@@ -47,7 +47,7 @@ class AnimatedCard extends StatelessWidget {
               ),
             ],
           ),
-          child: this.child,
+          child: child,
         ),
       ),
     );

@@ -1,5 +1,6 @@
 /// WHO Growth Reference Data (0-24 months)
 /// Each entry: [P3, P15, P50, P85, P97]
+library;
 
 class WhoGrowthData {
   // Weight for age - Boys (kg), monthly from 0 to 24

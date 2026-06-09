@@ -269,7 +269,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                   color: AppColors.primary, strokeWidth: 2),
             ),
           ),
-          error: (_, __) => Text(
+          error: (_, _) => Text(
             'Could not load today\'s stats',
             style: TextStyle(color: context.palette.muted),
           ),
@@ -803,7 +803,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: diapers.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final diaper = diapers[index];
                 return _buildDiaperItem(diaper);

@@ -655,7 +655,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                     reservedSize: 44,
                     getTitlesWidget: (value, meta) {
                       return Text(
-                        '${value.toStringAsFixed(1)}',
+                        value.toStringAsFixed(1),
                         style: const TextStyle(
                           fontSize: 10,
                           color: Color(0xFF8B85A0),

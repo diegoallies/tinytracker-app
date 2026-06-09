@@ -1402,8 +1402,8 @@ class _EditableBabyAvatar extends StatelessWidget {
                 ? CachedNetworkImage(
                     imageUrl: photoUrl!,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => _fallback(),
-                    placeholder: (_, __) => _fallback(),
+                    errorWidget: (_, _, _) => _fallback(),
+                    placeholder: (_, _) => _fallback(),
                   )
                 : _fallback(),
           ),

@@ -346,7 +346,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                             child: CachedNetworkImage(
                               imageUrl: photo.url,
                               fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(
+                              placeholder: (_, _) => Container(
                                 color: AppColors.pastelPurple.withValues(alpha: 0.3),
                                 child: const Center(
                                   child: SizedBox(
@@ -358,7 +358,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                                   ),
                                 ),
                               ),
-                              errorWidget: (_, __, ___) => Container(
+                              errorWidget: (_, _, _) => Container(
                                 color: Colors.grey.shade200,
                                 child: const Icon(
                                   Icons.broken_image_rounded,
@@ -534,7 +534,7 @@ class _FullscreenPhotoViewerState extends State<_FullscreenPhotoViewer> {
             onPressed: () async {
               final photo = widget.photos[_currentIndex];
               await widget.onDelete(photo);
-              if (mounted) Navigator.pop(context);
+              if (context.mounted) Navigator.pop(context);
             },
           ),
         ],
@@ -556,13 +556,13 @@ class _FullscreenPhotoViewerState extends State<_FullscreenPhotoViewer> {
                   child: CachedNetworkImage(
                     imageUrl: photo.url,
                     fit: BoxFit.contain,
-                    placeholder: (_, __) => const Center(
+                    placeholder: (_, _) => const Center(
                       child: CircularProgressIndicator(
                         valueColor:
                             AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     ),
-                    errorWidget: (_, __, ___) => const Center(
+                    errorWidget: (_, _, _) => const Center(
                       child: Icon(
                         Icons.broken_image_rounded,
                         color: Colors.white54,

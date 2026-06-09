@@ -90,6 +90,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (isLoggedIn) {
       final prefs = await SharedPreferences.getInstance();
       final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+      if (!mounted) return;
       if (!hasSeenOnboarding) {
         context.go('/onboarding');
       } else {
@@ -146,7 +147,7 @@ class _SplashScreenState extends State<SplashScreen>
                             borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFA78BFA).withOpacity(0.4 * _pulseAnimation.value),
+                                color: const Color(0xFFA78BFA).withValues(alpha: 0.4 * _pulseAnimation.value),
                                 blurRadius: 40,
                                 spreadRadius: 10,
                               ),
@@ -194,7 +195,7 @@ class _SplashScreenState extends State<SplashScreen>
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -218,7 +219,7 @@ class _SplashScreenState extends State<SplashScreen>
                         height: 3,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(2),
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                         ),
                         child: Align(
                           alignment: Alignment.centerLeft,
@@ -254,7 +255,7 @@ class _SplashScreenState extends State<SplashScreen>
                         'Made with love',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                         ),
                       ),
                     );

@@ -22,7 +22,7 @@ class WeeklySummaryCard extends ConsumerWidget {
         padding: EdgeInsets.symmetric(horizontal: 16),
         child: CardSkeleton(),
       ),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 

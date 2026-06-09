@@ -1044,7 +1044,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: feedings.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final feeding = feedings[index];
                 return _buildFeedingItem(feeding);
@@ -1455,7 +1455,7 @@ class _MedicationPickerSheetState
                   return ListView.separated(
                     shrinkWrap: true,
                     itemCount: meds.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    separatorBuilder: (_, _) => const SizedBox(height: 6),
                     itemBuilder: (ctx, i) => _MedicationListTile(
                       med: meds[i],
                       isOwner: widget.isOwner,

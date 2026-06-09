@@ -547,7 +547,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
               ),
             ),
           ),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
           data: (meds) {
             final chips = <Widget>[
               ...meds.map((m) => _SavedMedChip(

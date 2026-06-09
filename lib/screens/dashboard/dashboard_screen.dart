@@ -158,7 +158,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               photoUrl: baby.photoUrl,
                               babyName: baby.name,
                             ),
-                            error: (_, __) => _BabyAvatar(
+                            error: (_, _) => _BabyAvatar(
                               photoUrl: baby.photoUrl,
                               babyName: baby.name,
                             ),
@@ -204,7 +204,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               lastDiaperTime: s.lastDiaperTime,
             ),
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
           const SizedBox(height: 12),
 
@@ -248,7 +248,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               return const SizedBox.shrink();
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
           const SizedBox(height: 16),
 
@@ -301,7 +301,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   Expanded(child: CardSkeleton()),
                 ],
               ),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
             ),
           ),
           const SizedBox(height: 16),
@@ -380,7 +380,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   Expanded(child: CardSkeleton()),
                 ],
               ),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
             ),
           ),
           const SizedBox(height: 20),
@@ -518,7 +518,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     );
                   },
                   loading: () => const Column(children: [CardSkeleton(), SizedBox(height: 8), CardSkeleton()]),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
                 ),
               ],
             ),
@@ -684,8 +684,8 @@ class _BabyAvatar extends StatelessWidget {
               imageUrl: photoUrl!,
               fit: BoxFit.cover,
               fadeInDuration: const Duration(milliseconds: 150),
-              placeholder: (_, __) => _fallbackIcon(),
-              errorWidget: (_, __, ___) => _fallbackIcon(),
+              placeholder: (_, _) => _fallbackIcon(),
+              errorWidget: (_, _, _) => _fallbackIcon(),
             )
           : _fallbackIcon(),
     );

@@ -534,10 +534,10 @@ class _ProfileHero extends StatelessWidget {
                         ? CachedNetworkImage(
                             imageUrl: profile.avatarUrl as String,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(
+                            placeholder: (_, _) => Container(
                               color: AppColors.pastelPurple,
                             ),
-                            errorWidget: (_, __, ___) =>
+                            errorWidget: (_, _, _) =>
                                 _initials(profile),
                           )
                         : _initials(profile),
