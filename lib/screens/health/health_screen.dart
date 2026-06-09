@@ -7,6 +7,7 @@ import '../../providers/baby_medication_provider.dart';
 import '../../providers/baby_provider.dart';
 import '../../models/health_log.dart';
 import '../../providers/health_provider.dart';
+import '../../services/medication_guard.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../widgets/common/animated_card.dart';
@@ -129,6 +130,34 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
       return;
     }
 
+    // Dose-safety check before the medication log is inserted.
+    if (!isTemperatureTab && medication.isNotEmpty) {
+      var catalog = const <BabyMedication>[];
+      try {
+        catalog = await ref.read(babyMedicationsProvider.future);
+      } catch (_) {
+        // No catalog (offline?) — the guard simply won't match anything.
+      }
+      final check = await MedicationGuard.checkByName(
+        babyId: baby.id,
+        name: medication,
+        catalog: catalog,
+      );
+      if (!check.ok) {
+        if (!mounted) return;
+        final proceed = await showConfirmDialog(
+          context,
+          title: 'Double-check this dose',
+          message: '${check.warning}\n\nGive it anyway?',
+          confirmLabel: 'Give anyway',
+          destructive: true,
+          icon: Icons.medication_rounded,
+        );
+        if (!proceed) return;
+      }
+      if (!mounted) return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -144,6 +173,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
       );
 
       ref.invalidate(healthLogsProvider);
+      ref.invalidate(medicationDosesTodayProvider);
 
       _tempController.clear();
       _medicationController.clear();
@@ -483,6 +513,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
   Widget _buildSavedMedsRow() {
     final medsAsync = ref.watch(babyMedicationsProvider);
     final isOwner = ref.watch(babyProvider).isOwner;
+    final dosesToday = ref.watch(medicationDosesTodayProvider).asData?.value ??
+        const <String, List<DateTime>>{};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,6 +559,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             final chips = <Widget>[
               ...meds.map((m) => _SavedMedChip(
                     med: m,
+                    dosesToday:
+                        dosesToday[m.name.trim().toLowerCase()] ?? const [],
                     onTap: () => _applySavedMed(m),
                     onLongPress: isOwner ? () => _deleteSavedMed(m) : null,
                   )),
@@ -882,11 +916,13 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
 
 class _SavedMedChip extends StatelessWidget {
   final BabyMedication med;
+  final List<DateTime> dosesToday;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
 
   const _SavedMedChip({
     required this.med,
+    required this.dosesToday,
     required this.onTap,
     required this.onLongPress,
   });
@@ -894,43 +930,86 @@ class _SavedMedChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasDosage = med.defaultDosage != null && med.defaultDosage!.isNotEmpty;
+    final hasInstructions =
+        med.instructions != null && med.instructions!.isNotEmpty;
+    final status = MedicationGuard.todayStatus(med, dosesToday);
+    final statusColor = status.done ? AppColors.success : AppColors.muted;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: const Color(0xFFE8D5F5),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: AppColors.primary.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
-          child: Row(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.medication_rounded,
-                  size: 14, color: AppColors.primary),
-              const SizedBox(width: 6),
-              Text(
-                med.name,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.medication_rounded,
+                      size: 14, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    med.name,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  if (hasDosage) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '• ${med.defaultDosage}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF8B85A0),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      status.label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              if (hasDosage) ...[
-                const SizedBox(width: 6),
-                Text(
-                  '• ${med.defaultDosage}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF8B85A0),
+              if (hasInstructions) ...[
+                const SizedBox(height: 3),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 220),
+                  child: Text(
+                    med.instructions!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF8B85A0),
+                    ),
                   ),
                 ),
               ],

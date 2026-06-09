@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../models/baby_medication.dart';
@@ -9,6 +10,7 @@ import '../../providers/baby_provider.dart';
 import '../../providers/feeding_provider.dart';
 import '../../providers/feeding_settings_provider.dart';
 import '../../providers/health_provider.dart';
+import '../../services/medication_guard.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
@@ -105,6 +107,34 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
       }
     }
 
+    // Dose-safety check before anything is inserted. Cancelling only skips
+    // the medication — the feeding itself still gets logged.
+    var giveMed = _addMeds && canLogMeds && _selectedMedication != null;
+    var medSkipped = false;
+    if (giveMed) {
+      final check = await MedicationGuard.check(
+        babyId: baby.id,
+        med: _selectedMedication!,
+        at: _loggedAt,
+      );
+      if (!check.ok) {
+        if (!mounted) return;
+        final proceed = await showConfirmDialog(
+          context,
+          title: 'Double-check this dose',
+          message: '${check.warning}\n\nGive it anyway?',
+          confirmLabel: 'Give anyway',
+          destructive: true,
+          icon: Icons.medication_rounded,
+        );
+        if (!proceed) {
+          giveMed = false;
+          medSkipped = true;
+        }
+      }
+      if (!mounted) return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -121,7 +151,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         loggedAt: _loggedAt,
       );
 
-      if (_addMeds && canLogMeds && _selectedMedication != null) {
+      if (giveMed) {
         await HealthActions.logHealth(
           babyId: baby.id,
           medication: _selectedMedication!.name,
@@ -134,6 +164,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
 
       if (!mounted) return;
       ref.invalidate(recentFeedingsProvider);
+      if (giveMed) ref.invalidate(medicationDosesTodayProvider);
 
       setState(() {
         _notesController.clear();
@@ -150,7 +181,11 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
       Haptics.mediumTap();
 
       if (mounted) {
-        context.showSuccessSnackBar('Feeding logged');
+        if (medSkipped) {
+          context.showSnackBar('Feeding logged without the medication.');
+        } else {
+          context.showSuccessSnackBar('Feeding logged');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -1069,13 +1104,23 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Recent Feedings',
-          style: TextStyle(
-            color: AppColors.text,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Recent Feedings',
+                style: TextStyle(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => context.push('/history?domain=feeding'),
+              child: const Text('View all'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         recentFeedings.when(
@@ -1406,6 +1451,8 @@ class _MedicationPickerSheetState
   @override
   Widget build(BuildContext context) {
     final medsAsync = ref.watch(babyMedicationsProvider);
+    final dosesToday = ref.watch(medicationDosesTodayProvider).asData?.value ??
+        const <String, List<DateTime>>{};
 
     return SafeArea(
       child: Padding(
@@ -1504,6 +1551,9 @@ class _MedicationPickerSheetState
                     separatorBuilder: (_, _) => const SizedBox(height: 6),
                     itemBuilder: (ctx, i) => _MedicationListTile(
                       med: meds[i],
+                      dosesToday: dosesToday[
+                              meds[i].name.trim().toLowerCase()] ??
+                          const [],
                       isOwner: widget.isOwner,
                       onTap: () => Navigator.pop(context, meds[i]),
                       onDelete: () => _deleteMedication(meds[i]),
@@ -1521,12 +1571,14 @@ class _MedicationPickerSheetState
 
 class _MedicationListTile extends StatelessWidget {
   final BabyMedication med;
+  final List<DateTime> dosesToday;
   final bool isOwner;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   const _MedicationListTile({
     required this.med,
+    required this.dosesToday,
     required this.isOwner,
     required this.onTap,
     required this.onDelete,
@@ -1534,6 +1586,9 @@ class _MedicationListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = MedicationGuard.todayStatus(med, dosesToday);
+    final statusColor = status.done ? AppColors.success : AppColors.muted;
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(14),
@@ -1583,7 +1638,37 @@ class _MedicationListTile extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (med.instructions != null &&
+                        med.instructions!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        med.instructions!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
                   ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  status.label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: statusColor,
+                  ),
                 ),
               ),
               if (isOwner)

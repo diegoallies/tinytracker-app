@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
@@ -857,13 +858,23 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recent Diapers',
-          style: TextStyle(
-            color: context.palette.text,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Recent Diapers',
+                style: TextStyle(
+                  color: context.palette.text,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => context.push('/history?domain=diaper'),
+              child: const Text('View all'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         recentDiapers.when(
