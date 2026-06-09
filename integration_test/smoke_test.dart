@@ -119,6 +119,57 @@ void main() {
       await settleABit(tester, const Duration(seconds: 1));
     }
 
+    // ----- Write journeys: real inserts against the live test baby -----
+
+    // 1. Log a diaper (defaults to 'wet', just save).
+    await tapTab('Diaper');
+    final saveDiaper = find.text('Save Diaper');
+    await tester.scrollUntilVisible(saveDiaper, 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(saveDiaper, warnIfMissed: false);
+    expect(
+        await pumpUntilFound(tester, find.text('Diaper logged successfully')),
+        isTrue,
+        reason: 'diaper save should succeed against the live backend');
+
+    // 2. Log a reflux event (severity 2 + flag, from the Care Pack).
+    await tapTab('More');
+    await settleABit(tester, const Duration(seconds: 1));
+    await tester.tap(find.text('Reflux').last, warnIfMissed: false);
+    await settleABit(tester, const Duration(seconds: 2));
+    await tester.tap(find.text('2').first, warnIfMissed: false);
+    await tester.pump(const Duration(milliseconds: 300));
+    final logReflux = find.text('Log Reflux');
+    await tester.scrollUntilVisible(logReflux, 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(logReflux, warnIfMissed: false);
+    await settleABit(tester, const Duration(seconds: 3));
+    expect(tester.takeException(), isNull,
+        reason: 'reflux log should not throw');
+
+    // 3. Save today's journal (tap a mood, save).
+    final backToMore = find.byType(BackButton);
+    if (backToMore.evaluate().isNotEmpty) {
+      await tester.tap(backToMore.first, warnIfMissed: false);
+      await settleABit(tester, const Duration(seconds: 1));
+    }
+    await tapTab('More');
+    await settleABit(tester, const Duration(seconds: 1));
+    await tester.tap(find.text('Daily Journal').last, warnIfMissed: false);
+    await settleABit(tester, const Duration(seconds: 2));
+    await tester.tap(find.text('😊').first, warnIfMissed: false);
+    await tester.pump(const Duration(milliseconds: 300));
+    final saveJournal = find.text('Save Journal');
+    await tester.scrollUntilVisible(saveJournal, 300,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(saveJournal, warnIfMissed: false);
+    await settleABit(tester, const Duration(seconds: 3));
+    expect(tester.takeException(), isNull,
+        reason: 'journal save should not throw');
+
     // Land back on the dashboard to finish.
     await tapTab('Home');
     expect(tester.takeException(), isNull);

@@ -8,6 +8,8 @@ import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/feeding/feeding_screen.dart';
 import '../screens/diaper/diaper_screen.dart';
 import '../screens/sleep/sleep_screen.dart';
+import '../screens/history/history_screen.dart';
+import '../providers/history_provider.dart';
 import '../screens/growth/growth_screen.dart';
 import '../screens/health/health_screen.dart';
 import '../screens/milestones/milestones_screen.dart';
@@ -255,6 +257,20 @@ final appRouter = GoRouter(
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: const ImmunisationsScreen(),
+            transitionsBuilder: _slideTransition,
+          ),
+        ),
+        GoRoute(
+          path: '/history',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: HistoryScreen(
+              domain: switch (state.uri.queryParameters['domain']) {
+                'diaper' => HistoryDomain.diaper,
+                'sleep' => HistoryDomain.sleep,
+                _ => HistoryDomain.feeding,
+              },
+            ),
             transitionsBuilder: _slideTransition,
           ),
         ),

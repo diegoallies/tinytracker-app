@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/sleep_provider.dart';
@@ -754,13 +755,23 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recent Sleep Sessions',
-          style: TextStyle(
-            color: context.palette.text,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Recent Sleep Sessions',
+                style: TextStyle(
+                  color: context.palette.text,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => context.push('/history?domain=sleep'),
+              child: const Text('View all'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         recentSleeps.when(
