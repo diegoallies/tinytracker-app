@@ -57,14 +57,14 @@ class WeeklySummaryCard extends ConsumerWidget {
               children: [
                 const Icon(Icons.bar_chart_rounded, color: AppColors.primary, size: 22),
                 const SizedBox(width: 8),
-                Text(
+                const Text(
                   'This Week',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: context.palette.text),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.text),
                 ),
                 const Spacer(),
                 Text(
                   dateRange,
-                  style: TextStyle(fontSize: 12, color: context.palette.muted),
+                  style: const TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
               ],
             ),
@@ -106,9 +106,9 @@ class WeeklySummaryCard extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _MiniStat(label: 'Avg feeds/day', value: summary.avgFeedsPerDay.toStringAsFixed(1)),
-                  Container(width: 1, height: 24, color: context.palette.muted.withValues(alpha: 0.2)),
+                  Container(width: 1, height: 24, color: AppColors.muted.withValues(alpha: 0.2)),
                   _MiniStat(label: 'Avg sleep/day', value: '${summary.avgDailySleepHours.toStringAsFixed(1)}h'),
-                  Container(width: 1, height: 24, color: context.palette.muted.withValues(alpha: 0.2)),
+                  Container(width: 1, height: 24, color: AppColors.muted.withValues(alpha: 0.2)),
                   _MiniStat(label: 'Avg diapers/day', value: summary.avgDiapersPerDay.toStringAsFixed(1)),
                 ],
               ),
@@ -143,11 +143,11 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: iconColor),
         const SizedBox(width: 10),
-        Text(label, style: TextStyle(fontSize: 14, color: context.palette.text)),
+        Text(label, style: const TextStyle(fontSize: 14, color: AppColors.text)),
         const Spacer(),
         Text(
           value,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.palette.text),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text),
         ),
         const SizedBox(width: 10),
         _TrendBadge(trend: trend, label: changeLabel),
@@ -203,8 +203,8 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: context.palette.text)),
-        Text(label, style: TextStyle(fontSize: 10, color: context.palette.muted)),
+        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text)),
+        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.muted)),
       ],
     );
   }

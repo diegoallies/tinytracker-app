@@ -23,7 +23,7 @@ class LoadingSkeleton extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.palette.card,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),

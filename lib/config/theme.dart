@@ -26,12 +26,14 @@ class AppPalette extends ThemeExtension<AppPalette> {
     border: Color(0xFFEDE8F4),
   );
 
+  // Dark values tuned for separation: card sits clearly above surface and
+  // borders are visible — "everything blends together" was the complaint.
   static const dark = AppPalette(
-    text: Color(0xFFE8E4F0),
-    surface: Color(0xFF14111C),
-    card: Color(0xFF1F1A2B),
-    muted: Color(0xFF9A93AE),
-    border: Color(0xFF2E2740),
+    text: Color(0xFFEDEAF6),
+    surface: Color(0xFF120F1A),
+    card: Color(0xFF262038),
+    muted: Color(0xFFABA3C2),
+    border: Color(0xFF3F3558),
   );
 
   @override

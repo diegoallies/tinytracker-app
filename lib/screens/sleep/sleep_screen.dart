@@ -462,7 +462,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -482,7 +482,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: ctx.palette.border,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -634,7 +634,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -654,7 +654,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: ctx.palette.border,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),

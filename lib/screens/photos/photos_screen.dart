@@ -52,9 +52,10 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
           return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: ctx.palette.card,
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24)),
             ),
             padding: EdgeInsets.only(
               left: 24,
@@ -72,7 +73,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: ctx.palette.border,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -104,11 +105,11 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                       hintText: 'Add a caption...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(color: ctx.palette.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(color: ctx.palette.border),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -328,10 +329,10 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                                 ),
                               ),
                               errorWidget: (_, _, _) => Container(
-                                color: Colors.grey.shade200,
-                                child: const Icon(
+                                color: context.palette.surface,
+                                child: Icon(
                                   Icons.broken_image_rounded,
-                                  color: Colors.grey,
+                                  color: context.palette.muted,
                                 ),
                               ),
                             ),
@@ -373,9 +374,10 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: ctx.palette.card,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -386,7 +388,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: ctx.palette.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

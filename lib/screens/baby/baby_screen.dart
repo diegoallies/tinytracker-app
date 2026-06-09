@@ -52,10 +52,10 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.light(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: AppColors.primary,
             onPrimary: Colors.white,
-            surface: Colors.white,
+            surface: context.palette.card,
             onSurface: context.palette.text,
           ),
         ),
@@ -136,7 +136,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
   Future<void> _pickAndUploadBabyPhoto(String babyId) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -153,7 +153,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: context.palette.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -273,7 +273,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: context.palette.border,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -422,7 +422,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: context.palette.border,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -587,7 +587,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       case 'viewer':
         return AppColors.pastelGreen;
       default:
-        return Colors.grey.shade100;
+        return context.palette.surface;
     }
   }
 
@@ -600,7 +600,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       case 'viewer':
         return const Color(0xFF5bbf8c);
       default:
-        return AppColors.muted;
+        return context.palette.muted;
     }
   }
 
@@ -967,7 +967,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                               Icon(
                                 Icons.people_outline_rounded,
                                 size: 40,
-                                color: Colors.grey.shade300,
+                                color: context.palette.muted,
                               ),
                               const SizedBox(height: 8),
                               Text(
@@ -1130,7 +1130,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                       color: isSelected ? AppColors.primary : context.palette.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : Colors.grey.shade200,
+                        color: isSelected ? AppColors.primary : context.palette.border,
                       ),
                     ),
                     child: Center(
@@ -1163,11 +1163,11 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade200),
+        borderSide: BorderSide(color: context.palette.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade200),
+        borderSide: BorderSide(color: context.palette.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -1219,14 +1219,16 @@ class _InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: context.palette.text),
+          // Chip background stays pastel (light) in both modes, so content
+          // must be a fixed dark color for legibility.
+          Icon(icon, size: 16, color: AppColors.text),
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: context.palette.text,
+              color: AppColors.text,
             ),
           ),
         ],
@@ -1262,10 +1264,10 @@ class _RoleOption extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isSelected ? color : Colors.white,
+          color: isSelected ? color : context.palette.card,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? iconColor : Colors.grey.shade200,
+            color: isSelected ? iconColor : context.palette.border,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -1289,12 +1291,17 @@ class _RoleOption extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: context.palette.text,
+                      // Selected tile keeps its pastel (light) background, so
+                      // text must stay dark there in both modes.
+                      color: isSelected ? AppColors.text : context.palette.text,
                     ),
                   ),
                   Text(
                     description,
-                    style: TextStyle(fontSize: 12, color: context.palette.muted),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? AppColors.muted : context.palette.muted,
+                    ),
                   ),
                 ],
               ),
@@ -1377,7 +1384,7 @@ class _EditableBabyAvatar extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primary,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: context.palette.card, width: 2),
               ),
               child: const Icon(
                 Icons.camera_alt_rounded,
@@ -1428,9 +1435,9 @@ class _PhotoSourceTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.palette.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: context.palette.border),
         ),
         child: Row(
           children: [

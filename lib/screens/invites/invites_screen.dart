@@ -242,7 +242,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
       case 'viewer':
         return AppColors.pastelGreen;
       default:
-        return Colors.grey.shade100;
+        return context.palette.surface;
     }
   }
 
@@ -253,7 +253,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
       case 'viewer':
         return const Color(0xFF5bbf8c);
       default:
-        return AppColors.muted;
+        return context.palette.muted;
     }
   }
 

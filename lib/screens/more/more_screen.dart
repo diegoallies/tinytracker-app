@@ -14,7 +14,8 @@ class MoreScreen extends ConsumerWidget {
       description: 'Preferences',
       route: '/settings',
       color: Color(0xFFEDEAF3),
-      iconColor: AppColors.text,
+      // Fixed dark icon: the chip stays light in both themes.
+      iconColor: Color(0xFF2D2640),
     ),
     _FeatureItem(
       icon: Icons.auto_awesome_rounded,

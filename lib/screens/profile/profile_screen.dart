@@ -125,7 +125,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _pickAndUploadAvatar() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -142,7 +142,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: context.palette.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -615,7 +615,7 @@ class _StatPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.card,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -685,7 +685,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.card,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -926,7 +926,7 @@ class _EditActions extends StatelessWidget {
           _IconButton(
             icon: Icons.close_rounded,
             color: context.palette.muted,
-            background: Colors.grey.shade100,
+            background: context.palette.surface,
             onTap: onCancel,
             tooltip: 'Cancel',
           ),
@@ -949,7 +949,7 @@ class _EditActions extends StatelessWidget {
           : context.palette.muted.withValues(alpha: 0.4),
       background: enabled
           ? AppColors.pastelPurple.withValues(alpha: 0.5)
-          : Colors.grey.shade100,
+          : context.palette.surface,
       onTap: enabled ? onEdit : null,
       tooltip: 'Edit',
     );
@@ -1004,7 +1004,7 @@ class _FieldDivider extends StatelessWidget {
       padding: const EdgeInsets.only(left: 60, right: 20),
       child: Container(
         height: 1,
-        color: Colors.grey.shade100,
+        color: context.palette.border,
       ),
     );
   }
@@ -1027,7 +1027,7 @@ class _AccountActionsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.card,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(

@@ -74,6 +74,15 @@ void main() {
         reason: 'dashboard should show the test baby after sign-in');
     await settleABit(tester);
 
+    // Flip to DARK MODE so the whole walk verifies dark-mode rendering.
+    final nightToggle = find.byIcon(Icons.nightlight_round);
+    if (nightToggle.evaluate().isNotEmpty) {
+      await tester.tap(nightToggle.first, warnIfMissed: false);
+      await settleABit(tester, const Duration(seconds: 1));
+      expect(tester.takeException(), isNull,
+          reason: 'dark mode toggle should not throw');
+    }
+
     // Bottom tabs (custom nav bar labels: Home/Feed/Diaper/Sleep/More).
     Future<void> tapTab(String label) async {
       await tester.tap(find.text(label).last, warnIfMissed: false);

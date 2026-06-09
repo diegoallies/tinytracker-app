@@ -134,10 +134,10 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       lastDate: now,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: ColorScheme.light(
+          colorScheme: Theme.of(ctx).colorScheme.copyWith(
             primary: AppColors.primary,
             onPrimary: Colors.white,
-            surface: Colors.white,
+            surface: ctx.palette.card,
             onSurface: ctx.palette.text,
           ),
         ),
@@ -151,10 +151,10 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       initialTime: TimeOfDay.fromDateTime(_loggedAt),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: ColorScheme.light(
+          colorScheme: Theme.of(ctx).colorScheme.copyWith(
             primary: AppColors.primary,
             onPrimary: Colors.white,
-            surface: Colors.white,
+            surface: ctx.palette.card,
             onSurface: ctx.palette.text,
           ),
         ),
@@ -646,7 +646,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary
-                                : Colors.grey.shade300,
+                                : context.palette.border,
                             width: isSelected ? 3 : 1.5,
                           ),
                           boxShadow: isSelected
@@ -998,8 +998,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                             decoration: BoxDecoration(
                               color: colorIndicator,
                               shape: BoxShape.circle,
-                              border:
-                                  Border.all(color: Colors.grey.shade300, width: 1),
+                              border: Border.all(
+                                  color: context.palette.border, width: 1),
                             ),
                           ),
                         ],

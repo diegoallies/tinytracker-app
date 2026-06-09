@@ -150,7 +150,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
 
     final result = await showModalBottomSheet<int>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -168,7 +168,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: ctx.palette.border,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -302,7 +302,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -331,7 +331,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: ctx.palette.border,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -1003,7 +1003,7 @@ class _SessionTile extends StatelessWidget {
       onDismissed: onDelete,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.palette.card,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(

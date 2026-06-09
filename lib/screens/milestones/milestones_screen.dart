@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/theme.dart';
 import '../../models/milestone.dart';
 import '../../providers/milestone_provider.dart';
 import '../../utils/date_utils.dart';
@@ -103,11 +104,11 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
     final milestones = ref.watch(milestonesProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FC),
+      backgroundColor: context.palette.surface,
       appBar: AppBar(
         title: const Text('Milestones'),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF2D2640),
+        backgroundColor: context.palette.card,
+        foregroundColor: context.palette.text,
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
@@ -186,12 +187,12 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Progress',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D2640),
+                        color: context.palette.text,
                       ),
                     ),
                   ],
@@ -238,9 +239,9 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
             const SizedBox(height: 8),
             Text(
               '${(progress * 100).toInt()}% complete',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFF8B85A0),
+                color: context.palette.muted,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -266,7 +267,7 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
             child: Material(
               color: isSelected
                   ? const Color(0xFF9B72CF)
-                  : Colors.white,
+                  : context.palette.card,
               borderRadius: BorderRadius.circular(20),
               elevation: isSelected ? 2 : 0,
               child: InkWell(
@@ -281,7 +282,7 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
                     border: Border.all(
                       color: isSelected
                           ? Colors.transparent
-                          : const Color(0xFFE8D5F5),
+                          : context.palette.border,
                     ),
                   ),
                   child: Row(
@@ -292,7 +293,7 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
                           size: 14,
                           color: isSelected
                               ? Colors.white
-                              : const Color(0xFF8B85A0),
+                              : context.palette.muted,
                         ),
                         const SizedBox(width: 6),
                       ],
@@ -303,7 +304,7 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
                           fontWeight: FontWeight.w600,
                           color: isSelected
                               ? Colors.white
-                              : const Color(0xFF8B85A0),
+                              : context.palette.muted,
                         ),
                       ),
                     ],
@@ -348,9 +349,9 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
               const SizedBox(width: 10),
               Text(
                 '$achievedInGroup/${milestones.length}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF8B85A0),
+                  color: context.palette.muted,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -393,7 +394,7 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
                       border: Border.all(
                         color: milestone.achieved
                             ? const Color(0xFF4CAF50)
-                            : const Color(0xFFD5D0E0),
+                            : context.palette.border,
                         width: 2,
                       ),
                     ),
@@ -420,11 +421,11 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF2D2640),
+                                  color: context.palette.text,
                                   decoration: milestone.achieved
                                       ? TextDecoration.lineThrough
                                       : null,
-                                  decorationColor: const Color(0xFF8B85A0),
+                                  decorationColor: context.palette.muted,
                                 ),
                               ),
                             ),
@@ -467,9 +468,9 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
                           const SizedBox(height: 4),
                           Text(
                             milestone.description!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF8B85A0),
+                              color: context.palette.muted,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,

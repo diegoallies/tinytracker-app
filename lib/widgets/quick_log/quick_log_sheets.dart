@@ -52,7 +52,7 @@ class _DragHandle extends StatelessWidget {
         height: 4,
         margin: const EdgeInsets.only(top: 12, bottom: 8),
         decoration: BoxDecoration(
-          color: Colors.grey.shade300,
+          color: context.palette.border,
           borderRadius: BorderRadius.circular(2),
         ),
       ),
@@ -607,11 +607,13 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
                         const Icon(Icons.nightlight_round,
                             size: 32, color: AppColors.primary),
                         const SizedBox(height: 8),
-                        Text(
+                        const Text(
                           'Baby is sleeping',
                           style: TextStyle(
                             fontSize: 14,
-                            color: context.palette.muted,
+                            // Fixed dark tone: sits on the light pastel chip
+                            // in both light and dark mode.
+                            color: AppColors.primaryDark,
                           ),
                         ),
                         const SizedBox(height: 4),

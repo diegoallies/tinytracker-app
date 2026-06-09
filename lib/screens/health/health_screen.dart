@@ -205,11 +205,11 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     _initTabController(canAdministerMeds);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FC),
+      backgroundColor: context.palette.surface,
       appBar: AppBar(
         title: const Text('Health'),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF2D2640),
+        backgroundColor: context.palette.card,
+        foregroundColor: context.palette.text,
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
@@ -259,7 +259,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               decoration: BoxDecoration(
-                color: const Color(0xFFFAF8FC),
+                color: context.palette.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TabBar(
@@ -271,7 +271,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerHeight: 0,
                 labelColor: Colors.white,
-                unselectedLabelColor: const Color(0xFF8B85A0),
+                unselectedLabelColor: context.palette.muted,
                 labelStyle: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -310,17 +310,18 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               padding: const EdgeInsets.symmetric(vertical: 12),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.thermostat, size: 20, color: Color(0xFF9B72CF)),
-                  SizedBox(width: 8),
+                  const Icon(Icons.thermostat,
+                      size: 20, color: Color(0xFF9B72CF)),
+                  const SizedBox(width: 8),
                   Text(
                     'Temperature',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D2640),
+                      color: context.palette.text,
                     ),
                   ),
                 ],
@@ -408,15 +409,15 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             prefixIcon: Icon(
               Icons.thermostat,
               size: 20,
-              color: status?.color ?? const Color(0xFF8B85A0),
+              color: status?.color ?? context.palette.muted,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -426,7 +427,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
               ),
             ),
             filled: true,
-            fillColor: const Color(0xFFFAF8FC),
+            fillColor: context.palette.surface,
           ),
         ),
         if (status != null)
@@ -524,18 +525,19 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             const Icon(Icons.bookmark_rounded,
                 size: 16, color: AppColors.primary),
             const SizedBox(width: 6),
-            const Text(
+            Text(
               'Saved medications',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF2D2640),
+                color: context.palette.text,
               ),
             ),
             const Spacer(),
             Text(
               isOwner ? 'Tap to fill • Hold to delete' : 'Tap to fill',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF8B85A0)),
+              style:
+                  TextStyle(fontSize: 11, color: context.palette.muted),
             ),
           ],
         ),
@@ -573,13 +575,14 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFAF8FC),
+                  color: context.palette.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE8D5F5)),
+                  border: Border.all(color: context.palette.border),
                 ),
-                child: const Text(
+                child: Text(
                   'No daily meds saved yet — ask the owner to add some.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF8B85A0)),
+                  style: TextStyle(
+                      fontSize: 12, color: context.palette.muted),
                 ),
               );
             }
@@ -609,11 +612,11 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             prefixIcon: const Icon(Icons.medication, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -623,7 +626,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
               ),
             ),
             filled: true,
-            fillColor: const Color(0xFFFAF8FC),
+            fillColor: context.palette.surface,
           ),
           textCapitalization: TextCapitalization.sentences,
         ),
@@ -635,11 +638,11 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             prefixIcon: const Icon(Icons.science_outlined, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -649,7 +652,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
               ),
             ),
             filled: true,
-            fillColor: const Color(0xFFFAF8FC),
+            fillColor: context.palette.surface,
           ),
         ),
       ],
@@ -666,11 +669,11 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             prefixIcon: const Icon(Icons.sick_outlined, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -680,7 +683,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
               ),
             ),
             filled: true,
-            fillColor: const Color(0xFFFAF8FC),
+            fillColor: context.palette.surface,
           ),
           textCapitalization: TextCapitalization.sentences,
         ),
@@ -692,11 +695,11 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             prefixIcon: const Icon(Icons.notes, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+              borderSide: BorderSide(color: context.palette.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -706,7 +709,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
               ),
             ),
             filled: true,
-            fillColor: const Color(0xFFFAF8FC),
+            fillColor: context.palette.surface,
           ),
           maxLines: 2,
           textCapitalization: TextCapitalization.sentences,
@@ -719,12 +722,12 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Recent Logs',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2D2640),
+            color: context.palette.text,
           ),
         ),
         const SizedBox(height: 12),
@@ -752,17 +755,17 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                 children: [
                   Text(
                     AppDateUtils.formatDate(log.loggedAt),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D2640),
+                      color: context.palette.text,
                     ),
                   ),
                   Text(
                     AppDateUtils.formatTime(log.loggedAt),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF8B85A0),
+                      color: context.palette.muted,
                     ),
                   ),
                 ],
@@ -864,18 +867,18 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.sick_outlined,
                       size: 14,
-                      color: Color(0xFF8B85A0),
+                      color: context.palette.muted,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         log.symptoms!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF8B85A0),
+                          color: context.palette.muted,
                         ),
                       ),
                     ),
@@ -887,18 +890,18 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.notes,
                       size: 14,
-                      color: Color(0xFF8B85A0),
+                      color: context.palette.muted,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         log.notes!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF8B85A0),
+                          color: context.palette.muted,
                           fontStyle: FontStyle.italic,
                         ),
                       ),

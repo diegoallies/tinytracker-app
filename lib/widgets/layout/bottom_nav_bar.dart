@@ -108,7 +108,7 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isActive ? AppColors.primary : AppColors.muted,
+              color: isActive ? AppColors.primary : context.palette.muted,
               size: 24,
             ),
             const SizedBox(height: 2),
@@ -117,7 +117,7 @@ class _NavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? AppColors.primary : AppColors.muted,
+                color: isActive ? AppColors.primary : context.palette.muted,
               ),
             ),
           ],
@@ -169,7 +169,7 @@ class _ProfileNavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? AppColors.primary : AppColors.muted,
+                color: isActive ? AppColors.primary : context.palette.muted,
               ),
             ),
           ],

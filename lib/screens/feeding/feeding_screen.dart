@@ -276,7 +276,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     final value = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -294,17 +294,17 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: ctx.palette.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const Text(
+            Text(
               'Custom duration',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.text,
+                color: ctx.palette.text,
               ),
               textAlign: TextAlign.center,
             ),
@@ -318,15 +318,15 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
               ],
               autofocus: true,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
-                color: AppColors.text,
+                color: ctx.palette.text,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 suffixText: 'min',
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: ctx.palette.surface,
               ),
             ),
             const SizedBox(height: 16),
@@ -358,7 +358,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     final value = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -375,17 +375,17 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: ctx.palette.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const Text(
+            Text(
               'Custom amount',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.text,
+                color: ctx.palette.text,
               ),
               textAlign: TextAlign.center,
             ),
@@ -399,15 +399,15 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
               ],
               autofocus: true,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
-                color: AppColors.text,
+                color: ctx.palette.text,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 suffixText: 'ml',
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: ctx.palette.surface,
               ),
             ),
             const SizedBox(height: 16),
@@ -442,7 +442,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     final picked = await showModalBottomSheet<BabyMedication>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -526,10 +526,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Feed Type',
               style: TextStyle(
-                color: AppColors.text,
+                color: context.palette.text,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
@@ -557,12 +557,12 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary.withValues(alpha: 0.15)
-                          : AppColors.surface,
+                          : context.palette.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primary
-                            : AppColors.muted.withValues(alpha: 0.3),
+                            : context.palette.muted.withValues(alpha: 0.3),
                         width: isSelected ? 2 : 1,
                       ),
                     ),
@@ -575,7 +575,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                           size: 18,
                           color: isSelected
                               ? AppColors.primary
-                              : AppColors.muted,
+                              : context.palette.muted,
                         ),
                         const SizedBox(width: 6),
                         Flexible(
@@ -584,7 +584,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                             style: TextStyle(
                               color: isSelected
                                   ? AppColors.primary
-                                  : AppColors.muted,
+                                  : context.palette.muted,
                               fontWeight: isSelected
                                   ? FontWeight.w600
                                   : FontWeight.w500,
@@ -614,10 +614,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
           children: [
             Row(
               children: [
-                const Text(
+                Text(
                   'Duration',
                   style: TextStyle(
-                    color: AppColors.text,
+                    color: context.palette.text,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
@@ -679,10 +679,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Amount',
               style: TextStyle(
-                color: AppColors.text,
+                color: context.palette.text,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
@@ -725,19 +725,19 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                     ],
                     textAlign: TextAlign.center,
                     onChanged: (_) => setState(() {}),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                     decoration: InputDecoration(
                       suffixText: 'ml',
-                      suffixStyle: const TextStyle(
+                      suffixStyle: TextStyle(
                         fontSize: 16,
-                        color: AppColors.muted,
+                        color: context.palette.muted,
                       ),
                       filled: true,
-                      fillColor: AppColors.surface,
+                      fillColor: context.palette.surface,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -793,19 +793,19 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'When did it happen?',
               style: TextStyle(
-                color: AppColors.text,
+                color: context.palette.text,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Quick pick or set a specific time',
               style: TextStyle(
-                color: AppColors.muted,
+                color: context.palette.muted,
                 fontSize: 12,
               ),
             ),
@@ -844,14 +844,14 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
               children: [
                 Expanded(
                   child: Divider(
-                      color: AppColors.muted.withValues(alpha: 0.2)),
+                      color: context.palette.muted.withValues(alpha: 0.2)),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
                     'OR',
                     style: TextStyle(
-                      color: AppColors.muted,
+                      color: context.palette.muted,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1,
@@ -860,7 +860,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                 ),
                 Expanded(
                   child: Divider(
-                      color: AppColors.muted.withValues(alpha: 0.2)),
+                      color: context.palette.muted.withValues(alpha: 0.2)),
                 ),
               ],
             ),
@@ -880,7 +880,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                   'Only the owner can log on past days.',
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.muted.withValues(alpha: 0.8),
+                    color: context.palette.muted.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -915,14 +915,14 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Give medication',
                         style: TextStyle(
-                          color: AppColors.text,
+                          color: context.palette.text,
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
                         ),
@@ -930,7 +930,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                       Text(
                         'Logged at the same time as this feeding',
                         style: TextStyle(
-                          color: AppColors.muted,
+                          color: context.palette.muted,
                           fontSize: 12,
                         ),
                       ),
@@ -966,9 +966,9 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                 decoration: InputDecoration(
                   hintText: 'Dosage (e.g. 2.5 ml)',
                   hintStyle: TextStyle(
-                      color: AppColors.muted.withValues(alpha: 0.6)),
+                      color: context.palette.muted.withValues(alpha: 0.6)),
                   filled: true,
-                  fillColor: AppColors.surface,
+                  fillColor: context.palette.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -976,7 +976,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 12),
                 ),
-                style: const TextStyle(color: AppColors.text),
+                style: TextStyle(color: context.palette.text),
               ),
             ],
           ],
@@ -1053,9 +1053,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
           minLines: 1,
           decoration: InputDecoration(
             hintText: 'Add notes (optional)',
-            hintStyle: TextStyle(color: AppColors.muted.withValues(alpha: 0.6)),
+            hintStyle: TextStyle(
+                color: context.palette.muted.withValues(alpha: 0.6)),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: context.palette.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -1063,7 +1064,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          style: const TextStyle(color: AppColors.text),
+          style: TextStyle(color: context.palette.text),
         ),
       ),
     );
@@ -1106,11 +1107,11 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 'Recent Feedings',
                 style: TextStyle(
-                  color: AppColors.text,
+                  color: context.palette.text,
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
                 ),
@@ -1136,7 +1137,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
               child: Text(
                 'Failed to load feedings\n$error',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                style:
+                    TextStyle(color: context.palette.muted, fontSize: 13),
               ),
             ),
           ),
@@ -1233,8 +1235,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
-                        color: AppColors.text,
+                      style: TextStyle(
+                        color: context.palette.text,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -1242,8 +1244,8 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                     const SizedBox(height: 2),
                     Text(
                       _itemTimeLabel(loggedAt),
-                      style: const TextStyle(
-                        color: AppColors.muted,
+                      style: TextStyle(
+                        color: context.palette.muted,
                         fontSize: 13,
                       ),
                     ),
@@ -1359,7 +1361,7 @@ class _MedicationSelector extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1369,7 +1371,7 @@ class _MedicationSelector extends StatelessWidget {
                 size: 20,
                 color: selected != null
                     ? AppColors.primary
-                    : AppColors.muted.withValues(alpha: 0.6),
+                    : context.palette.muted.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1381,14 +1383,14 @@ class _MedicationSelector extends StatelessWidget {
                         ? FontWeight.w600
                         : FontWeight.w400,
                     color: selected != null
-                        ? AppColors.text
-                        : AppColors.muted.withValues(alpha: 0.7),
+                        ? context.palette.text
+                        : context.palette.muted.withValues(alpha: 0.7),
                   ),
                 ),
               ),
               Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: AppColors.muted.withValues(alpha: 0.7),
+                color: context.palette.muted.withValues(alpha: 0.7),
               ),
             ],
           ),
@@ -1467,19 +1469,19 @@ class _MedicationPickerSheetState
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: context.palette.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             Row(
               children: [
-                const Text(
+                Text(
                   'Medications',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+                    color: context.palette.text,
                   ),
                 ),
                 const Spacer(),
@@ -1520,15 +1522,15 @@ class _MedicationPickerSheetState
                           Icon(
                             Icons.medication_outlined,
                             size: 48,
-                            color: Colors.grey.shade300,
+                            color: context.palette.muted,
                           ),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'No medications yet',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.text,
+                              color: context.palette.text,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -1536,9 +1538,9 @@ class _MedicationPickerSheetState
                             widget.isOwner
                                 ? 'Tap Add to create one'
                                 : 'Ask the owner to add medications',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.muted,
+                              color: context.palette.muted,
                             ),
                           ),
                         ],
@@ -1587,7 +1589,8 @@ class _MedicationListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = MedicationGuard.todayStatus(med, dosesToday);
-    final statusColor = status.done ? AppColors.success : AppColors.muted;
+    final statusColor =
+        status.done ? AppColors.success : context.palette.muted;
 
     return Material(
       color: Colors.transparent,
@@ -1598,7 +1601,7 @@ class _MedicationListTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -1622,19 +1625,19 @@ class _MedicationListTile extends StatelessWidget {
                   children: [
                     Text(
                       med.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: context.palette.text,
                       ),
                     ),
                     if (med.defaultDosage != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         med.defaultDosage!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],
@@ -1645,9 +1648,9 @@ class _MedicationListTile extends StatelessWidget {
                         med.instructions!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],
@@ -1722,12 +1725,12 @@ class _CustomTimeTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.12)
-              : AppColors.surface,
+              : context.palette.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected
                 ? AppColors.primary
-                : AppColors.muted.withValues(alpha: 0.3),
+                : context.palette.muted.withValues(alpha: 0.3),
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -1756,7 +1759,9 @@ class _CustomTimeTile extends StatelessWidget {
                   Text(
                     headline,
                     style: TextStyle(
-                      color: selected ? AppColors.primary : AppColors.text,
+                      color: selected
+                          ? AppColors.primary
+                          : context.palette.text,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -1764,17 +1769,17 @@ class _CustomTimeTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: AppColors.muted,
+                    style: TextStyle(
+                      color: context.palette.muted,
                       fontSize: 12,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.muted,
+              color: context.palette.muted,
               size: 22,
             ),
           ],
@@ -1811,12 +1816,12 @@ class _Pill extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.15)
-              : AppColors.surface,
+              : context.palette.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected
                 ? AppColors.primary
-                : AppColors.muted.withValues(alpha: 0.3),
+                : context.palette.muted.withValues(alpha: 0.3),
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -1827,14 +1832,14 @@ class _Pill extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: selected ? AppColors.primary : AppColors.muted,
+                color: selected ? AppColors.primary : context.palette.muted,
               ),
               const SizedBox(width: 4),
             ],
             Text(
               label,
               style: TextStyle(
-                color: selected ? AppColors.primary : AppColors.text,
+                color: selected ? AppColors.primary : context.palette.text,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: 13,
               ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../models/growth.dart';
 import '../../providers/growth_provider.dart';
@@ -120,11 +121,11 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
     final growthEntries = ref.watch(growthEntriesProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FC),
+      backgroundColor: context.palette.surface,
       appBar: AppBar(
         title: const Text('Growth'),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF2D2640),
+        backgroundColor: context.palette.card,
+        foregroundColor: context.palette.text,
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
@@ -190,12 +191,12 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'New Measurement',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D2640),
+                  color: context.palette.text,
                 ),
               ),
               const SizedBox(height: 16),
@@ -243,11 +244,11 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                   prefixIcon: const Icon(Icons.notes, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+                    borderSide: BorderSide(color: context.palette.border),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+                    borderSide: BorderSide(color: context.palette.border),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -257,7 +258,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: const Color(0xFFFAF8FC),
+                  fillColor: context.palette.surface,
                 ),
                 maxLines: 2,
               ),
@@ -318,11 +319,11 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
         prefixIcon: Icon(icon, size: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+          borderSide: BorderSide(color: context.palette.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE8D5F5)),
+          borderSide: BorderSide(color: context.palette.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -332,7 +333,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
           ),
         ),
         filled: true,
-        fillColor: const Color(0xFFFAF8FC),
+        fillColor: context.palette.surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 14,
@@ -384,12 +385,12 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'WHO Percentiles',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF2D2640),
+                    color: context.palette.text,
                   ),
                 ),
               ],
@@ -500,7 +501,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
               child: Material(
                 color: isSelected
                     ? const Color(0xFF9B72CF)
-                    : Colors.white,
+                    : context.palette.card,
                 borderRadius: BorderRadius.circular(12),
                 elevation: isSelected ? 2 : 0,
                 child: InkWell(
@@ -513,7 +514,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                       border: Border.all(
                         color: isSelected
                             ? Colors.transparent
-                            : const Color(0xFFE8D5F5),
+                            : context.palette.border,
                       ),
                     ),
                     child: Row(
@@ -524,7 +525,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                           size: 16,
                           color: isSelected
                               ? Colors.white
-                              : const Color(0xFF8B85A0),
+                              : context.palette.muted,
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -534,7 +535,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                             fontWeight: FontWeight.w600,
                             color: isSelected
                                 ? Colors.white
-                                : const Color(0xFF8B85A0),
+                                : context.palette.muted,
                           ),
                         ),
                       ],
@@ -566,8 +567,8 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
           alignment: Alignment.center,
           child: Text(
             'No ${_selectedChart.name} data to display',
-            style: const TextStyle(
-              color: Color(0xFF8B85A0),
+            style: TextStyle(
+              color: context.palette.muted,
               fontSize: 14,
             ),
           ),
@@ -618,7 +619,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                 horizontalInterval:
                     ((maxY - minY) / 4).clamp(0.5, double.infinity),
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: const Color(0xFFE8D5F5).withValues(alpha: 0.5),
+                  color: context.palette.border.withValues(alpha: 0.5),
                   strokeWidth: 1,
                 ),
               ),
@@ -630,11 +631,11 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                   sideTitles: SideTitles(showTitles: false),
                 ),
                 bottomTitles: AxisTitles(
-                  axisNameWidget: const Text(
+                  axisNameWidget: Text(
                     'Age (months)',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF8B85A0),
+                      color: context.palette.muted,
                     ),
                   ),
                   sideTitles: SideTitles(
@@ -646,9 +647,9 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           '${value.toInt()}m',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
-                            color: Color(0xFF8B85A0),
+                            color: context.palette.muted,
                           ),
                         ),
                       );
@@ -662,9 +663,9 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                     getTitlesWidget: (value, meta) {
                       return Text(
                         value.toStringAsFixed(1),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
-                          color: Color(0xFF8B85A0),
+                          color: context.palette.muted,
                         ),
                       );
                     },
@@ -705,7 +706,7 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                     getDotPainter: (spot, percent, barData, index) {
                       return FlDotCirclePainter(
                         radius: 4,
-                        color: Colors.white,
+                        color: context.palette.card,
                         strokeWidth: 2.5,
                         strokeColor: chartColor,
                       );
@@ -738,12 +739,12 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'History',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2D2640),
+            color: context.palette.text,
           ),
         ),
         const SizedBox(height: 12),
@@ -770,10 +771,10 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                 children: [
                   Text(
                     AppDateUtils.formatDate(entry.measuredAt),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D2640),
+                      color: context.palette.text,
                     ),
                   ),
                   if (ageMonths != null)
@@ -828,9 +829,9 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
                 const SizedBox(height: 8),
                 Text(
                   entry.notes!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF8B85A0),
+                    color: context.palette.muted,
                   ),
                 ),
               ],
