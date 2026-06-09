@@ -103,7 +103,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     final symptoms = _symptomsController.text.trim();
     final notes = _notesController.text.trim();
 
-    final isTemperatureTab = _tabController.index == 0;
+    final isTemperatureTab = _tabController!.index == 0;
 
     if (isTemperatureTab && temp == null) {
       ScaffoldMessenger.of(context).showSnackBar(
