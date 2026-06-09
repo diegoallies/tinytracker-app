@@ -536,12 +536,12 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
 
       // Clipboard as backup, then the system share sheet (WhatsApp etc.).
       await Clipboard.setData(ClipboardData(text: inviteLink));
-      await SharePlus.instance.share(ShareParams(
-        text: 'You’ve been invited to help track $babyName on TinyTrack! 🍼\n\n'
-            'Open this link on your phone (or paste it in the app under '
-            'More → Invites):\n$inviteLink\n\n'
-            'The link expires in 7 days.',
-      ));
+      await Share.share(
+        'You’ve been invited to help track $babyName on TinyTrack! 🍼\n\n'
+        'Open this link on your phone (or paste it in the app under '
+        'More → Invites):\n$inviteLink\n\n'
+        'The link expires in 7 days.',
+      );
 
       if (mounted) {
         context.showSuccessSnackBar('Invite created — link also copied to clipboard');

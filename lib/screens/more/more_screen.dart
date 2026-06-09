@@ -25,6 +25,14 @@ class MoreScreen extends ConsumerWidget {
       iconColor: Color(0xFF9b72cf),
     ),
     _FeatureItem(
+      icon: Icons.insights_rounded,
+      label: 'Trends',
+      description: '14-day charts',
+      route: '/trends',
+      color: Color(0xFFd5e8f5),
+      iconColor: Color(0xFF5b8cbf),
+    ),
+    _FeatureItem(
       icon: Icons.trending_up_rounded,
       label: 'Growth',
       description: 'Track measurements',
