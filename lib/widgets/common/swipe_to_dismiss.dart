@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/haptics.dart';
 
-class SwipeToDismiss extends StatelessWidget {
+class SwipeToDismiss extends StatefulWidget {
   final String itemId;
   final Widget child;
   final Future<bool?> Function() onConfirmDismiss;
@@ -16,14 +16,38 @@ class SwipeToDismiss extends StatelessWidget {
   });
 
   @override
+  State<SwipeToDismiss> createState() => _SwipeToDismissState();
+}
+
+class _SwipeToDismissState extends State<SwipeToDismiss> {
+  // Once Dismissible animates out, Flutter requires it be removed from the
+  // tree by the next frame. Parents that delete via an async network call +
+  // provider refetch can't remove it that fast, so we hide ourselves
+  // synchronously and let the parent's eventual refetch clean up the data.
+  bool _dismissed = false;
+
+  @override
+  void didUpdateWidget(covariant SwipeToDismiss oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the parent reuses this widget for a different item id (very rare due
+    // to keying, but possible), reset the dismissed state.
+    if (oldWidget.itemId != widget.itemId) {
+      _dismissed = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_dismissed) return const SizedBox.shrink();
+
     return Dismissible(
-      key: Key(itemId),
+      key: Key(widget.itemId),
       direction: DismissDirection.endToStart,
-      confirmDismiss: (_) => onConfirmDismiss(),
+      confirmDismiss: (_) => widget.onConfirmDismiss(),
       onDismissed: (_) {
         Haptics.heavyTap();
-        onDismissed();
+        if (mounted) setState(() => _dismissed = true);
+        widget.onDismissed();
       },
       background: Container(
         alignment: Alignment.centerRight,
@@ -48,7 +72,7 @@ class SwipeToDismiss extends StatelessWidget {
           ],
         ),
       ),
-      child: child,
+      child: widget.child,
     );
   }
 }

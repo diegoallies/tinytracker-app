@@ -155,11 +155,11 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       lastDate: now,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
+          colorScheme: ColorScheme.light(
             primary: AppColors.primary,
             onPrimary: Colors.white,
             surface: Colors.white,
-            onSurface: AppColors.text,
+            onSurface: ctx.palette.text,
           ),
         ),
         child: child!,
@@ -172,11 +172,11 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       initialTime: TimeOfDay.fromDateTime(_loggedAt),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
+          colorScheme: ColorScheme.light(
             primary: AppColors.primary,
             onPrimary: Colors.white,
             surface: Colors.white,
-            onSurface: AppColors.text,
+            onSurface: ctx.palette.text,
           ),
         ),
         child: child!,
@@ -269,9 +269,9 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                   color: AppColors.primary, strokeWidth: 2),
             ),
           ),
-          error: (_, __) => const Text(
+          error: (_, __) => Text(
             'Could not load today\'s stats',
-            style: TextStyle(color: AppColors.muted),
+            style: TextStyle(color: context.palette.muted),
           ),
           data: (data) {
             final wet = data['wet'] ?? 0;
@@ -284,10 +284,10 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Today',
                       style: TextStyle(
-                        color: AppColors.text,
+                        color: context.palette.text,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
@@ -374,8 +374,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
     final isQuickPick = isNow ||
         _matchesAgo(const Duration(minutes: 15)) ||
         _matchesAgo(const Duration(minutes: 30)) ||
-        _matchesAgo(const Duration(hours: 1)) ||
-        _matchesAgo(const Duration(hours: 2));
+        _matchesAgo(const Duration(hours: 1));
     final isCustom = !isQuickPick;
 
     return AnimatedCard(
@@ -384,10 +383,10 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'When did it happen?',
               style: TextStyle(
-                color: AppColors.text,
+                color: context.palette.text,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
@@ -396,7 +395,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
             Text(
               'Quick pick or set a specific time',
               style: TextStyle(
-                color: AppColors.muted,
+                color: context.palette.muted,
                 fontSize: 12,
               ),
             ),
@@ -429,31 +428,26 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                   selected: _matchesAgo(const Duration(hours: 1)),
                   onTap: () => _setRelativeTime(const Duration(hours: 1)),
                 ),
-                _TimePill(
-                  label: '2h ago',
-                  selected: _matchesAgo(const Duration(hours: 2)),
-                  onTap: () => _setRelativeTime(const Duration(hours: 2)),
-                ),
               ],
             ),
 
             const SizedBox(height: 14),
             Row(
               children: [
-                Expanded(child: Divider(color: AppColors.muted.withValues(alpha: 0.2))),
+                Expanded(child: Divider(color: context.palette.muted.withValues(alpha: 0.2))),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
                     'OR',
                     style: TextStyle(
-                      color: AppColors.muted,
+                      color: context.palette.muted,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1,
                     ),
                   ),
                 ),
-                Expanded(child: Divider(color: AppColors.muted.withValues(alpha: 0.2))),
+                Expanded(child: Divider(color: context.palette.muted.withValues(alpha: 0.2))),
               ],
             ),
             const SizedBox(height: 14),
@@ -521,8 +515,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
-            color: AppColors.muted,
+          style: TextStyle(
+            color: context.palette.muted,
             fontSize: 11,
           ),
         ),
@@ -537,15 +531,20 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Diaper Type',
+            Text(
+              'What kind?',
               style: TextStyle(
-                color: AppColors.text,
+                color: context.palette.text,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            Text(
+              'Pick the type of diaper change',
+              style: TextStyle(color: context.palette.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 14),
             Row(
               children: _diaperTypes.map((type) {
                 final isSelected = _selectedType == type.$1;
@@ -565,39 +564,38 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        height: 48,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.primary.withValues(alpha:0.15)
-                              : AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
+                              ? AppColors.primary.withValues(alpha: 0.12)
+                              : context.palette.surface,
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary
-                                : AppColors.muted.withValues(alpha:0.3),
-                            width: isSelected ? 2 : 1,
+                                : context.palette.muted.withValues(alpha: 0.25),
+                            width: isSelected ? 1.5 : 1,
                           ),
                         ),
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               type.$3,
-                              size: 18,
+                              size: 26,
                               color: isSelected
                                   ? AppColors.primary
-                                  : AppColors.muted,
+                                  : context.palette.muted,
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(height: 6),
                             Text(
                               type.$2,
                               style: TextStyle(
                                 color: isSelected
                                     ? AppColors.primary
-                                    : AppColors.muted,
+                                    : context.palette.text,
                                 fontWeight: isSelected
-                                    ? FontWeight.w600
+                                    ? FontWeight.w700
                                     : FontWeight.w500,
                                 fontSize: 14,
                               ),
@@ -623,13 +621,18 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Poop Color',
+            Text(
+              'Poop color',
               style: TextStyle(
-                color: AppColors.text,
+                color: context.palette.text,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Helps spot digestion or health changes',
+              style: TextStyle(color: context.palette.muted, fontSize: 12),
             ),
             const SizedBox(height: 14),
             Wrap(
@@ -684,7 +687,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                       Text(
                         colorData.$2,
                         style: TextStyle(
-                          color: isSelected ? AppColors.text : AppColors.muted,
+                          color: isSelected ? context.palette.text : context.palette.muted,
                           fontSize: 11,
                           fontWeight: isSelected
                               ? FontWeight.w600
@@ -712,9 +715,9 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
           minLines: 1,
           decoration: InputDecoration(
             hintText: 'Add notes (optional)',
-            hintStyle: TextStyle(color: AppColors.muted.withValues(alpha:0.6)),
+            hintStyle: TextStyle(color: context.palette.muted.withValues(alpha:0.6)),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: context.palette.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -722,7 +725,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          style: TextStyle(color: AppColors.text),
+          style: TextStyle(color: context.palette.text),
         ),
       ),
     );
@@ -763,10 +766,10 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Recent Diapers',
           style: TextStyle(
-            color: AppColors.text,
+            color: context.palette.text,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -784,7 +787,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
               padding: const EdgeInsets.all(32),
               child: Text(
                 'Failed to load diapers',
-                style: TextStyle(color: AppColors.muted),
+                style: TextStyle(color: context.palette.muted),
               ),
             ),
           ),
@@ -840,7 +843,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         break;
       default:
         icon = Icons.help_outline;
-        iconColor = AppColors.muted;
+        iconColor = context.palette.muted;
         label = type;
     }
 
@@ -879,8 +882,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                       children: [
                         Text(
                           label,
-                          style: const TextStyle(
-                            color: AppColors.text,
+                          style: TextStyle(
+                            color: context.palette.text,
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
                           ),
@@ -903,8 +906,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                     const SizedBox(height: 2),
                     Text(
                       _itemTimeLabel(loggedAt),
-                      style: const TextStyle(
-                        color: AppColors.muted,
+                      style: TextStyle(
+                        color: context.palette.muted,
                         fontSize: 13,
                       ),
                     ),
@@ -940,12 +943,12 @@ class _CustomTimeTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.12)
-              : AppColors.surface,
+              : context.palette.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected
                 ? AppColors.primary
-                : AppColors.muted.withValues(alpha: 0.3),
+                : context.palette.muted.withValues(alpha: 0.3),
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -974,7 +977,7 @@ class _CustomTimeTile extends StatelessWidget {
                   Text(
                     selected ? 'Custom time' : 'Pick a specific date & time',
                     style: TextStyle(
-                      color: selected ? AppColors.primary : AppColors.text,
+                      color: selected ? AppColors.primary : context.palette.text,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -983,7 +986,7 @@ class _CustomTimeTile extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      color: AppColors.muted,
+                      color: context.palette.muted,
                       fontSize: 12,
                     ),
                   ),
@@ -992,7 +995,7 @@ class _CustomTimeTile extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.muted,
+              color: context.palette.muted,
               size: 22,
             ),
           ],
@@ -1004,7 +1007,6 @@ class _CustomTimeTile extends StatelessWidget {
 
 class _TimePill extends StatelessWidget {
   final String label;
-  final IconData? icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -1012,7 +1014,6 @@ class _TimePill extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    this.icon,
   });
 
   @override
@@ -1025,35 +1026,22 @@ class _TimePill extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.15)
-              : AppColors.surface,
+              : context.palette.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected
                 ? AppColors.primary
-                : AppColors.muted.withValues(alpha: 0.3),
+                : context.palette.muted.withValues(alpha: 0.3),
             width: selected ? 1.5 : 1,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 14,
-                color: selected ? AppColors.primary : AppColors.muted,
-              ),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? AppColors.primary : AppColors.text,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                fontSize: 13,
-              ),
-            ),
-          ],
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? AppColors.primary : context.palette.text,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 13,
+          ),
         ),
       ),
     );

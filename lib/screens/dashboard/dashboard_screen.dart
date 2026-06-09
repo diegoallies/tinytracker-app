@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/router.dart';
 import '../../config/theme.dart';
 import '../../utils/haptics.dart';
 import '../../providers/baby_provider.dart';
@@ -31,14 +32,57 @@ class DashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen>
+    with RouteAware, WidgetsBindingObserver {
   Timer? _sleepTimer;
   String _sleepDuration = '00:00';
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      shellRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    shellRouteObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
     _sleepTimer?.cancel();
     super.dispose();
+  }
+
+  /// Refetch everything the dashboard cares about. Called on:
+  /// • initial entry (build)
+  /// • returning from a sibling tab (didPopNext)
+  /// • app coming back from background (didChangeAppLifecycleState)
+  void _refreshAll() {
+    if (!mounted) return;
+    ref.invalidate(dashboardStatsProvider);
+    ref.invalidate(activityFeedProvider);
+    ref.invalidate(weeklySummaryProvider);
+    ref.invalidate(earnedBadgesProvider);
+  }
+
+  @override
+  void didPopNext() {
+    // Another tab was popped off — dashboard is now on top again.
+    _refreshAll();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshAll();
+    }
   }
 
   void _startSleepTimer(DateTime startTime) {
@@ -129,12 +173,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.text,
+                                    color: context.palette.text,
                                   ),
                                 ),
                                 Text(
                                   '${baby.ageDisplay} old  \u2022  ${DateFormat('EEEE, MMM d').format(DateTime.now())}',
-                                  style: TextStyle(fontSize: 13, color: AppColors.muted),
+                                  style: TextStyle(fontSize: 13, color: context.palette.muted),
                                 ),
                               ],
                             ),
@@ -278,9 +322,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.restaurant_rounded, size: 16, color: AppColors.muted),
+                              Icon(Icons.restaurant_rounded, size: 16, color: context.palette.muted),
                               const SizedBox(width: 6),
-                              Text('Last Feed', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                              Text('Last Feed', style: TextStyle(fontSize: 12, color: context.palette.muted)),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -291,7 +335,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           if (s.lastFeedType != null)
                             Text(
                               _feedTypeLabel(s.lastFeedType!),
-                              style: TextStyle(fontSize: 12, color: AppColors.muted),
+                              style: TextStyle(fontSize: 12, color: context.palette.muted),
                             ),
                         ],
                       ),
@@ -308,9 +352,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.water_drop_rounded, size: 16, color: AppColors.muted),
+                              Icon(Icons.water_drop_rounded, size: 16, color: context.palette.muted),
                               const SizedBox(width: 6),
-                              Text('Last Diaper', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                              Text('Last Diaper', style: TextStyle(fontSize: 12, color: context.palette.muted)),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -321,7 +365,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           if (s.lastDiaperType != null)
                             Text(
                               s.lastDiaperType!.substring(0, 1).toUpperCase() + s.lastDiaperType!.substring(1),
-                              style: TextStyle(fontSize: 12, color: AppColors.muted),
+                              style: TextStyle(fontSize: 12, color: context.palette.muted),
                             ),
                         ],
                       ),
@@ -398,16 +442,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     child: const Icon(Icons.auto_awesome, color: AppColors.primary, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Daily Summary', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                        Text('AI-powered insights & comparison', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                        const Text('Daily Summary', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text('AI-powered insights & comparison', style: TextStyle(fontSize: 12, color: context.palette.muted)),
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                  Icon(Icons.chevron_right_rounded, color: context.palette.muted),
                 ],
               ),
             ),
@@ -425,12 +469,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 activity.when(
                   data: (items) {
                     if (items.isEmpty) {
-                      return const AnimatedCard(
+                      return AnimatedCard(
                         child: Center(
                           child: Padding(
-                            padding: EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(20),
                             child: Text('No activity in the last 24 hours',
-                                style: TextStyle(color: AppColors.muted)),
+                                style: TextStyle(color: context.palette.muted)),
                           ),
                         ),
                       );
@@ -451,7 +495,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     color: _activityColor(item.type),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Icon(_activityIcon(item.type), size: 18, color: AppColors.text),
+                                  child: Icon(_activityIcon(item.type), size: 18, color: context.palette.text),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -461,7 +505,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       Text(item.label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                                       Text(
                                         AppDateUtils.timeAgo(item.time),
-                                        style: TextStyle(fontSize: 12, color: AppColors.muted),
+                                        style: TextStyle(fontSize: 12, color: context.palette.muted),
                                       ),
                                     ],
                                   ),
@@ -558,14 +602,14 @@ class _StatCard extends StatelessWidget {
             if (sleepMinutes != null)
               CountUpDuration(
                 totalMinutes: sleepMinutes!,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.palette.text),
               )
             else
               CountUpText(
                 targetValue: numericValue ?? 0,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.palette.text),
               ),
-            Text(label, style: TextStyle(fontSize: 11, color: AppColors.muted)),
+            Text(label, style: TextStyle(fontSize: 11, color: context.palette.muted)),
           ],
         ),
       ),
@@ -605,7 +649,7 @@ class _QuickAction extends StatelessWidget {
                 color: color,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, color: AppColors.text, size: 24),
+              child: Icon(icon, color: context.palette.text, size: 24),
             ),
             const SizedBox(height: 6),
             Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), textAlign: TextAlign.center),

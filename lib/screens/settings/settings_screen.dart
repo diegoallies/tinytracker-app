@@ -31,8 +31,8 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   _SettingsRow(
                     icon: Icons.dark_mode_rounded,
-                    iconBg: AppColors.text.withValues(alpha: 0.08),
-                    iconColor: AppColors.text,
+                    iconBg: context.palette.text.withValues(alpha: 0.08),
+                    iconColor: context.palette.text,
                     title: 'Dark Mode',
                     subtitle: 'Switch between light and dark themes',
                     trailing: const NightModeToggle(),
@@ -66,10 +66,10 @@ class SettingsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 14, 16, 16),
                       child: Row(
                         children: [
-                          const Text(
+                          Text(
                             'Remind after',
                             style: TextStyle(
-                                fontSize: 13, color: AppColors.muted),
+                                fontSize: 13, color: context.palette.muted),
                           ),
                           const Spacer(),
                           for (final m in const [120, 150, 180, 240])
@@ -121,7 +121,7 @@ class SettingsScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.muted.withValues(alpha: 0.6),
+                    color: context.palette.muted.withValues(alpha: 0.6),
                     letterSpacing: 0.4,
                   ),
                 ),
@@ -144,10 +144,10 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: AppColors.muted,
+          color: context.palette.muted,
           letterSpacing: 0.8,
         ),
       ),
@@ -216,18 +216,18 @@ class _SettingsRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.text,
+                    color: context.palette.text,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.muted,
+                    color: context.palette.muted,
                   ),
                 ),
               ],
@@ -270,12 +270,12 @@ class _IntervalChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surface,
+          color: selected ? AppColors.primary : context.palette.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: selected
                 ? AppColors.primary
-                : AppColors.muted.withValues(alpha: 0.3),
+                : context.palette.muted.withValues(alpha: 0.3),
           ),
         ),
         child: Text(
@@ -283,7 +283,7 @@ class _IntervalChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : AppColors.text,
+            color: selected ? Colors.white : context.palette.text,
           ),
         ),
       ),

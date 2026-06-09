@@ -235,7 +235,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.text,
+                          color: context.palette.text,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -311,7 +311,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                   ),
                 ),
@@ -319,7 +319,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                   IconButton(
                     icon: Icon(
                       Icons.refresh_rounded,
-                      color: AppColors.muted,
+                      color: context.palette.muted,
                       size: 20,
                     ),
                     onPressed: () => _loadAiSummary(forceRefresh: true),
@@ -347,7 +347,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.6,
-                  color: AppColors.text.withValues(alpha: 0.85),
+                  color: context.palette.text.withValues(alpha: 0.85),
                 ),
               )
             else
@@ -355,7 +355,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                 'Unable to generate summary. Tap refresh to try again.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.muted,
+                  color: context.palette.muted,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -418,7 +418,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                     label,
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.muted,
+                      color: context.palette.muted,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -429,7 +429,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.text,
+                          color: context.palette.text,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -437,7 +437,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                         'vs $yesterdayValue',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],

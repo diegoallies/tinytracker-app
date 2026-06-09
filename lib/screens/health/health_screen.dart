@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/theme.dart';
+import '../../models/baby_medication.dart';
+import '../../providers/baby_medication_provider.dart';
 import '../../providers/baby_provider.dart';
 import '../../models/health_log.dart';
 import '../../providers/health_provider.dart';
 import '../../utils/date_utils.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/medications/add_medication_dialog.dart';
 
 enum HealthTab { temperature, medication }
 
@@ -446,10 +450,149 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     );
   }
 
+  void _applySavedMed(BabyMedication med) {
+    _medicationController.text = med.name;
+    _dosageController.text = med.defaultDosage ?? '';
+    setState(() {});
+  }
+
+  Future<void> _addSavedMed() async {
+    final baby = ref.read(selectedBabyProvider);
+    if (baby == null) return;
+    final added = await showDialog<BabyMedication>(
+      context: context,
+      builder: (_) => AddMedicationDialog(babyId: baby.id),
+    );
+    if (added != null) {
+      ref.invalidate(babyMedicationsProvider);
+      _applySavedMed(added);
+    }
+  }
+
+  Future<void> _deleteSavedMed(BabyMedication med) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete medication'),
+        content: Text('Remove "${med.name}" from saved medications?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await BabyMedicationActions.delete(med.id);
+      ref.invalidate(babyMedicationsProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildSavedMedsRow() {
+    final medsAsync = ref.watch(babyMedicationsProvider);
+    final isOwner = ref.watch(babyProvider).isOwner;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.bookmark_rounded,
+                size: 16, color: AppColors.primary),
+            const SizedBox(width: 6),
+            const Text(
+              'Saved medications',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2D2640),
+              ),
+            ),
+            const Spacer(),
+            Text(
+              isOwner ? 'Tap to fill • Hold to delete' : 'Tap to fill',
+              style: const TextStyle(fontSize: 11, color: Color(0xFF8B85A0)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        medsAsync.when(
+          loading: () => const SizedBox(
+            height: 36,
+            child: Center(
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (meds) {
+            final chips = <Widget>[
+              ...meds.map((m) => _SavedMedChip(
+                    med: m,
+                    onTap: () => _applySavedMed(m),
+                    onLongPress: isOwner ? () => _deleteSavedMed(m) : null,
+                  )),
+              if (isOwner)
+                _AddMedChip(onTap: _addSavedMed),
+            ];
+
+            if (chips.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAF8FC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE8D5F5)),
+                ),
+                child: const Text(
+                  'No daily meds saved yet — ask the owner to add some.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF8B85A0)),
+                ),
+              );
+            }
+
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: chips,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildMedicationInput() {
     return Column(
       key: const ValueKey('medication'),
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildSavedMedsRow(),
+        const SizedBox(height: 12),
         TextFormField(
           controller: _medicationController,
           decoration: InputDecoration(
@@ -754,6 +897,111 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                   ],
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedMedChip extends StatelessWidget {
+  final BabyMedication med;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+
+  const _SavedMedChip({
+    required this.med,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasDosage = med.defaultDosage != null && med.defaultDosage!.isNotEmpty;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8D5F5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.medication_rounded,
+                  size: 14, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Text(
+                med.name,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+              if (hasDosage) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '• ${med.defaultDosage}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF8B85A0),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddMedChip extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddMedChip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.primary,
+              style: BorderStyle.solid,
+              width: 1.2,
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, size: 16, color: AppColors.primary),
+              SizedBox(width: 4),
+              Text(
+                'Add daily med',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
             ],
           ),
         ),

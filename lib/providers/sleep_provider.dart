@@ -84,4 +84,54 @@ class SleepActions {
         .delete()
         .eq('id', sleepId);
   }
+
+  /// Start an active session with an explicit (backdated) start time.
+  /// Use when the baby has been sleeping for a while and the user is logging it late.
+  static Future<SleepSession?> startSleepAt({
+    required String babyId,
+    required DateTime start,
+  }) async {
+    final userId = SupabaseService.userId;
+    if (userId == null) return null;
+
+    if (start.isAfter(DateTime.now())) {
+      throw ArgumentError('Start time cannot be in the future');
+    }
+
+    final data = await SupabaseService.client.from('sleeps').insert({
+      'baby_id': babyId,
+      'user_id': userId,
+      'start_time': start.toUtc().toIso8601String(),
+    }).select().single();
+
+    return SleepSession.fromJson(data);
+  }
+
+  /// Insert a completed session with explicit start/end times (for backdating).
+  static Future<SleepSession?> logBackdated({
+    required String babyId,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final userId = SupabaseService.userId;
+    if (userId == null) return null;
+
+    final duration = end.difference(start).inMinutes;
+    if (duration <= 0) {
+      throw ArgumentError('End time must be after start time');
+    }
+    if (end.isAfter(DateTime.now())) {
+      throw ArgumentError('End time cannot be in the future');
+    }
+
+    final data = await SupabaseService.client.from('sleeps').insert({
+      'baby_id': babyId,
+      'user_id': userId,
+      'start_time': start.toUtc().toIso8601String(),
+      'end_time': end.toUtc().toIso8601String(),
+      'duration_minutes': duration,
+    }).select().single();
+
+    return SleepSession.fromJson(data);
+  }
 }

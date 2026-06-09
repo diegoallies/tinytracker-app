@@ -26,6 +26,11 @@ import '../screens/onboarding/onboarding_screen.dart';
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Shared RouteObserver for the shell navigator. Screens subscribe to this
+/// to know when they become visible again after a sibling tab was popped
+/// (e.g. dashboard listening for return from /sleep so it can refresh).
+final shellRouteObserver = RouteObserver<PageRoute<dynamic>>();
+
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
@@ -65,6 +70,7 @@ final appRouter = GoRouter(
     // Main app with bottom nav
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
+      observers: [shellRouteObserver],
       builder: (context, state, child) => AppScaffold(child: child),
       routes: [
         GoRoute(

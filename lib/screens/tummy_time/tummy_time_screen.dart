@@ -208,18 +208,18 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                     ),
                   ),
                 ),
-                const Text(
+                Text(
                   'Daily Goal',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+                    color: ctx.palette.text,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'How many minutes of tummy time per day?',
-                  style: TextStyle(fontSize: 13, color: AppColors.muted),
+                  style: TextStyle(fontSize: 13, color: ctx.palette.muted),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -236,12 +236,12 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Text(
+                    Text(
                       'min',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.muted,
+                        color: ctx.palette.muted,
                       ),
                     ),
                   ],
@@ -371,18 +371,18 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Log Past Session',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.text,
+                      color: ctx.palette.text,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Backdate a tummy time session',
-                    style: TextStyle(fontSize: 13, color: AppColors.muted),
+                    style: TextStyle(fontSize: 13, color: ctx.palette.muted),
                   ),
                   const SizedBox(height: 20),
 
@@ -686,20 +686,24 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_rounded, size: 20),
-                            SizedBox(width: 4),
-                            Text(
-                              'Log past',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_rounded, size: 18),
+                              SizedBox(width: 4),
+                              Text(
+                                'Log past',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -708,14 +712,14 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
               ),
               const SizedBox(height: 24),
 
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
                   "Today's Sessions",
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+                    color: context.palette.text,
                   ),
                 ),
               ),
@@ -766,7 +770,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                     padding: const EdgeInsets.all(32),
                     child: Text(
                       'Failed to load sessions',
-                      style: TextStyle(color: AppColors.muted),
+                      style: TextStyle(color: context.palette.muted),
                     ),
                   ),
                 ),
@@ -820,10 +824,10 @@ class _HeroCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     isRunning ? 'Session in progress' : 'Daily progress',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.muted,
+                      color: context.palette.muted,
                       letterSpacing: 0.2,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -913,26 +917,26 @@ class _HeroCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.muted,
+                            color: context.palette.muted,
                             letterSpacing: 1.5,
                           ),
                         ),
                       ] else ...[
                         Text(
                           '$progressPercent%',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 40,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.text,
+                            color: context.palette.text,
                             letterSpacing: -1,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '${totalMinutes.toStringAsFixed(0)} / $goalMinutes min',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.muted,
+                            color: context.palette.muted,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -992,7 +996,7 @@ class _StatusDot extends StatelessWidget {
       height: 8,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: running ? Colors.green : AppColors.muted.withValues(alpha: 0.4),
+        color: running ? Colors.green : context.palette.muted.withValues(alpha: 0.4),
         boxShadow: running
             ? [
                 BoxShadow(
@@ -1067,17 +1071,17 @@ class _SessionTile extends StatelessWidget {
                 children: [
                   Text(
                     '$duration min',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.text,
+                      color: context.palette.text,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Started at $startFormatted',
-                    style: const TextStyle(
-                      color: AppColors.muted,
+                    style: TextStyle(
+                      color: context.palette.muted,
                       fontSize: 12,
                     ),
                   ),
@@ -1142,7 +1146,7 @@ class _SheetPickerTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -1162,9 +1166,9 @@ class _SheetPickerTile extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.muted,
+                        color: context.palette.muted,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.3,
                       ),
@@ -1172,10 +1176,10 @@ class _SheetPickerTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: context.palette.text,
                       ),
                     ),
                   ],
@@ -1183,7 +1187,7 @@ class _SheetPickerTile extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.muted.withValues(alpha: 0.6),
+                color: context.palette.muted.withValues(alpha: 0.6),
               ),
             ],
           ),

@@ -431,7 +431,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.text,
+                                color: context.palette.text,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -470,7 +470,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                                             fontWeight: FontWeight.w600,
                                             color: isSelected
                                                 ? Colors.white
-                                                : AppColors.text,
+                                                : context.palette.text,
                                           ),
                                         ),
                                       ),
@@ -497,7 +497,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.text,
+                                color: context.palette.text,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -544,7 +544,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.text,
+                                color: context.palette.text,
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -645,7 +645,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: AppColors.text,
+              color: context.palette.text,
             ),
           ),
         ],
@@ -668,7 +668,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.text,
+              color: context.palette.text,
             ),
           ),
         ],

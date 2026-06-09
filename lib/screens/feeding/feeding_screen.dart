@@ -14,6 +14,7 @@ import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/swipe_to_dismiss.dart';
+import '../../widgets/medications/add_medication_dialog.dart';
 
 class FeedingScreen extends ConsumerStatefulWidget {
   const FeedingScreen({super.key});
@@ -429,7 +430,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final recentFeedings = ref.watch(recentFeedingsProvider);
+    final recentFeedings = ref.watch(recentFeedingsWithMedsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -719,8 +720,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
   Widget _buildTimeSelector() {
     final isOwner = ref.watch(babyProvider).isOwner;
     final now = DateTime.now();
-    final diff = now.difference(_loggedAt);
-    final isNow = diff.inSeconds.abs() < 60;
+    final isNow = now.difference(_loggedAt).inSeconds.abs() < 60;
     final isToday = _loggedAt.year == now.year &&
         _loggedAt.month == now.month &&
         _loggedAt.day == now.day;
@@ -729,16 +729,23 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         _loggedAt.day == now.day - 1;
 
     final timeStr = DateFormat('h:mm a').format(_loggedAt);
-    String dayLabel;
+    String fullLabel;
     if (isNow) {
-      dayLabel = 'Now';
+      fullLabel = 'Right now';
     } else if (isToday) {
-      dayLabel = 'Today, $timeStr';
+      fullLabel = 'Today, $timeStr';
     } else if (isYesterday) {
-      dayLabel = 'Yesterday, $timeStr';
+      fullLabel = 'Yesterday, $timeStr';
     } else {
-      dayLabel = DateFormat('MMM d, h:mm a').format(_loggedAt);
+      fullLabel = DateFormat('EEE, MMM d • h:mm a').format(_loggedAt);
     }
+
+    // A custom time is anything not matching one of the quick options.
+    final isQuickPick = isNow ||
+        _matchesAgo(const Duration(minutes: 15)) ||
+        _matchesAgo(const Duration(minutes: 30)) ||
+        _matchesAgo(const Duration(hours: 1));
+    final isCustom = !isQuickPick;
 
     return AnimatedCard(
       child: Padding(
@@ -746,36 +753,25 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Text(
-                  'When',
-                  style: TextStyle(
-                    color: AppColors.text,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    dayLabel,
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
+            const Text(
+              'When did it happen?',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            const Text(
+              'Quick pick or set a specific time',
+              style: TextStyle(
+                color: AppColors.muted,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Quick options — most-used live here.
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -800,18 +796,42 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                   selected: _matchesAgo(const Duration(hours: 1)),
                   onTap: () => _setRelativeTime(const Duration(hours: 1)),
                 ),
-                _Pill(
-                  label: '2h ago',
-                  selected: _matchesAgo(const Duration(hours: 2)),
-                  onTap: () => _setRelativeTime(const Duration(hours: 2)),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Divider(
+                      color: AppColors.muted.withValues(alpha: 0.2)),
                 ),
-                _Pill(
-                  label: isOwner ? 'Pick date & time' : 'Pick time',
-                  icon: isOwner ? Icons.event_rounded : Icons.schedule_rounded,
-                  selected: false,
-                  onTap: () => _pickTime(allowDateChange: isOwner),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    'OR',
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Divider(
+                      color: AppColors.muted.withValues(alpha: 0.2)),
                 ),
               ],
+            ),
+            const SizedBox(height: 14),
+
+            // Separate, prominent custom-time tile.
+            _CustomTimeTile(
+              label: fullLabel,
+              selected: isCustom,
+              isOwner: isOwner,
+              onTap: () => _pickTime(allowDateChange: isOwner),
             ),
             if (!isOwner)
               Padding(
@@ -1036,10 +1056,14 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     );
   }
 
-  Widget _buildFeedingItem(dynamic feeding) {
+  Widget _buildFeedingItem(dynamic item) {
+    final feeding = item.feeding;
     final type = feeding.type as String;
     final loggedAt = (feeding.loggedAt as DateTime).toLocal();
     final feedingId = feeding.id as String;
+    final medication = item.medication as String?;
+    final dosage = item.dosage as String?;
+    final hasMed = medication != null && medication.isNotEmpty;
 
     IconData icon;
     String label;
@@ -1115,6 +1139,10 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                         fontSize: 13,
                       ),
                     ),
+                    if (hasMed) ...[
+                      const SizedBox(height: 6),
+                      _MedBadge(medication: medication, dosage: dosage),
+                    ],
                   ],
                 ),
               ),
@@ -1149,6 +1177,56 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     if (isToday) return 'Today, $time';
     if (isYesterday) return 'Yesterday, $time';
     return DateFormat('MMM d, h:mm a').format(loggedAt);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Small badge showing the medication + dosage given with this feeding
+// ──────────────────────────────────────────────────────────────────────
+
+class _MedBadge extends StatelessWidget {
+  final String? medication;
+  final String? dosage;
+
+  const _MedBadge({required this.medication, required this.dosage});
+
+  @override
+  Widget build(BuildContext context) {
+    final med = medication ?? '';
+    final dose = dosage?.trim() ?? '';
+    final label = dose.isEmpty ? med : '$med · $dose';
+    const accent = Color(0xFFE91E63);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.pastelPink.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.medical_services_rounded,
+            size: 12,
+            color: accent,
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: accent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1230,94 +1308,10 @@ class _MedicationPickerSheet extends ConsumerStatefulWidget {
 class _MedicationPickerSheetState
     extends ConsumerState<_MedicationPickerSheet> {
   Future<void> _showAddDialog() async {
-    final nameCtrl = TextEditingController();
-    final dosageCtrl = TextEditingController();
-    bool saving = false;
-
     final added = await showDialog<BabyMedication>(
       context: context,
-      builder: (dctx) => StatefulBuilder(
-        builder: (dctx, setDialog) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Add Medication'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Medication name',
-                  hintText: 'e.g. Panado',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: dosageCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Default dosage (optional)',
-                  hintText: 'e.g. 2.5 ml',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed:
-                  saving ? null : () => Navigator.pop(dctx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: saving
-                  ? null
-                  : () async {
-                      final name = nameCtrl.text.trim();
-                      if (name.isEmpty) return;
-                      setDialog(() => saving = true);
-                      try {
-                        final created = await BabyMedicationActions.add(
-                          babyId: widget.babyId,
-                          name: name,
-                          defaultDosage: dosageCtrl.text.trim(),
-                        );
-                        if (dctx.mounted) Navigator.pop(dctx, created);
-                      } catch (e) {
-                        if (dctx.mounted) {
-                          setDialog(() => saving = false);
-                          ScaffoldMessenger.of(dctx).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed: $e'),
-                              backgroundColor: Colors.red.shade400,
-                            ),
-                          );
-                        }
-                      }
-                    },
-              child: saving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text('Add'),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => AddMedicationDialog(babyId: widget.babyId),
     );
-
-    nameCtrl.dispose();
-    dosageCtrl.dispose();
 
     if (added != null) {
       ref.invalidate(babyMedicationsProvider);
@@ -1567,6 +1561,99 @@ class _MedicationListTile extends StatelessWidget {
 }
 
 // ──────────────────────────────────────────────────────────────────────
+// Prominent "Pick a specific date & time" tile shown below the quick pills
+// ──────────────────────────────────────────────────────────────────────
+
+class _CustomTimeTile extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool isOwner;
+  final VoidCallback onTap;
+
+  const _CustomTimeTile({
+    required this.label,
+    required this.selected,
+    required this.isOwner,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final headline = selected
+        ? 'Custom time'
+        : (isOwner ? 'Pick a specific date & time' : 'Pick a specific time');
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.12)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? AppColors.primary
+                : AppColors.muted.withValues(alpha: 0.3),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.primary
+                    : AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isOwner ? Icons.event_rounded : Icons.schedule_rounded,
+                size: 20,
+                color: selected ? Colors.white : AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    headline,
+                    style: TextStyle(
+                      color: selected ? AppColors.primary : AppColors.text,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────
 // Reusable shared pill + step button
 // ──────────────────────────────────────────────────────────────────────
 
@@ -1589,12 +1676,12 @@ class _Pill extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.15)
               : AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected
                 ? AppColors.primary
@@ -1651,3 +1738,4 @@ class _StepButton extends StatelessWidget {
     );
   }
 }
+

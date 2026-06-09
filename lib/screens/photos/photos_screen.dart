@@ -81,7 +81,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.text,
+                      color: ctx.palette.text,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -113,7 +113,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                         borderSide: BorderSide(color: AppColors.primary),
                       ),
                       filled: true,
-                      fillColor: AppColors.surface,
+                      fillColor: ctx.palette.surface,
                     ),
                     maxLines: 2,
                     textCapitalization: TextCapitalization.sentences,
@@ -320,7 +320,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.text,
+                          color: context.palette.text,
                         ),
                       ),
                     ),
@@ -380,11 +380,11 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.error_outline, size: 48, color: AppColors.muted),
+                Icon(Icons.error_outline, size: 48, color: context.palette.muted),
                 const SizedBox(height: 12),
                 Text(
                   'Failed to load photos',
-                  style: TextStyle(color: AppColors.muted),
+                  style: TextStyle(color: context.palette.muted),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
@@ -428,7 +428,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.text,
+                color: ctx.palette.text,
               ),
             ),
             const SizedBox(height: 20),
@@ -445,7 +445,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
               title: const Text('Take Photo'),
               subtitle: Text(
                 'Use your camera',
-                style: TextStyle(color: AppColors.muted, fontSize: 13),
+                style: TextStyle(color: ctx.palette.muted, fontSize: 13),
               ),
               onTap: () {
                 Navigator.pop(ctx);
@@ -469,7 +469,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
               title: const Text('Choose from Gallery'),
               subtitle: Text(
                 'Select an existing photo',
-                style: TextStyle(color: AppColors.muted, fontSize: 13),
+                style: TextStyle(color: ctx.palette.muted, fontSize: 13),
               ),
               onTap: () {
                 Navigator.pop(ctx);

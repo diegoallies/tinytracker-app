@@ -25,6 +25,76 @@ final recentFeedingsProvider = FutureProvider<List<Feeding>>((ref) async {
   }
 });
 
+/// A feeding paired with the medication entry (if any) that was logged at
+/// the same time. Feeding + meds are inserted with the identical `logged_at`,
+/// so we join in-Dart with a 1-second tolerance to absorb any DB round-trip
+/// precision loss.
+class FeedingWithMed {
+  final Feeding feeding;
+  final String? medication;
+  final String? dosage;
+
+  const FeedingWithMed({
+    required this.feeding,
+    this.medication,
+    this.dosage,
+  });
+
+  bool get hasMed => medication != null && medication!.isNotEmpty;
+}
+
+final recentFeedingsWithMedsProvider =
+    FutureProvider<List<FeedingWithMed>>((ref) async {
+  final feedings = await ref.watch(recentFeedingsProvider.future);
+  if (feedings.isEmpty) return const [];
+
+  final baby = ref.read(selectedBabyProvider);
+  if (baby == null) {
+    return feedings.map((f) => FeedingWithMed(feeding: f)).toList();
+  }
+
+  // Fetch meds in a time window covering all recent feedings.
+  final times = [for (final f in feedings) f.loggedAt]..sort();
+  final earliest = times.first.subtract(const Duration(seconds: 2));
+  final latest = times.last.add(const Duration(seconds: 2));
+
+  try {
+    final medsData = await SupabaseService.client
+        .from('health_logs')
+        .select('logged_at, medication, dosage')
+        .eq('baby_id', baby.id)
+        .not('medication', 'is', null)
+        .gte('logged_at', earliest.toUtc().toIso8601String())
+        .lte('logged_at', latest.toUtc().toIso8601String());
+
+    final meds = medsData
+        .map((m) => (
+              loggedAt: DateTime.parse(m['logged_at'] as String),
+              medication: m['medication'] as String?,
+              dosage: m['dosage'] as String?,
+            ))
+        .toList();
+
+    return feedings.map((f) {
+      for (final m in meds) {
+        if ((m.loggedAt.difference(f.loggedAt)).abs() <
+            const Duration(seconds: 1)) {
+          return FeedingWithMed(
+            feeding: f,
+            medication: m.medication,
+            dosage: m.dosage,
+          );
+        }
+      }
+      return FeedingWithMed(feeding: f);
+    }).toList();
+  } catch (e, st) {
+    debugPrint('recentFeedingsWithMedsProvider error: $e\n$st');
+    // Fall back to feedings without meds info rather than failing the screen.
+    return feedings.map((f) => FeedingWithMed(feeding: f)).toList();
+  }
+});
+
 final todayFeedCountProvider = FutureProvider<int>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
   if (baby == null) return 0;
