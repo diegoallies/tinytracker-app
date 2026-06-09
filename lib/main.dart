@@ -9,6 +9,7 @@ import 'app/deep_links.dart';
 import 'app/router.dart';
 import 'providers/night_mode_provider.dart';
 import 'services/notification_service.dart';
+import 'services/pending_writes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,7 @@ void main() async {
   );
 
   await NotificationService.initialize();
+  await PendingWrites.init();
 
   runApp(
     const ProviderScope(
@@ -29,6 +31,8 @@ void main() async {
   );
 
   setupDeepLinks();
+  // Push any logs that were saved offline last session.
+  PendingWrites.flush();
 }
 
 class TinyTrackApp extends ConsumerWidget {

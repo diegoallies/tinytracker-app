@@ -16,6 +16,8 @@ class AppScaffold extends ConsumerWidget {
     final location = GoRouterState.of(context).uri.toString();
     final showFab = location.startsWith('/dashboard') || location == '/';
     final offline = ref.watch(isOfflineProvider);
+    // Keep the offline-queue flusher alive for the whole session.
+    ref.watch(pendingWritesFlusherProvider);
 
     return Scaffold(
       body: Column(

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/diaper.dart';
+import '../services/pending_writes.dart';
 import '../services/supabase_service.dart';
 import '../utils/date_utils.dart';
 import 'baby_provider.dart';
@@ -92,22 +93,31 @@ class DiaperActions {
       'logged_at': (loggedAt ?? DateTime.now()).toUtc().toIso8601String(),
     };
 
-    // stool_type lands with the Care Pack migration; if the column doesn't
-    // exist yet the insert is retried without it so logging never breaks.
-    if (isDirty && stoolType != null) {
-      try {
-        await SupabaseService.client
-            .from('diapers')
-            .insert({...payload, 'stool_type': stoolType});
-        return;
-      } on PostgrestException catch (e) {
-        // Only retry when the column genuinely doesn't exist yet — see
-        // feeding_provider.dart for the rationale.
-        if (e.code != '42703' && e.code != 'PGRST204') rethrow;
-        debugPrint('diaper insert with stool_type failed (${e.code}), retrying without');
+    final fullPayload = {
+      ...payload,
+      if (isDirty && stoolType != null) 'stool_type': stoolType,
+    };
+
+    try {
+      // stool_type lands with the Care Pack migration; if the column doesn't
+      // exist yet the insert is retried without it so logging never breaks.
+      if (isDirty && stoolType != null) {
+        try {
+          await SupabaseService.client.from('diapers').insert(fullPayload);
+          return;
+        } on PostgrestException catch (e) {
+          // Only retry when the column genuinely doesn't exist yet — see
+          // feeding_provider.dart for the rationale.
+          if (e.code != '42703' && e.code != 'PGRST204') rethrow;
+          debugPrint('diaper insert with stool_type failed (${e.code}), retrying without');
+        }
       }
+      await SupabaseService.client.from('diapers').insert(payload);
+    } catch (e) {
+      // Offline? Park it locally — it syncs when connectivity returns.
+      if (!PendingWrites.isConnectivityError(e)) rethrow;
+      await PendingWrites.enqueue('diapers', fullPayload);
     }
-    await SupabaseService.client.from('diapers').insert(payload);
   }
 
   static Future<void> deleteDiaper(String diaperId) async {

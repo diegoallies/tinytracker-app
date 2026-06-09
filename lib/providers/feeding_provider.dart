@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/feeding.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
+import '../services/pending_writes.dart';
 import '../utils/date_utils.dart';
 import 'baby_provider.dart';
 
@@ -134,27 +135,35 @@ class FeedingActions {
       'logged_at': ts.toUtc().toIso8601String(),
     };
 
-    // quality/had_spitup land with the Care Pack migration; retry without
-    // them if the columns don't exist yet so logging never breaks.
-    var inserted = false;
-    if (quality != null || hadSpitup) {
-      try {
-        await SupabaseService.client.from('feedings').insert({
-          ...payload,
-          'quality': ?quality,
-          'had_spitup': hadSpitup,
-        });
-        inserted = true;
-      } on PostgrestException catch (e) {
-        // Only retry when the columns genuinely don't exist yet (pre-migration).
-        // Anything else (5xx, constraint violation) must propagate — a blind
-        // retry could double-insert or silently drop the care-pack fields.
-        if (e.code != '42703' && e.code != 'PGRST204') rethrow;
-        debugPrint('feeding insert with care-pack fields failed (${e.code}), retrying without');
+    final fullPayload = {
+      ...payload,
+      'quality': ?quality,
+      'had_spitup': hadSpitup,
+    };
+
+    try {
+      // quality/had_spitup land with the Care Pack migration; retry without
+      // them if the columns don't exist yet so logging never breaks.
+      var inserted = false;
+      if (quality != null || hadSpitup) {
+        try {
+          await SupabaseService.client.from('feedings').insert(fullPayload);
+          inserted = true;
+        } on PostgrestException catch (e) {
+          // Only retry when the columns genuinely don't exist yet (pre-migration).
+          // Anything else (5xx, constraint violation) must propagate — a blind
+          // retry could double-insert or silently drop the care-pack fields.
+          if (e.code != '42703' && e.code != 'PGRST204') rethrow;
+          debugPrint('feeding insert with care-pack fields failed (${e.code}), retrying without');
+        }
       }
-    }
-    if (!inserted) {
-      await SupabaseService.client.from('feedings').insert(payload);
+      if (!inserted) {
+        await SupabaseService.client.from('feedings').insert(payload);
+      }
+    } catch (e) {
+      // Offline? Park it locally — it syncs when connectivity returns.
+      if (!PendingWrites.isConnectivityError(e)) rethrow;
+      await PendingWrites.enqueue('feedings', fullPayload);
     }
 
     // Reschedule feeding reminder from the actual logged time. The feed is
