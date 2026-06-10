@@ -156,3 +156,13 @@ Diego's family runs a paper "Baby Care Tracking & Reporting Pack" with the nanny
 ### 30. Export is the report hub, with a normalized design
 - New "All reports" card links every report from Export: Weekly Report, Monthly Milestone Review, Daily Journal, Trends. The weekly/monthly care-pack screens and the owner-only Family Report all support any past week/month, exported as PDF.
 - The old Time Period / Preview / What's Included trio collapsed into one Data export card matching the doctor/family card shape; the 7/14/30 selector and stat chips moved to the palette surface+border style so dark mode is correct.
+
+### 31. The family report shows everything (v1.1.1)
+- New "Day by day" ledger section: one row per day with feeds, milk ml, sleep time, nappies, reflux events, medicine doses, tummy time and journal mood. Every day of the period is accounted for.
+- The journal section prints every journalled day in full - mood, cramps, gas and all five text fields - instead of six quoted highlights. All ledger arithmetic lives in report_math with unit tests (69 green).
+- This week / Last week chips removed from the Family Report card (Diego: "be professional").
+
+### 32. Saved journals and reports actually open
+- The real "can't open" bug: tapping a saved journal/report silently swapped a form two screens up. Now tapping a saved journal day opens a read-only viewer with everything written that day plus an Edit shortcut; a calendar button jumps to any date since birth; the saved list shows a month.
+- Weekly Report and Monthly Review scroll to the top when a past report is opened.
+- Verified end-to-end on the Android emulator: every All-reports row navigates, journal opens, weekly/monthly PDFs re-rendered and reviewed page by page.
