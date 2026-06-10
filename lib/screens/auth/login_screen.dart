@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthApiException;
 import '../../app/deep_links.dart';
 import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
@@ -53,11 +54,76 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackBar('Invalid email or password');
+        final notConfirmed = e is AuthApiException &&
+            (e.code == 'email_not_confirmed' ||
+                e.message.toLowerCase().contains('not confirmed'));
+        if (notConfirmed) {
+          _showConfirmEmailSheet(email);
+        } else {
+          context.showErrorSnackBar('Invalid email or password');
+        }
       }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  /// Shown when the credentials are right but the account hasn't clicked its
+  /// confirmation link yet - a generic "wrong password" here would be a lie.
+  void _showConfirmEmailSheet(String email) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          AppSpacing.md,
+          AppSpacing.gutter,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Icon(Icons.mark_email_unread_rounded,
+                size: 44, color: AppColors.primary),
+            const SizedBox(height: AppSpacing.sm),
+            Text('Confirm your email first',
+                style: Theme.of(ctx).textTheme.titleLarge,
+                textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Your account exists, but we sent a confirmation link to '
+              '$email and it hasn\'t been clicked yet. Open that email, tap '
+              'the link, then sign in again.',
+              style: Theme.of(ctx).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.send_rounded, size: 18),
+              label: const Text('Resend confirmation email'),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final ok = await AuthService().resendConfirmation(email);
+                if (!mounted) return;
+                if (ok) {
+                  context.showSuccessSnackBar(
+                      'Confirmation email sent to $email');
+                } else {
+                  context.showErrorSnackBar(
+                      'Couldn\'t resend right now. Wait a minute and try again.');
+                }
+              },
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('I\'ll check my inbox'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _forgotPassword() async {

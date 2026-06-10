@@ -21,11 +21,11 @@ import '../../widgets/medications/give_dose_sheet.dart';
 
 enum HealthTab { temperature, medication }
 
-/// Provider to check if user can administer meds (owner or parent role)
+/// Provider to check if user can administer meds. The nanny (logger) gives
+/// daytime doses, so anyone who can log can give meds; viewers stay
+/// read-only. MedicationGuard enforces the dose-safety limits for everyone.
 final canAdministerMedsProvider = Provider<bool>((ref) {
-  final babyState = ref.watch(babyProvider);
-  // Only owner or parent role can administer meds (not logger/nanny/viewer)
-  return babyState.isOwner || babyState.role == 'parent';
+  return ref.watch(babyProvider).canLogMeds;
 });
 
 class HealthScreen extends ConsumerStatefulWidget {

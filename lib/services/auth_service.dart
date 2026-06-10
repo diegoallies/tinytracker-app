@@ -44,6 +44,21 @@ class AuthService {
     }
   }
 
+  /// Resends the signup confirmation email for accounts that registered but
+  /// never clicked the verify link.
+  Future<bool> resendConfirmation(String email) async {
+    try {
+      await _client.auth.resend(
+        type: OtpType.signup,
+        email: email,
+        emailRedirectTo: 'tinytracker://login',
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   User? get currentUser => _client.auth.currentUser;
   String? get userId => currentUser?.id;
   bool get isAuthenticated => currentUser != null;

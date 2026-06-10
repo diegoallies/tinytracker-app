@@ -34,6 +34,12 @@ void main() async {
   // Push any logs that were saved offline last session.
   PendingWrites.flush();
 
+  // Navigating away never blurs the focused field, so the keyboard would
+  // stay up on the next page. Drop focus whenever the route changes.
+  appRouter.routerDelegate.addListener(() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  });
+
   // Password-recovery emails deep-link back into the app; supabase_flutter
   // consumes the link and emits this event once the recovery session is live.
   Supabase.instance.client.auth.onAuthStateChange.listen((state) {
@@ -66,6 +72,14 @@ class TinyTrackApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: mode,
       routerConfig: appRouter,
+      // Tap anywhere outside a field to dismiss the keyboard. Widgets with
+      // their own tap handlers win the gesture arena, so buttons/fields are
+      // unaffected; only dead space triggers the unfocus.
+      builder: (context, child) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: child,
+      ),
     );
   }
 }

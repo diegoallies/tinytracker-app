@@ -36,6 +36,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
   bool _isUploadingPhoto = false;
   bool _isLoadingShares = false;
   List<BabyShare> _shares = [];
+  List<Map<String, dynamic>> _pendingInvites = [];
 
   static const _genderOptions = ['male', 'female', 'other'];
 
@@ -231,8 +232,24 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
     try {
       final notifier = ref.read(babyProvider.notifier);
       final shares = await notifier.getShares(babyId);
+      List<Map<String, dynamic>> invites = const [];
+      try {
+        final rows = await SupabaseService.client
+            .from('baby_invites')
+            .select('id, invited_email, role, expires_at')
+            .eq('baby_id', babyId)
+            .isFilter('used_by', null)
+            .gte('expires_at', DateTime.now().toUtc().toIso8601String())
+            .order('created_at', ascending: false);
+        invites = List<Map<String, dynamic>>.from(rows);
+      } catch (e) {
+        debugPrint('pending invites load failed: $e');
+      }
       if (mounted) {
-        setState(() => _shares = shares);
+        setState(() {
+          _shares = shares;
+          _pendingInvites = invites;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -529,6 +546,34 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _cancelInvite(Map<String, dynamic> invite, String babyId) async {
+    final email = (invite['invited_email'] as String?) ?? 'this invite';
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Cancel invite?',
+      message: 'The invite for $email will stop working immediately.',
+      confirmLabel: 'Cancel invite',
+      destructive: true,
+      icon: Icons.cancel_rounded,
+    );
+    if (!confirmed || !mounted) return;
+    try {
+      await SupabaseService.client
+          .from('baby_invites')
+          .delete()
+          .eq('id', invite['id'] as String);
+      if (!mounted) return;
+      context.showSuccessSnackBar('Invite cancelled');
+      await _loadShares(babyId);
+    } catch (e) {
+      if (mounted) {
+        context.showErrorSnackBar(
+          'Couldn\'t cancel the invite. Check your connection and try again.',
+        );
+      }
+    }
   }
 
   Future<void> _createInvite(
@@ -1124,6 +1169,104 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                           ),
                         );
                       }),
+                    if (_pendingInvites.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Pending invites',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: context.palette.muted,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...List.generate(_pendingInvites.length, (index) {
+                        final invite = _pendingInvites[index];
+                        final email = (invite['invited_email'] as String?) ??
+                            'Anyone with the link';
+                        final role = (invite['role'] as String?) ?? 'logger';
+                        final expiresAt = DateTime.tryParse(
+                                (invite['expires_at'] as String?) ?? '')
+                            ?.toLocal();
+                        final daysLeft = expiresAt
+                            ?.difference(DateTime.now())
+                            .inDays;
+                        final expiryLabel = daysLeft == null
+                            ? 'waiting to be accepted'
+                            : daysLeft < 1
+                                ? 'expires today'
+                                : 'expires in $daysLeft day${daysLeft == 1 ? '' : 's'}';
+                        return Padding(
+                          padding: EdgeInsets.only(top: index == 0 ? 0 : 8),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: context.palette.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: context.palette.border,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: _roleColor(role),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.hourglass_top_rounded,
+                                    size: 18,
+                                    color: _roleIconColor(role),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        email,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: context.palette.text,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${roleDisplayName(role)} invite, $expiryLabel',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: context.palette.muted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.close_rounded,
+                                    size: 18,
+                                    color: Colors.red.shade300,
+                                  ),
+                                  onPressed: () =>
+                                      _cancelInvite(invite, baby.id),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ],
                 ),
               ),

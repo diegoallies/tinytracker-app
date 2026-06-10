@@ -22,7 +22,9 @@ class BabyState {
   bool get canLog => role == 'owner' || role == 'logger' || role == 'parent';
   bool get isOwner => role == 'owner';
   bool get isViewer => role == 'viewer';
-  bool get canLogMeds => role == 'owner' || role == 'parent';
+  // The nanny (logger) administers daytime meds, so anyone who can log can
+  // give medicine - MedicationGuard enforces the dose-safety limits.
+  bool get canLogMeds => canLog;
 
   BabyState copyWith({
     Baby? selectedBaby,
