@@ -568,11 +568,15 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       // when dismissed - that must never read as "invite failed".
       try {
         await SharePlus.instance.share(ShareParams(
+          title: 'TinyTrack invite',
+          subject: 'TinyTrack invite for $babyName',
+          // Link goes LAST: iOS keeps the full text and uses the trailing
+          // URL for the preview instead of replacing the message with it.
           text: 'You\'re invited to help track $babyName on TinyTrack! 🍼\n\n'
-              'Open this link on your phone (or paste it in the app under '
-              'More > Invites):\n$inviteLink\n\n'
-              'Sign up with $invitedEmail - the invite only works for that email. '
-              'The link expires in 7 days.',
+              'Sign up with $invitedEmail - the invite only works for that '
+              'email and expires in 7 days.\n\n'
+              'Tap the link on your phone (or paste it in the app under '
+              'More > Invites):\n\n$inviteLink',
         ));
       } catch (e) {
         debugPrint('share sheet failed (link already on clipboard): $e');
