@@ -62,24 +62,24 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .select('id')
           .eq('baby_id', baby.id)
           .isFilter('deleted_at', null)
-          .gte('created_at', todayStart.toUtc().toIso8601String())
-          .lte('created_at', now);
+          .gte('logged_at', todayStart.toUtc().toIso8601String())
+          .lte('logged_at', now);
 
       final todayDiapersResult = await supabase
           .from('diapers')
           .select('id')
           .eq('baby_id', baby.id)
           .isFilter('deleted_at', null)
-          .gte('created_at', todayStart.toUtc().toIso8601String())
-          .lte('created_at', now);
+          .gte('logged_at', todayStart.toUtc().toIso8601String())
+          .lte('logged_at', now);
 
       final todaySleepsResult = await supabase
           .from('sleeps')
           .select('duration_minutes')
           .eq('baby_id', baby.id)
           .isFilter('deleted_at', null)
-          .gte('created_at', todayStart.toUtc().toIso8601String())
-          .lte('created_at', now);
+          .gte('start_time', todayStart.toUtc().toIso8601String())
+          .lte('start_time', now);
 
       // Fetch yesterday's data
       final yesterdayFeedingsResult = await supabase
@@ -87,24 +87,24 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .select('id')
           .eq('baby_id', baby.id)
           .isFilter('deleted_at', null)
-          .gte('created_at', yesterdayStart.toUtc().toIso8601String())
-          .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
+          .gte('logged_at', yesterdayStart.toUtc().toIso8601String())
+          .lte('logged_at', yesterdayEnd.toUtc().toIso8601String());
 
       final yesterdayDiapersResult = await supabase
           .from('diapers')
           .select('id')
           .eq('baby_id', baby.id)
           .isFilter('deleted_at', null)
-          .gte('created_at', yesterdayStart.toUtc().toIso8601String())
-          .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
+          .gte('logged_at', yesterdayStart.toUtc().toIso8601String())
+          .lte('logged_at', yesterdayEnd.toUtc().toIso8601String());
 
       final yesterdaySleepsResult = await supabase
           .from('sleeps')
           .select('duration_minutes')
           .eq('baby_id', baby.id)
           .isFilter('deleted_at', null)
-          .gte('created_at', yesterdayStart.toUtc().toIso8601String())
-          .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
+          .gte('start_time', yesterdayStart.toUtc().toIso8601String())
+          .lte('start_time', yesterdayEnd.toUtc().toIso8601String());
 
       // Calculate sleep totals
       int todaySleep = 0;
