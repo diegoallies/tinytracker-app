@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -873,10 +874,128 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       const SizedBox(height: 16),
                       _buildFamilyReportCard(),
                     ],
+                    const SizedBox(height: 16),
+                    _buildAllReportsCard(),
                     const SizedBox(height: 20),
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  /// Every report in the app, reachable from one place. The weekly and
+  /// monthly care-pack reports open their own screens, where any past week
+  /// or month can be picked and exported as a PDF.
+  Widget _buildAllReportsCard() {
+    Widget row({
+      required IconData icon,
+      required Color tint,
+      required String title,
+      required String subtitle,
+      required String route,
+    }) {
+      return InkWell(
+        onTap: () => context.push(route),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: tint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 20, color: AppColors.text),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: context.palette.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.palette.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: context.palette.muted,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return AnimatedCard(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'All reports',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: context.palette.text,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Pick any past week or month inside each report, then share '
+              'it as a PDF.',
+              style: TextStyle(fontSize: 12, color: context.palette.muted),
+            ),
+            const SizedBox(height: 8),
+            row(
+              icon: Icons.event_note_rounded,
+              tint: AppColors.pastelBlue,
+              title: 'Weekly Report',
+              subtitle: 'Care-pack week summary, any week since birth',
+              route: '/weekly-report',
+            ),
+            row(
+              icon: Icons.cake_rounded,
+              tint: AppColors.pastelPink,
+              title: 'Monthly Milestone Review',
+              subtitle: 'Month-birthday review, any month since birth',
+              route: '/monthly-review',
+            ),
+            row(
+              icon: Icons.menu_book_rounded,
+              tint: AppColors.pastelGreen,
+              title: 'Daily Journal',
+              subtitle: 'The nanny\'s daily log, day by day',
+              route: '/journal',
+            ),
+            row(
+              icon: Icons.insights_rounded,
+              tint: AppColors.pastelPurple,
+              title: 'Trends',
+              subtitle: 'Charts over feeds, sleep and growth',
+              route: '/trends',
+            ),
+          ],
+        ),
       ),
     );
   }
