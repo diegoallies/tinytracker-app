@@ -27,6 +27,7 @@ class MonthlyReviewScreen extends ConsumerStatefulWidget {
 
 class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
   late DateTime _month;
+  final ScrollController _scroll = ScrollController();
 
   final Map<String, String> _checklist = {};
   final _commentsCtrl = TextEditingController();
@@ -43,6 +44,7 @@ class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
 
   @override
   void dispose() {
+    _scroll.dispose();
     _commentsCtrl.dispose();
     super.dispose();
   }
@@ -88,6 +90,10 @@ class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
       _checklist.clear();
       _commentsCtrl.clear();
     });
+    // The review renders at the top - make the switch visible.
+    if (_scroll.hasClients) {
+      _scroll.animateTo(0, duration: AppMotion.normal, curve: AppMotion.ease);
+    }
   }
 
   void _hydrate(MonthlyReview? review) {
@@ -170,6 +176,7 @@ class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
         child: baby == null
             ? const Center(child: Text('No baby selected'))
             : ListView(
+                controller: _scroll,
                 padding: const EdgeInsets.fromLTRB(AppSpacing.gutter,
                     AppSpacing.md, AppSpacing.gutter, AppSpacing.xxl),
                 children: [

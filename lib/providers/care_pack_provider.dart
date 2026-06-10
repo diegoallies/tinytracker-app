@@ -151,7 +151,7 @@ final recentJournalsProvider =
         .eq('baby_id', baby.id)
         .isFilter('deleted_at', null)
         .order('journal_date', ascending: false)
-        .limit(14);
+        .limit(31);
     return data.map<DailyJournal>(DailyJournal.fromJson).toList();
   } catch (e, st) {
     _handle(e, st, 'recentJournalsProvider');

@@ -35,7 +35,7 @@ class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   // Keep in sync with pubspec.yaml's version.
-  static const _appVersion = '1.1.0';
+  static const _appVersion = '1.1.1';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

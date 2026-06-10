@@ -251,6 +251,7 @@ class FamilyReportService {
           pw.SizedBox(height: 22),
           ..._atAGlanceSection(d),
           pw.SizedBox(height: 20),
+          ..._dayByDaySection(d),
           ..._feedingSection(d),
           pw.SizedBox(height: 20),
           ..._sleepSection(d),
@@ -1012,6 +1013,63 @@ class FamilyReportService {
   }
 
   // -------------------------------------------------------------------
+  // 2b. Day by day - one ledger row per day, nothing escapes the report
+  // -------------------------------------------------------------------
+
+  static const _moodLabels = {
+    'happy': 'Happy',
+    'okay': 'Okay',
+    'fussy': 'Fussy',
+    'very_fussy': 'Very fussy',
+  };
+
+  static List<pw.Widget> _dayByDaySection(_ReportData d) {
+    final ledger = dailyLedger(
+      start: d.periodStart,
+      days: d.activeDays,
+      feedings: d.feedings,
+      sleeps: d.sleeps,
+      diapers: d.diapers,
+      reflux: d.reflux,
+      healthLogs: d.healthLogs,
+      tummyTimes: d.tummyTimes,
+      journals: d.journals,
+    );
+    if (ledger.every((l) => l.isEmpty)) return const [];
+
+    return [
+      _sectionHeader('Day by day', _accentGlance),
+      _zebraTable(
+        [
+          'Date', 'Feeds', 'Milk (ml)', 'Sleep', 'Nappies', 'Reflux',
+          'Medicine', 'Tummy', 'Mood',
+        ],
+        [
+          for (final l in ledger)
+            [
+              DateFormat('EEE d MMM').format(l.day),
+              l.feeds == 0 ? '-' : '${l.feeds}',
+              l.milkMl == 0 ? '-' : '${l.milkMl.round()}',
+              l.sleepMinutes == 0 ? '-' : _hm(l.sleepMinutes),
+              l.nappies == 0 ? '-' : '${l.nappies}',
+              l.refluxEvents == 0 ? '-' : '${l.refluxEvents}',
+              l.medicineDoses == 0 ? '-' : '${l.medicineDoses}',
+              l.tummyMinutes == 0 ? '-' : '${l.tummyMinutes}m',
+              _moodLabels[l.mood] ?? '-',
+            ],
+        ],
+      ),
+      pw.SizedBox(height: 4),
+      pw.Text(
+        'Sleep and tummy time count on the day the session started. '
+        'Mood comes from the daily journal.',
+        style: pw.TextStyle(fontSize: 7.5, color: _muted),
+      ),
+      pw.SizedBox(height: 20),
+    ];
+  }
+
+  // -------------------------------------------------------------------
   // 9. Journal highlights
   // -------------------------------------------------------------------
 
@@ -1070,29 +1128,102 @@ class FamilyReportService {
       widgets.add(pw.SizedBox(height: 10));
     }
 
-    // Up to 6 "new things" / notable activities, quoted.
-    final highlights = <(String, String)>[];
+    // The journal in full: every journalled day with everything written
+    // that day, nothing summarised away.
+    const fields = [
+      ('activities', 'Playtime activities'),
+      ('new_things', 'New things tried or noticed'),
+      ('upsets', 'Upsets'),
+      ('fussy_times', 'Fussy / crying times'),
+      ('notes', 'Notes'),
+    ];
+
+    widgets.add(_subLabel('The journal, day by day'));
     for (final j in d.journals) {
       final date = DateTime.tryParse((j['journal_date'] ?? '').toString());
-      final when = date == null ? '' : DateFormat('EEE d MMM').format(date);
-      for (final field in ['new_things', 'activities']) {
-        final text = _ascii((j[field] ?? '').toString().trim());
-        if (text.isNotEmpty) highlights.add((text, when));
-      }
-    }
-    if (highlights.isNotEmpty) {
-      final seen = <String>{};
-      var added = 0;
-      widgets.add(_subLabel('New things & notable moments'));
-      for (final (text, dateLabel) in highlights) {
-        if (added >= 6) break;
-        if (!seen.add(text.toLowerCase())) continue;
-        widgets.add(_bullet(
-          '"${_truncate(text, 160)}"${dateLabel.isEmpty ? '' : ' - $dateLabel'}',
-          _accentJournal,
+      final when =
+          date == null ? '' : DateFormat('EEEE d MMMM').format(date);
+      final mood = _moodLabels[(j['mood'] ?? '').toString()];
+      final cramps = (j['cramps'] as num?)?.toInt();
+      final gas = (j['gas'] as num?)?.toInt();
+      final headline = [
+        if (mood != null) 'Mood: $mood',
+        if (cramps != null) 'Cramps $cramps/3',
+        if (gas != null) 'Gas $gas/3',
+      ].join('    ');
+
+      final lines = <pw.Widget>[];
+      for (final (key, label) in fields) {
+        final text = _ascii((j[key] ?? '').toString().trim());
+        if (text.isEmpty) continue;
+        lines.add(pw.Padding(
+          padding: const pw.EdgeInsets.only(top: 3),
+          child: pw.RichText(
+            text: pw.TextSpan(
+              children: [
+                pw.TextSpan(
+                  text: '$label:  ',
+                  style: pw.TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _muted,
+                  ),
+                ),
+                pw.TextSpan(
+                  text: text,
+                  style: pw.TextStyle(fontSize: 8.5, color: _ink),
+                ),
+              ],
+            ),
+          ),
         ));
-        added++;
       }
+
+      widgets.add(pw.Container(
+        width: double.infinity,
+        margin: const pw.EdgeInsets.only(bottom: 6),
+        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: pw.BoxDecoration(
+          color: _cellFill,
+          borderRadius: pw.BorderRadius.circular(6),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  when,
+                  style: pw.TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+                if (headline.isNotEmpty)
+                  pw.Text(
+                    headline,
+                    style: pw.TextStyle(fontSize: 8.5, color: _muted),
+                  ),
+              ],
+            ),
+            if (lines.isEmpty)
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(top: 3),
+                child: pw.Text(
+                  'Nothing written this day.',
+                  style: pw.TextStyle(
+                      fontSize: 8.5,
+                      color: _muted,
+                      fontStyle: pw.FontStyle.italic),
+                ),
+              )
+            else
+              ...lines,
+          ],
+        ),
+      ));
     }
     return widgets;
   }
@@ -1463,9 +1594,6 @@ class FamilyReportService {
         .replaceAll(RegExp(r'[ \t]{2,}'), ' ')
         .trim();
   }
-
-  static String _truncate(String s, int max) =>
-      s.length <= max ? s : '${s.substring(0, max - 3)}...';
 
   static String _orDash(dynamic value) {
     final s = _ascii(value?.toString() ?? '');

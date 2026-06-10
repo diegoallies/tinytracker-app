@@ -693,3 +693,139 @@ class GlanceAggregates {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Day-by-day ledger
+// ---------------------------------------------------------------------------
+
+/// One day's complete activity line in the family report's daily ledger.
+class DayLedger {
+  final DateTime day;
+  final int feeds;
+  final double milkMl;
+  final int sleepSessions;
+  final int sleepMinutes;
+  final int nappies;
+  final int refluxEvents;
+  final int medicineDoses;
+  final int tummyMinutes;
+  final String? mood;
+
+  const DayLedger({
+    required this.day,
+    required this.feeds,
+    required this.milkMl,
+    required this.sleepSessions,
+    required this.sleepMinutes,
+    required this.nappies,
+    required this.refluxEvents,
+    required this.medicineDoses,
+    required this.tummyMinutes,
+    required this.mood,
+  });
+
+  bool get isEmpty =>
+      feeds == 0 &&
+      sleepSessions == 0 &&
+      nappies == 0 &&
+      refluxEvents == 0 &&
+      medicineDoses == 0 &&
+      tummyMinutes == 0 &&
+      mood == null;
+}
+
+/// Buckets every record into local calendar days, one [DayLedger] per day
+/// from [start] (inclusive) for [days] days, in order. Sleep and tummy
+/// sessions count on the day they STARTED; medicine doses are health_logs
+/// rows with a non-empty medication.
+List<DayLedger> dailyLedger({
+  required DateTime start,
+  required int days,
+  required List<Map<String, dynamic>> feedings,
+  required List<Map<String, dynamic>> sleeps,
+  required List<Map<String, dynamic>> diapers,
+  required List<Map<String, dynamic>> reflux,
+  required List<Map<String, dynamic>> healthLogs,
+  required List<Map<String, dynamic>> tummyTimes,
+  required List<Map<String, dynamic>> journals,
+}) {
+  String? keyOf(Map<String, dynamic> row, String field) {
+    final dt = parseTimestamp(row[field]);
+    return dt == null ? null : dayKey(dt);
+  }
+
+  final feedCount = <String, int>{};
+  final mlSum = <String, double>{};
+  for (final f in feedings) {
+    final k = keyOf(f, 'logged_at');
+    if (k == null) continue;
+    feedCount[k] = (feedCount[k] ?? 0) + 1;
+    final ml = f['amount_ml'];
+    if (ml is num) mlSum[k] = (mlSum[k] ?? 0) + ml.toDouble();
+  }
+
+  final sleepCount = <String, int>{};
+  final sleepMin = <String, int>{};
+  for (final s in sleeps) {
+    final k = keyOf(s, 'start_time');
+    if (k == null) continue;
+    final minutes = sessionMinutes(s);
+    if (minutes <= 0) continue;
+    sleepCount[k] = (sleepCount[k] ?? 0) + 1;
+    sleepMin[k] = (sleepMin[k] ?? 0) + minutes;
+  }
+
+  final nappyCount = <String, int>{};
+  for (final d in diapers) {
+    final k = keyOf(d, 'logged_at');
+    if (k != null) nappyCount[k] = (nappyCount[k] ?? 0) + 1;
+  }
+
+  final refluxCount = <String, int>{};
+  for (final r in reflux) {
+    final k = keyOf(r, 'logged_at');
+    if (k != null) refluxCount[k] = (refluxCount[k] ?? 0) + 1;
+  }
+
+  final doseCount = <String, int>{};
+  for (final h in healthLogs) {
+    if ((h['medication'] ?? '').toString().trim().isEmpty) continue;
+    final k = keyOf(h, 'logged_at');
+    if (k != null) doseCount[k] = (doseCount[k] ?? 0) + 1;
+  }
+
+  final tummyMin = <String, int>{};
+  for (final t in tummyTimes) {
+    final k = keyOf(t, 'start_time');
+    if (k == null) continue;
+    final minutes = (t['duration_minutes'] as num?)?.toInt() ?? 0;
+    if (minutes > 0) tummyMin[k] = (tummyMin[k] ?? 0) + minutes;
+  }
+
+  final moodByDay = <String, String>{};
+  for (final j in journals) {
+    final date = DateTime.tryParse((j['journal_date'] ?? '').toString());
+    final mood = (j['mood'] ?? '').toString().trim();
+    if (date != null && mood.isNotEmpty) moodByDay[dayKey(date)] = mood;
+  }
+
+  return [
+    for (var i = 0; i < days; i++)
+      () {
+        final day = DateTime(start.year, start.month, start.day + i);
+        final k = dayKey(day);
+        return DayLedger(
+          day: day,
+          feeds: feedCount[k] ?? 0,
+          milkMl: mlSum[k] ?? 0,
+          sleepSessions: sleepCount[k] ?? 0,
+          sleepMinutes: sleepMin[k] ?? 0,
+          nappies: nappyCount[k] ?? 0,
+          refluxEvents: refluxCount[k] ?? 0,
+          medicineDoses: doseCount[k] ?? 0,
+          tummyMinutes: tummyMin[k] ?? 0,
+          mood: moodByDay[k],
+        );
+      }(),
+  ];
+}

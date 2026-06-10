@@ -950,29 +950,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     final beforeBirth =
         dob != null && start.isBefore(DateTime(dob.year, dob.month, 1));
 
-    final thisStart =
-        _familyMonthly ? DateTime(now.year, now.month, 1) : weekStartOf(now);
-    final lastStart = _familyMonthly
-        ? DateTime(now.year, now.month - 1, 1)
-        : DateTime(thisStart.year, thisStart.month, thisStart.day - 7);
-    final isThisPeriod = start.isAtSameMomentAs(thisStart);
-    final isLastPeriod = start.isAtSameMomentAs(lastStart);
-
-    Widget quickChip(String label, bool selected, DateTime anchor) {
-      return ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        selectedColor: AppColors.primary,
-        checkmarkColor: Colors.white,
-        labelStyle: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: selected ? Colors.white : context.palette.text,
-        ),
-        onSelected: (_) => setState(() => _familyAnchor = anchor),
-      );
-    }
-
     return AnimatedCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -1001,7 +978,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Any week or month, beautifully summarised - feeding, sleep, digestion, reflux, growth, medicine and milestones in one professional document.',
+              'Any week or month in one professional document: a day-by-day ledger plus feeding, sleep, digestion, reflux, growth, medicine, milestones and the full daily journal.',
               style: TextStyle(
                 fontSize: 14,
                 color: context.palette.muted,
@@ -1011,17 +988,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             _buildFamilyModeToggle(),
             const SizedBox(height: AppSpacing.sm),
             _buildFamilyPeriodStepper(periodLabel, canStepForward),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                quickChip(_familyMonthly ? 'This month' : 'This week',
-                    isThisPeriod, thisStart),
-                quickChip(_familyMonthly ? 'Last month' : 'Last week',
-                    isLastPeriod, lastStart),
-              ],
-            ),
             if (beforeBirth) ...[
               const SizedBox(height: AppSpacing.sm),
               Container(

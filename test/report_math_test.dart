@@ -716,4 +716,93 @@ void main() {
       );
     });
   });
+
+  group('dailyLedger', () {
+    List<DayLedger> build() => dailyLedger(
+          start: DateTime(2026, 6, 8),
+          days: 3,
+          feedings: [
+            {'logged_at': '2026-06-08T06:00:00', 'amount_ml': 120},
+            {'logged_at': '2026-06-08T09:30:00', 'amount_ml': 90},
+            {'logged_at': '2026-06-09T07:00:00'}, // breast, no ml
+          ],
+          sleeps: [
+            // Starts on the 8th late evening, ends on the 9th: counts on the 8th.
+            {
+              'start_time': '2026-06-08T22:00:00',
+              'end_time': '2026-06-09T05:00:00',
+            },
+            {'start_time': '2026-06-09T13:00:00', 'duration_minutes': 90},
+            // Open session (no end, no duration) is ignored.
+            {'start_time': '2026-06-10T20:00:00'},
+          ],
+          diapers: [
+            {'logged_at': '2026-06-08T08:00:00', 'type': 'wet'},
+            {'logged_at': '2026-06-10T10:00:00', 'type': 'dirty'},
+          ],
+          reflux: [
+            {'logged_at': '2026-06-09T11:00:00'},
+          ],
+          healthLogs: [
+            {'logged_at': '2026-06-08T07:00:00', 'medication': 'Nexiam'},
+            // Temperature-only rows are not medicine doses.
+            {'logged_at': '2026-06-08T12:00:00', 'temperature_c': 37.0},
+          ],
+          tummyTimes: [
+            {'start_time': '2026-06-09T15:00:00', 'duration_minutes': 12},
+            {'start_time': '2026-06-09T17:00:00', 'duration_minutes': 8},
+          ],
+          journals: [
+            {'journal_date': '2026-06-08', 'mood': 'happy'},
+            {'journal_date': '2026-06-10', 'mood': 'fussy'},
+          ],
+        );
+
+    test('produces one row per day, in order', () {
+      final ledger = build();
+      expect(ledger.length, 3);
+      expect(ledger[0].day, DateTime(2026, 6, 8));
+      expect(ledger[2].day, DateTime(2026, 6, 10));
+    });
+
+    test('buckets every domain on the right local day', () {
+      final l = build();
+      // 8 June: 2 feeds 210ml, the overnight sleep, 1 nappy, 1 dose, happy.
+      expect(l[0].feeds, 2);
+      expect(l[0].milkMl, 210);
+      expect(l[0].sleepSessions, 1);
+      expect(l[0].sleepMinutes, 7 * 60);
+      expect(l[0].nappies, 1);
+      expect(l[0].medicineDoses, 1);
+      expect(l[0].mood, 'happy');
+      expect(l[0].refluxEvents, 0);
+      // 9 June: 1 feed no ml, 90min nap, reflux event, 20min tummy.
+      expect(l[1].feeds, 1);
+      expect(l[1].milkMl, 0);
+      expect(l[1].sleepMinutes, 90);
+      expect(l[1].refluxEvents, 1);
+      expect(l[1].tummyMinutes, 20);
+      expect(l[1].mood, isNull);
+      // 10 June: nappy + fussy mood; the open sleep session is ignored.
+      expect(l[2].nappies, 1);
+      expect(l[2].sleepSessions, 0);
+      expect(l[2].mood, 'fussy');
+      expect(l[2].isEmpty, isFalse);
+    });
+
+    test('a day with nothing logged is empty', () {
+      final ledger = dailyLedger(
+        start: DateTime(2026, 6, 1),
+        days: 2,
+        feedings: const [],
+        sleeps: const [],
+        diapers: const [],
+        reflux: const [],
+        healthLogs: const [],
+        tummyTimes: const [],
+        journals: const [],
+      );
+      expect(ledger.every((l) => l.isEmpty), isTrue);
+    });
+  });
 }

@@ -54,6 +54,7 @@ class DailyJournalScreen extends ConsumerStatefulWidget {
 class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
   DateTime _date = _dayOf(DateTime.now());
   String? _populatedFor;
+  final ScrollController _scroll = ScrollController();
 
   String? _mood;
   int? _cramps;
@@ -67,6 +68,7 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
 
   @override
   void dispose() {
+    _scroll.dispose();
     _activitiesController.dispose();
     _newThingsController.dispose();
     _upsetsController.dispose();
@@ -80,6 +82,180 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
     if (day == _date) return;
     Haptics.selectionClick();
     setState(() => _date = day);
+    // The form lives at the top - make the change visible.
+    if (_scroll.hasClients) {
+      _scroll.animateTo(0,
+          duration: AppMotion.normal, curve: AppMotion.ease);
+    }
+  }
+
+  /// Jump to any date since birth via the calendar.
+  Future<void> _pickAnyDate() async {
+    Haptics.lightTap();
+    final dob = ref.read(selectedBabyProvider)?.dateOfBirth;
+    final today = _dayOf(DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: dob == null ? DateTime(today.year - 1) : _dayOf(dob),
+      lastDate: today,
+      helpText: 'Open a journal day',
+    );
+    if (picked != null) _selectDate(picked);
+  }
+
+  /// Read-only view of a saved journal entry, with an edit shortcut.
+  void _openJournalViewer(DailyJournal j) {
+    Haptics.lightTap();
+    final day = _dayOf(j.journalDate);
+
+    Widget field(BuildContext ctx, String label, String? value) {
+      if (value == null || value.trim().isEmpty) {
+        return const SizedBox.shrink();
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: ctx.palette.muted,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value.trim(),
+              style: TextStyle(color: ctx.palette.text, fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+
+    String moodLabel() {
+      for (final m in _moods) {
+        if (m.$1 == j.mood) return '${m.$2}  ${m.$3}';
+      }
+      return 'Not recorded';
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.65,
+        maxChildSize: 0.92,
+        minChildSize: 0.4,
+        builder: (ctx, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.gutter, AppSpacing.md, AppSpacing.gutter,
+              AppSpacing.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                DateFormat('EEEE, MMMM d').format(day),
+                textAlign: TextAlign.center,
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(moodLabel(),
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: ctx.palette.text)),
+                        const SizedBox(height: 2),
+                        Text('Mood',
+                            style: TextStyle(
+                                fontSize: 11, color: ctx.palette.muted)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(j.cramps == null ? '-' : '${j.cramps} / 3',
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: j.cramps == null
+                                    ? ctx.palette.muted
+                                    : _levelColor(ctx, j.cramps!))),
+                        const SizedBox(height: 2),
+                        Text('Cramps',
+                            style: TextStyle(
+                                fontSize: 11, color: ctx.palette.muted)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(j.gas == null ? '-' : '${j.gas} / 3',
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: j.gas == null
+                                    ? ctx.palette.muted
+                                    : _levelColor(ctx, j.gas!))),
+                        const SizedBox(height: 2),
+                        Text('Gas',
+                            style: TextStyle(
+                                fontSize: 11, color: ctx.palette.muted)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Divider(color: ctx.palette.border),
+              const SizedBox(height: AppSpacing.sm),
+              field(ctx, 'Playtime activities', j.activities),
+              field(ctx, 'New things he tried or noticed', j.newThings),
+              field(ctx, 'Anything that upset him', j.upsets),
+              field(ctx, 'Fussy / crying times', j.fussyTimes),
+              field(ctx, 'Notes', j.notes),
+              if ((j.activities ?? '').trim().isEmpty &&
+                  (j.newThings ?? '').trim().isEmpty &&
+                  (j.upsets ?? '').trim().isEmpty &&
+                  (j.fussyTimes ?? '').trim().isEmpty &&
+                  (j.notes ?? '').trim().isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Text(
+                    'Nothing written this day.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: ctx.palette.muted,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 13),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.edit_rounded, size: 18),
+                label: const Text('Edit this day'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _selectDate(day);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _applyJournal(DailyJournal? journal) {
@@ -172,6 +348,7 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
           onRefresh: _onRefresh,
           color: AppColors.primary,
           child: ListView(
+            controller: _scroll,
             physics: const BouncingScrollPhysics(
                 parent: AlwaysScrollableScrollPhysics()),
             padding: const EdgeInsets.symmetric(
@@ -262,13 +439,31 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              DateFormat('EEEE, MMM d').format(_date),
-              style: TextStyle(
-                color: context.palette.text,
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    DateFormat('EEEE, MMM d').format(_date),
+                    style: TextStyle(
+                      color: context.palette.text,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: _pickAnyDate,
+                  tooltip: 'Open any day',
+                  icon: Icon(
+                    Icons.calendar_month_rounded,
+                    size: 22,
+                    color: AppColors.primary,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 36, minHeight: 36),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
@@ -475,12 +670,17 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recent days',
+          'Saved journals',
           style: TextStyle(
             color: context.palette.text,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Tap a day to open it',
+          style: TextStyle(color: context.palette.muted, fontSize: 12),
         ),
         const SizedBox(height: AppSpacing.sm),
         recent.when(
@@ -499,11 +699,11 @@ class _DailyJournalScreenState extends ConsumerState<DailyJournalScreen> {
             }
             return Column(
               children: [
-                for (final (i, j) in journals.take(7).indexed) ...[
+                for (final (i, j) in journals.indexed) ...[
                   if (i > 0) const SizedBox(height: AppSpacing.xs),
                   _RecentDayRow(
                     journal: j,
-                    onTap: () => _selectDate(j.journalDate),
+                    onTap: () => _openJournalViewer(j),
                   ),
                 ],
               ],
