@@ -76,7 +76,7 @@ class _SmartInsightsState extends State<SmartInsights> {
       };
 
       // Care Pack extras (reflux, digestion, feed quality). These tables and
-      // columns ship with a later migration — each query is wrapped so a
+      // columns ship with a later migration - each query is wrapped so a
       // failure just leaves its key out of the payload, never breaks the call.
       try {
         final reflux = await client
@@ -119,7 +119,7 @@ class _SmartInsightsState extends State<SmartInsights> {
               .where((j) => ((j['gas'] as num?)?.toInt() ?? 0) >= 2)
               .length,
         };
-        // stool_type ships with a later diapers migration — its own guard so
+        // stool_type ships with a later diapers migration - its own guard so
         // the rest of the digestion summary survives without it.
         try {
           final stools = await client

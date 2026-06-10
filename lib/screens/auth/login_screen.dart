@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final ok = await AuthService().resetPassword(email);
     if (!mounted) return;
     if (ok) {
-      context.showSuccessSnackBar('Reset link sent — check your inbox');
+      context.showSuccessSnackBar('Reset link sent - check your inbox');
     } else {
       context.showErrorSnackBar('Couldn’t send the reset link. Try again.');
     }

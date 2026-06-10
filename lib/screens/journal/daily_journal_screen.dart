@@ -17,7 +17,7 @@ import '../../widgets/common/loading_skeleton.dart';
 
 DateTime _dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
 
-/// Accent for a 0–3 cramps/gas level.
+/// Accent for a 0-3 cramps/gas level.
 Color _levelColor(BuildContext context, int level) {
   return switch (level) {
     0 => context.palette.muted,
@@ -677,7 +677,7 @@ class _MoodOption extends StatelessWidget {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// 0–3 scale row (cramps / gas)
+// 0-3 scale row (cramps / gas)
 // ──────────────────────────────────────────────────────────────────────
 
 class _ScaleRow extends StatelessWidget {

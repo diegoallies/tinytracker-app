@@ -64,7 +64,7 @@ class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
   }
 
   /// The review is done on the baby's "month birthday" (the 4th in the
-  /// original paper pack) — age is measured at that day of the month.
+  /// original paper pack) - age is measured at that day of the month.
   DateTime _reviewDate(Baby baby) {
     final day = baby.dateOfBirth.day.clamp(1, 28);
     return DateTime(_month.year, _month.month, day);
@@ -347,7 +347,7 @@ class _MonthlyReviewScreenState extends ConsumerState<MonthlyReviewScreen> {
                     style: context.textTheme.titleMedium),
                 const SizedBox(height: 2),
                 Text(
-                  'Every baby moves at his own pace — "Sometimes" and '
+                  'Every baby moves at his own pace - "Sometimes" and '
                   '"Not yet" are useful answers too.',
                   style: context.textTheme.bodySmall,
                 ),

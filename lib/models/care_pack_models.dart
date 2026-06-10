@@ -1,5 +1,5 @@
 /// Models for the Care Pack features (reflux, daily journal, weekly report,
-/// monthly review, emergency contacts). Kept in one file — they ship and
+/// monthly review, emergency contacts). Kept in one file - they ship and
 /// evolve together with supabase/2026-06-10_care_pack.sql.
 library;
 
@@ -7,7 +7,7 @@ class RefluxEvent {
   final String id;
   final String babyId;
   final String userId;
-  final int severity; // 1–5
+  final int severity; // 1-5
   final bool painfulCrying;
   final bool archingBack;
   final String? triggerNoticed;
@@ -52,8 +52,8 @@ class DailyJournal {
   final String userId;
   final DateTime journalDate;
   final String? mood; // happy | okay | fussy | very_fussy
-  final int? cramps; // 0–3
-  final int? gas; // 0–3
+  final int? cramps; // 0-3
+  final int? gas; // 0-3
   final String? fussyTimes;
   final String? activities;
   final String? newThings;

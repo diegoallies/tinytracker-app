@@ -110,7 +110,7 @@ class DiaperActions {
           await SupabaseService.client.from('diapers').insert(fullPayload);
           return;
         } on PostgrestException catch (e) {
-          // Only retry when the column genuinely doesn't exist yet — see
+          // Only retry when the column genuinely doesn't exist yet - see
           // feeding_provider.dart for the rationale.
           if (e.code != '42703' && e.code != 'PGRST204') rethrow;
           debugPrint('diaper insert with stool_type failed (${e.code}), retrying without');
@@ -118,7 +118,7 @@ class DiaperActions {
       }
       await SupabaseService.client.from('diapers').insert(payload);
     } catch (e) {
-      // Offline? Park it locally — it syncs when connectivity returns.
+      // Offline? Park it locally - it syncs when connectivity returns.
       if (!PendingWrites.isConnectivityError(e)) rethrow;
       await PendingWrites.enqueue('diapers', fullPayload);
     }

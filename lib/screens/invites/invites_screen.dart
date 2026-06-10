@@ -73,7 +73,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
     } catch (e) {
       if (mounted) {
         context.showErrorSnackBar(
-          'That invite link didn’t work — it may be expired or already used.',
+          'That invite link didn’t work - it may be expired or already used.',
         );
       }
     } finally {
@@ -139,7 +139,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
       }
 
       // Fetch pending invites that haven't expired and haven't been used.
-      // (The table has no 'status' column — an invite is pending while
+      // (The table has no 'status' column - an invite is pending while
       // used_by is null.)
       final response = await SupabaseService.client
           .from('baby_invites')

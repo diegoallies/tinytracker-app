@@ -126,10 +126,10 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
       return;
     }
 
-    // Sanity bounds — a real body temperature stays well inside this range.
+    // Sanity bounds - a real body temperature stays well inside this range.
     if (isTemperatureTab && temp != null && (temp < 30 || temp > 43)) {
       context.showErrorSnackBar(
-          'That temperature looks off — please enter 30–43 °C.');
+          'That temperature looks off - please enter 30-43 °C.');
       return;
     }
 
@@ -144,7 +144,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
       try {
         catalog = await ref.read(babyMedicationsProvider.future);
       } catch (_) {
-        // No catalog (offline?) — the guard simply won't match anything.
+        // No catalog (offline?) - the guard simply won't match anything.
       }
       final check = await MedicationGuard.checkByName(
         babyId: baby.id,
@@ -572,8 +572,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                     ),
                     child: Text(
                       isOwner
-                          ? 'No daily meds yet — add the first one below.'
-                          : 'No daily meds saved yet — ask the owner to add some.',
+                          ? 'No daily meds yet - add the first one below.'
+                          : 'No daily meds saved yet - ask the owner to add some.',
                       style: TextStyle(
                           fontSize: 12, color: context.palette.muted),
                     ),
@@ -628,7 +628,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     );
   }
 
-  /// One-off medicine form — anything not in the daily catalog
+  /// One-off medicine form - anything not in the daily catalog
   /// (still guarded by [MedicationGuard.checkByName] on save).
   Widget _buildOneOffForm() {
     return Column(

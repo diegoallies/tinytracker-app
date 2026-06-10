@@ -1,5 +1,5 @@
 -- ============================================================================
--- TinyTrack "Care Pack" schema — 2026-06-10
+-- TinyTrack "Care Pack" schema - 2026-06-10
 -- Digitises the Allies Family Baby Care Tracking & Reporting Pack (paper).
 --
 -- Idempotent: safe to re-run. No destructive statements.
@@ -24,7 +24,7 @@ alter table public.diapers add column if not exists stool_type integer
   check (stool_type is null or stool_type between 1 and 7);
 
 -- ============================================================
--- 3. Reflux events (Reflux Tracker — daily, severity 1-5)
+-- 3. Reflux events (Reflux Tracker - daily, severity 1-5)
 -- ============================================================
 create table if not exists public.reflux_events (
   id             uuid primary key default gen_random_uuid(),
@@ -129,7 +129,7 @@ create index if not exists idx_emergency_contacts_baby
   on public.emergency_contacts (baby_id, sort_order);
 
 -- ============================================================
--- 8. RLS — same share-based policy shape as the other log tables
+-- 8. RLS - same share-based policy shape as the other log tables
 -- ============================================================
 do $$
 declare

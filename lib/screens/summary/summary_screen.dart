@@ -143,13 +143,13 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     final baby = ref.read(selectedBabyProvider);
     if (baby == null) return;
 
-    // Nothing logged yet today? Don't ask an AI to narrate an empty day —
+    // Nothing logged yet today? Don't ask an AI to narrate an empty day -
     // it invents nonsense ("a great day with 0 feedings").
     if (_todayFeedings == 0 && _todayDiapers == 0 && _todaySleepMinutes == 0) {
       if (mounted) {
         setState(() {
           _aiSummary =
-              'Nothing logged yet today — ${baby.name}\'s summary will appear '
+              'Nothing logged yet today - ${baby.name}\'s summary will appear '
               'once the day gets going. 🌅';
           _isLoadingSummary = false;
         });

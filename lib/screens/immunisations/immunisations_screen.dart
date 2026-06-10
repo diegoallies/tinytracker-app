@@ -23,7 +23,7 @@ DateTime _dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
 String _dateLabel(DateTime d) => DateFormat('d MMM yyyy').format(d);
 
 /// A visit is "due now" for this long after its due date before it reads
-/// as overdue — clinics book the visit within a window, not on the exact day.
+/// as overdue - clinics book the visit within a window, not on the exact day.
 const int _dueWindowDays = 14;
 
 enum _VisitStatus { complete, dueNow, overdue, upcoming }
@@ -303,7 +303,7 @@ class _ProgressCard extends StatelessWidget {
               const _NextDueBanner(
                 color: AppColors.success,
                 icon: Icons.verified_rounded,
-                text: 'All caught up — every dose is recorded',
+                text: 'All caught up - every dose is recorded',
               )
             else
               _nextDueFor(nextVisit),
@@ -403,7 +403,7 @@ class _VisitSection extends StatelessWidget {
     final due = ImmunisationData.dueDateFor(visit, dob);
     final status = _statusFor(visit, dob, givenByKey.keys.toSet());
     // Rows turn warning-tinted only once the visit's 14-day "due now" window
-    // has passed — matches the header's overdue logic.
+    // has passed - matches the header's overdue logic.
     final pastDue =
         _dayOf(DateTime.now()).isAfter(due.add(const Duration(days: 14)));
 

@@ -6,7 +6,7 @@ import '../../providers/baby_medication_provider.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 
-/// Dialog for adding — or, when [existing] is set, editing — a baby's
+/// Dialog for adding - or, when [existing] is set, editing - a baby's
 /// daily/recurring medication.
 /// Returns the created/updated [BabyMedication] via Navigator.pop on success.
 class AddMedicationDialog extends StatefulWidget {
@@ -76,7 +76,7 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
       final alreadySelected =
           _frequencyPerDay == frequency && _asNeeded == asNeeded;
       if (alreadySelected) {
-        // Tap again to clear — schedule stays optional.
+        // Tap again to clear - schedule stays optional.
         _frequencyPerDay = null;
         _asNeeded = false;
         return;
@@ -209,7 +209,7 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(
                 labelText: 'Instructions (optional)',
-                hintText: 'e.g. Only when needed — max 4 doses in 24h',
+                hintText: 'e.g. Only when needed - max 4 doses in 24h',
               ),
             ),
           ],

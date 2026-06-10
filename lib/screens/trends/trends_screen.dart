@@ -13,7 +13,7 @@ import '../../widgets/common/loading_skeleton.dart';
 
 const _weekdayInitials = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-/// Accent for a reflux severity: 1–2 settled, 3 caution, 4–5 alert.
+/// Accent for a reflux severity: 1-2 settled, 3 caution, 4-5 alert.
 Color _severityColor(int severity) {
   if (severity <= 2) return AppColors.success;
   if (severity == 3) return AppColors.warning;
@@ -26,7 +26,7 @@ String _signed(double v, {int decimals = 1}) =>
 String _formatMinutes(int minutes) =>
     minutes < 60 ? '${minutes}m' : '${minutes ~/ 60}h ${minutes % 60}m';
 
-/// Grid/axis step that keeps roughly 3–5 lines on screen.
+/// Grid/axis step that keeps roughly 3-5 lines on screen.
 double _niceInterval(double maxY, List<int> steps) {
   for (final step in steps) {
     if (maxY / step <= 5) return step.toDouble();
@@ -415,9 +415,9 @@ class _FeedingCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           _StatRow(
             statLabel: 'Avg per feed',
-            statValue: avgMl > 0 ? '${avgMl.round()} ml' : '—',
+            statValue: avgMl > 0 ? '${avgMl.round()} ml' : '-',
             chips: [
-              // More or fewer feeds isn't good or bad — show direction only.
+              // More or fewer feeds isn't good or bad - show direction only.
               _DeltaChip(
                 delta: data.feedsPerDay.delta,
                 label: '${_signed(data.feedsPerDay.delta)} feeds/day',
@@ -506,7 +506,7 @@ class _SleepCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           _StatRow(
             statLabel: 'Longest stretch',
-            statValue: longest > 0 ? _formatMinutes(longest) : '—',
+            statValue: longest > 0 ? _formatMinutes(longest) : '-',
             chips: [
               _DeltaChip(
                 delta: data.sleepMinutesPerDay.delta,

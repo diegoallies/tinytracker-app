@@ -56,20 +56,20 @@ class _GrowthScreenState extends ConsumerState<GrowthScreen> {
       return;
     }
 
-    // Sanity bounds — catch typos like a missing decimal point.
+    // Sanity bounds - catch typos like a missing decimal point.
     if (weight != null && (weight < 0.5 || weight > 30)) {
       context.showErrorSnackBar(
-          'That weight looks off — please enter 0.5–30 kg.');
+          'That weight looks off - please enter 0.5-30 kg.');
       return;
     }
     if (height != null && (height < 30 || height > 130)) {
       context.showErrorSnackBar(
-          'That height looks off — please enter 30–130 cm.');
+          'That height looks off - please enter 30-130 cm.');
       return;
     }
     if (head != null && (head < 25 || head > 60)) {
       context.showErrorSnackBar(
-          'That head circumference looks off — please enter 25–60 cm.');
+          'That head circumference looks off - please enter 25-60 cm.');
       return;
     }
 

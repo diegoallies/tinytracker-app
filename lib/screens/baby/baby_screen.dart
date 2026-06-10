@@ -545,7 +545,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       );
 
       if (mounted) {
-        context.showSuccessSnackBar('Invite created — link also copied to clipboard');
+        context.showSuccessSnackBar('Invite created - link also copied to clipboard');
       }
     } catch (e) {
       if (mounted) {

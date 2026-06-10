@@ -8,7 +8,7 @@ import '../../providers/prediction_provider.dart';
 import '../../services/prediction_service.dart';
 import '../common/animated_card.dart';
 
-/// "Next up" — pattern-based predictions for the next feeding and nap,
+/// "Next up" - pattern-based predictions for the next feeding and nap,
 /// computed from the last week of logs (see PredictionService).
 class NextUpCard extends ConsumerWidget {
   const NextUpCard({super.key});

@@ -9,7 +9,7 @@ import 'supabase_service.dart';
 /// connectivity returns and on app start, oldest first.
 ///
 /// Semantics: an enqueued entry is treated as a successful log by the UI
-/// ("saved, will sync") — the banner shows how many are waiting.
+/// ("saved, will sync") - the banner shows how many are waiting.
 class PendingWrites {
   PendingWrites._();
 
@@ -55,7 +55,7 @@ class PendingWrites {
 
   /// Attempts to send all queued entries, oldest first. Stops at the first
   /// connectivity failure (still offline). Entries the server REJECTS
-  /// (PostgrestException) are dropped after logging — they would poison the
+  /// (PostgrestException) are dropped after logging - they would poison the
   /// queue forever. Returns how many entries were successfully synced.
   static Future<int> flush({
     Future<void> Function(String table, Map<String, dynamic> payload)? insert,
@@ -69,7 +69,7 @@ class PendingWrites {
             await SupabaseService.client.from(table).insert(payload);
           };
 
-      // Keys snapshot — entries enqueued mid-flush are picked up next time.
+      // Keys snapshot - entries enqueued mid-flush are picked up next time.
       final keys = _box.keys.toList();
       for (final key in keys) {
         final raw = _box.get(key);
@@ -85,7 +85,7 @@ class PendingWrites {
             debugPrint('pending_writes: still offline, ${_box.length} left');
             break;
           }
-          // Server saw it and said no — drop it rather than retry forever.
+          // Server saw it and said no - drop it rather than retry forever.
           debugPrint('pending_writes: dropping rejected $table entry: $e');
           await _box.delete(key);
         }

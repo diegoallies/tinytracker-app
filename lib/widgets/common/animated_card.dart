@@ -10,7 +10,7 @@ class AnimatedCard extends StatelessWidget {
 
   /// Brand pastel accent. Prefer this over [color] for tinted cards: light
   /// mode gets the pastel fill, dark mode gets a normal dark card with the
-  /// pastel as a border accent (see BuildContext.tintedCard) — so
+  /// pastel as a border accent (see BuildContext.tintedCard) - so
   /// palette-based text stays readable in both modes.
   final Color? tint;
 

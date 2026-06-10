@@ -744,7 +744,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Last 14 days of reflux, digestion, feeding and meds — a clinical summary to bring to appointments.',
+                              'Last 14 days of reflux, digestion, feeding and meds - a clinical summary to bring to appointments.',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: context.palette.muted,
@@ -834,7 +834,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     final endInclusive = end.subtract(const Duration(days: 1));
     final periodLabel = _familyMonthly
         ? AppDateUtils.formatMonthYear(start)
-        : '${AppDateUtils.formatDate(start)} – ${AppDateUtils.formatFull(endInclusive)}';
+        : '${AppDateUtils.formatDate(start)} - ${AppDateUtils.formatFull(endInclusive)}';
 
     return AnimatedCard(
       child: Padding(

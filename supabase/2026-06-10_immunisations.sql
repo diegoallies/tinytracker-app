@@ -1,5 +1,5 @@
 -- ============================================================================
--- TinyTrack immunisations (SA EPI schedule tracker) — 2026-06-10
+-- TinyTrack immunisations (SA EPI schedule tracker) - 2026-06-10
 -- Applied directly via the Management API the same night (idempotent).
 -- ============================================================================
 

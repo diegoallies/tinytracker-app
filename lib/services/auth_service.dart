@@ -32,7 +32,7 @@ class AuthService {
 
   Future<bool> resetPassword(String email) async {
     try {
-      // Deep-link back into the app (NOT the old website) — handled by
+      // Deep-link back into the app (NOT the old website) - handled by
       // supabase_flutter, which emits AuthChangeEvent.passwordRecovery.
       await _client.auth.resetPasswordForEmail(
         email,

@@ -1,5 +1,5 @@
 -- ============================================================================
--- Medication schedules & dose-safety — 2026-06-10
+-- Medication schedules & dose-safety - 2026-06-10
 -- From the parents' instructions: each medication carries how often it may
 -- be given so the app can warn before an accidental double dose.
 -- Applied live via the Management API the same night (idempotent).
@@ -34,7 +34,7 @@ begin
       (b, 'Nexiam',           null,  creator, 1,    false, null, 'Once a day'),
       (b, 'Hyospasmol syrup', null,  creator, 3,    false, 4,    '3 times a day'),
       (b, 'Retina drops',     null,  creator, 1,    false, null, 'Once a day'),
-      (b, 'Calpol',           null,  creator, null, true,  4,    'Only when needed — max 4 doses in 24h, at least 4h apart')
+      (b, 'Calpol',           null,  creator, null, true,  4,    'Only when needed - max 4 doses in 24h, at least 4h apart')
   on conflict (baby_id, lower(name)) do update
     set frequency_per_day  = excluded.frequency_per_day,
         as_needed          = excluded.as_needed,
@@ -44,6 +44,6 @@ begin
   update public.baby_medications
      set as_needed = true,
          min_interval_hours = 4,
-         instructions = 'Only when needed — max 4 doses in 24h, at least 4h apart'
+         instructions = 'Only when needed - max 4 doses in 24h, at least 4h apart'
    where baby_id = b and lower(name) = 'panado';
 end $$;

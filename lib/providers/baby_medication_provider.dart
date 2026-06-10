@@ -23,7 +23,7 @@ final babyMedicationsProvider =
 });
 
 /// Today's administered medication doses for the selected baby, grouped by
-/// lowercased medication name. One health_logs query per screen open — the
+/// lowercased medication name. One health_logs query per screen open - the
 /// status chips for every catalog med are computed from this single map.
 final medicationDosesTodayProvider =
     FutureProvider.autoDispose<Map<String, List<DateTime>>>((ref) async {

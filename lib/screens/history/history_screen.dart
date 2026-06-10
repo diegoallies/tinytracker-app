@@ -60,7 +60,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   void _maybeRequestNextPage() {
-    // Only ask for another page once the last requested one arrived full —
+    // Only ask for another page once the last requested one arrived full -
     // a short page means there is nothing left to fetch.
     final lastPage =
         ref.read(historyPageProvider((widget.domain, _pageCount - 1)));

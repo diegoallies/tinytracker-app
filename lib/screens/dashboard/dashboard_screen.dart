@@ -75,7 +75,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   @override
   void didPopNext() {
-    // Another tab was popped off — dashboard is now on top again.
+    // Another tab was popped off - dashboard is now on top again.
     _refreshAll();
   }
 
@@ -656,7 +656,7 @@ class _QuickAction extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               // The chip stays pastel in both themes, so the glyph must be
-              // the FIXED dark ink — palette.text goes white in dark mode
+              // the FIXED dark ink - palette.text goes white in dark mode
               // and vanishes against the light pastel.
               child: Icon(icon, color: AppColors.text, size: 24),
             ),

@@ -36,7 +36,7 @@ class NotificationService {
   }
 
   /// Schedules the next feeding reminder with the OS (survives the app being
-  /// backgrounded or killed — the old Future.delayed approach did not).
+  /// backgrounded or killed - the old Future.delayed approach did not).
   static Future<void> scheduleFeedingReminder({
     required DateTime lastFeedTime,
     int intervalMinutes = 180,
@@ -53,7 +53,7 @@ class NotificationService {
     if (delay.isNegative) return;
 
     // Anchoring to tz now + delay sidesteps needing the device's named
-    // timezone — the instant is correct even if tz.local is UTC.
+    // timezone - the instant is correct even if tz.local is UTC.
     final scheduledAt = tz.TZDateTime.now(tz.local).add(delay);
 
     final hours = intervalMinutes ~/ 60;
@@ -110,7 +110,7 @@ class NotificationService {
 
     // Next Friday 14:00 in DEVICE-local time. tz.local is UTC (we never call
     // setLocalLocation), so compute the target with Dart's local DateTime and
-    // anchor the tz instant via a delta — same trick as the feeding reminder.
+    // anchor the tz instant via a delta - same trick as the feeding reminder.
     final now = DateTime.now();
     var target = DateTime(now.year, now.month,
         now.day + (DateTime.friday - now.weekday) % 7, 14);
@@ -141,7 +141,7 @@ class NotificationService {
     await _plugin.zonedSchedule(
       _weeklyReportNotificationId,
       'Weekly report time 📋',
-      'Most of it is already filled in from the week\'s logs — finish and share it with the parents.',
+      'Most of it is already filled in from the week\'s logs - finish and share it with the parents.',
       scheduledAt,
       details,
       // Inexact keeps us clear of the Android 12+ exact-alarm permission;

@@ -27,7 +27,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   );
 
   // Dark values tuned for separation: card sits clearly above surface and
-  // borders are visible — "everything blends together" was the complaint.
+  // borders are visible - "everything blends together" was the complaint.
   static const dark = AppPalette(
     text: Color(0xFFEDEAF6),
     surface: Color(0xFF120F1A),
@@ -74,7 +74,7 @@ extension PaletteOnContext on BuildContext {
   ///
   /// Light mode: the pastel IS the background. Dark mode: the background is
   /// the standard dark card and the pastel survives as a visible accent
-  /// border — so `palette.text`/`palette.muted` are correct on top of it in
+  /// border - so `palette.text`/`palette.muted` are correct on top of it in
   /// BOTH modes. Never hand-roll pastel fills on cards again.
   ({Color background, BoxBorder? border}) tintedCard(Color pastel) {
     if (Theme.of(this).brightness == Brightness.light) {

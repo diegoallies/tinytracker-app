@@ -39,7 +39,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
   String _selectedType = 'bottle';
   int? _durationMinutes; // for breast feeds
   BabyMedication? _selectedMedication;
-  int? _feedQuality; // optional 1–5 "how did the feed go?"
+  int? _feedQuality; // optional 1-5 "how did the feed go?"
   bool _hadSpitup = false;
 
   static const _allFeedTypes = [
@@ -94,7 +94,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
 
     if (_isBreastFeeding && _durationMinutes! > 120) {
       context.showErrorSnackBar(
-          'That duration looks off — please enter 1–120 minutes.');
+          'That duration looks off - please enter 1-120 minutes.');
       return;
     }
 
@@ -102,13 +102,13 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
       final amount = int.tryParse(_amountController.text);
       if (amount == null || amount < 1 || amount > 500) {
         context.showErrorSnackBar(
-            'That amount looks off — please enter 1–500 ml.');
+            'That amount looks off - please enter 1-500 ml.');
         return;
       }
     }
 
     // Dose-safety check before anything is inserted. Cancelling only skips
-    // the medication — the feeding itself still gets logged.
+    // the medication - the feeding itself still gets logged.
     var giveMed = _addMeds && canLogMeds && _selectedMedication != null;
     var medSkipped = false;
     if (giveMed) {
@@ -812,7 +812,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Quick options — most-used live here.
+            // Quick options - most-used live here.
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -1003,7 +1003,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Optional — tap a star again to clear',
+              'Optional - tap a star again to clear',
               style: TextStyle(color: context.palette.muted, fontSize: 12),
             ),
             const SizedBox(height: 8),

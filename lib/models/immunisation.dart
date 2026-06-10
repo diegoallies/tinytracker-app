@@ -1,4 +1,4 @@
-/// Model for public.immunisations — one row per (baby, vaccine) marking a
+/// Model for public.immunisations - one row per (baby, vaccine) marking a
 /// dose from the SA EPI schedule (lib/utils/immunisation_data.dart) as given.
 library;
 

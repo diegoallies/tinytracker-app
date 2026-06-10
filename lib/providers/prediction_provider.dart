@@ -33,7 +33,7 @@ final nextFeedingPredictionProvider =
     return PredictionService.predictNextFromEvents(times);
   } catch (e, st) {
     debugPrint('nextFeedingPredictionProvider error: $e\n$st');
-    return null; // Prediction is a bonus — never break the screen for it.
+    return null; // Prediction is a bonus - never break the screen for it.
   }
 });
 

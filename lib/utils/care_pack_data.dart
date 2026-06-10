@@ -38,7 +38,7 @@ class CarePackStage {
 }
 
 class CareCheckItem {
-  /// Stable key stored in jsonb maps — never change once shipped.
+  /// Stable key stored in jsonb maps - never change once shipped.
   final String key;
   final String label;
   const CareCheckItem(this.key, this.label);
@@ -71,7 +71,7 @@ abstract final class CarePackData {
   static const List<CarePackStage> stages = [
     CarePackStage(
       id: '2-3m',
-      label: '2–3 Months',
+      label: '2-3 Months',
       subtitle: 'Newborn stage: head control, social smiles, eye tracking',
       minMonths: 0,
       maxMonths: 3,
@@ -171,7 +171,7 @@ abstract final class CarePackData {
     ),
     CarePackStage(
       id: '5-6m',
-      label: '5–6 Months',
+      label: '5-6 Months',
       subtitle: 'Sitting, solids, and "who\'s that?" stage',
       minMonths: 5,
       maxMonths: 6,
@@ -224,7 +224,7 @@ abstract final class CarePackData {
     ),
     CarePackStage(
       id: '7-9m',
-      label: '7–9 Months',
+      label: '7-9 Months',
       subtitle: 'Crawling, pulling up, and stranger anxiety stage',
       minMonths: 7,
       maxMonths: 9,
@@ -278,7 +278,7 @@ abstract final class CarePackData {
     ),
     CarePackStage(
       id: '10-12m',
-      label: '10–12 Months',
+      label: '10-12 Months',
       subtitle: 'First words, first steps, big personality',
       minMonths: 10,
       maxMonths: 240,
@@ -337,7 +337,7 @@ abstract final class CarePackData {
   ];
 
   /// Stage for a baby of [ageMonths]. Clamps to the nearest stage so a
-  /// 13-month-old still gets the 10–12 month content.
+  /// 13-month-old still gets the 10-12 month content.
   static CarePackStage stageForAgeMonths(int ageMonths) {
     for (final stage in stages) {
       if (ageMonths >= stage.minMonths && ageMonths <= stage.maxMonths) {

@@ -2,7 +2,7 @@
 /// grouped by clinic visit age. Pure data: no Flutter imports so it stays
 /// unit-testable, mirroring care_pack_data.dart.
 ///
-/// Vaccine keys are stored in immunisations.vaccine_key — never change a key
+/// Vaccine keys are stored in immunisations.vaccine_key - never change a key
 /// once shipped.
 library;
 
@@ -106,7 +106,7 @@ abstract final class ImmunisationData {
       schedule.fold(0, (sum, v) => sum + v.vaccines.length);
 
   /// Due date for [visit] given a date of birth. Day-component arithmetic,
-  /// not Duration math — DST-safe (matches weekStartOf in care_pack_provider).
+  /// not Duration math - DST-safe (matches weekStartOf in care_pack_provider).
   static DateTime dueDateFor(ImmunisationVisit visit, DateTime dateOfBirth) {
     return DateTime(
       dateOfBirth.year,

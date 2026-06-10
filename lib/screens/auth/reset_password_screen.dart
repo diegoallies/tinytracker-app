@@ -9,7 +9,7 @@ import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 
 /// Shown when the user arrives from a password-recovery email deep link
-/// (tinytracker://reset-password). The recovery session is already active —
+/// (tinytracker://reset-password). The recovery session is already active -
 /// they just choose a new password.
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -42,12 +42,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           .updateUser(UserAttributes(password: password));
       Haptics.mediumTap();
       if (!mounted) return;
-      context.showSuccessSnackBar('Password updated — welcome back!');
+      context.showSuccessSnackBar('Password updated - welcome back!');
       context.go('/dashboard');
     } catch (e) {
       if (mounted) {
         context.showErrorSnackBar(
-          'Couldn\'t update the password. The reset link may have expired — '
+          'Couldn\'t update the password. The reset link may have expired - '
           'request a new one from the login screen.',
         );
       }
@@ -92,7 +92,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'You\'re signed in from the reset link — choose a new password below.',
+                'You\'re signed in from the reset link - choose a new password below.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context)
                     .textTheme

@@ -16,7 +16,7 @@ class DoseCheck {
 
 /// Dose-safety checks run before a medication health_log is inserted.
 ///
-/// Never blocks logging because a check itself failed — network errors
+/// Never blocks logging because a check itself failed - network errors
 /// resolve to [DoseCheck.pass].
 class MedicationGuard {
   static const int _asNeededMaxPer24h = 4;
@@ -38,12 +38,12 @@ class MedicationGuard {
       // Scheduled meds: already at (or over) today's count.
       final freq = med.frequencyPerDay;
       if (freq != null && dosesToday.length >= freq) {
-        // Always the canonical phrase — `instructions` is free text and
+        // Always the canonical phrase - `instructions` is free text and
         // reads badly mid-sentence.
         final schedule = freq == 1 ? 'once a day' : '$freq× a day';
         final n = dosesToday.length;
         warnings.add(
-          '"${med.name}" is $schedule — already given $n '
+          '"${med.name}" is $schedule - already given $n '
           'time${n == 1 ? '' : 's'} today '
           '(last at ${_timeFmt.format(dosesToday.first)}).',
         );
@@ -51,7 +51,7 @@ class MedicationGuard {
 
       // Minimum gap between doses (scheduled or as-needed). For backdated
       // logging, the gap is measured to the nearest dose BEFORE the chosen
-      // time — a later dose shouldn't produce a negative-gap warning here.
+      // time - a later dose shouldn't produce a negative-gap warning here.
       final gap = med.minIntervalHours;
       if (gap != null) {
         final last = await BabyMedicationActions.lastDose(babyId, med.name);
@@ -66,7 +66,7 @@ class MedicationGuard {
             final hoursAgo =
                 (elapsed.inMinutes / 60).clamp(0, double.infinity);
             warnings.add(
-              '"${med.name}" was given at ${_timeFmt.format(lastBefore)} — '
+              '"${med.name}" was given at ${_timeFmt.format(lastBefore)} - '
               'that\'s only ${_fmtHours(hoursAgo)}h ago. '
               'The minimum gap is ${_fmtHours(gap)} hours.',
             );
@@ -87,7 +87,7 @@ class MedicationGuard {
         if (recent.length >= _asNeededMaxPer24h) {
           warnings.add(
             '"${med.name}" has already been given ${recent.length} times '
-            'in the last 24 hours — the maximum is '
+            'in the last 24 hours - the maximum is '
             '$_asNeededMaxPer24h doses per 24h.',
           );
         }

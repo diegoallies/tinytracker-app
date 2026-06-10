@@ -108,7 +108,7 @@ class _QuickLogFeedingSheet extends ConsumerStatefulWidget {
 class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
   String _selectedType = 'bottle';
   int _amountMl = 60;
-  int? _quality; // optional 1–5 "how did the feed go?"
+  int? _quality; // optional 1-5 "how did the feed go?"
   bool _hadSpitup = false;
   bool _isSaving = false;
 
@@ -592,7 +592,7 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
           ),
           data: (session) {
             if (session != null) {
-              // Active sleep — show elapsed time and wake up button
+              // Active sleep - show elapsed time and wake up button
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (_timer == null || !_timer!.isActive) {
                   _startElapsedTimer(session.startTime);
@@ -655,7 +655,7 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
               );
             }
 
-            // No active sleep — show start button
+            // No active sleep - show start button
             return Column(
               children: [
                 Container(
@@ -703,7 +703,7 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
 
 /// Standalone medicine quick-log: lists the selected baby's catalog meds;
 /// tapping one closes this sheet and opens the full [GiveDoseSheet]
-/// (guard warnings, time, dosage, notes) — no feed log required.
+/// (guard warnings, time, dosage, notes) - no feed log required.
 Future<void> showQuickMedicineSheet(BuildContext context, WidgetRef ref) async {
   HapticFeedback.mediumImpact();
 

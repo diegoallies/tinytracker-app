@@ -154,7 +154,7 @@ class FeedingActions {
           inserted = true;
         } on PostgrestException catch (e) {
           // Only retry when the columns genuinely don't exist yet (pre-migration).
-          // Anything else (5xx, constraint violation) must propagate — a blind
+          // Anything else (5xx, constraint violation) must propagate - a blind
           // retry could double-insert or silently drop the care-pack fields.
           if (e.code != '42703' && e.code != 'PGRST204') rethrow;
           debugPrint('feeding insert with care-pack fields failed (${e.code}), retrying without');
@@ -164,13 +164,13 @@ class FeedingActions {
         await SupabaseService.client.from('feedings').insert(payload);
       }
     } catch (e) {
-      // Offline? Park it locally — it syncs when connectivity returns.
+      // Offline? Park it locally - it syncs when connectivity returns.
       if (!PendingWrites.isConnectivityError(e)) rethrow;
       await PendingWrites.enqueue('feedings', fullPayload);
     }
 
     // Reschedule feeding reminder from the actual logged time. The feed is
-    // already saved — a reminder failure must never surface as a save error.
+    // already saved - a reminder failure must never surface as a save error.
     try {
       final interval = await NotificationService.getReminderInterval();
       await NotificationService.scheduleFeedingReminder(

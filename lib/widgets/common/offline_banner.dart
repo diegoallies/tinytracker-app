@@ -53,7 +53,7 @@ class OfflineBanner extends ConsumerWidget {
       if (offline) {
         final suffix = pending > 0
             ? ' · $pending saved locally'
-            : ' — feeds & nappies still save locally';
+            : ' - feeds & nappies still save locally';
         return strip(AppColors.warning, Icons.wifi_off_rounded,
             'You’re offline$suffix');
       }

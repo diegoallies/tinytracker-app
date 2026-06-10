@@ -17,7 +17,7 @@ import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/loading_skeleton.dart';
 import '../../widgets/common/swipe_to_dismiss.dart';
 
-/// Accent for a reflux severity: 1–2 settled, 3 caution, 4–5 alert.
+/// Accent for a reflux severity: 1-2 settled, 3 caution, 4-5 alert.
 Color _severityColor(int severity) {
   if (severity <= 2) return AppColors.success;
   if (severity == 3) return AppColors.warning;
@@ -210,7 +210,7 @@ class _RefluxScreenState extends ConsumerState<RefluxScreen> {
           const EmptyState(
             icon: Icons.sentiment_satisfied_alt_rounded,
             title: 'No reflux events yet',
-            description: 'Log a spit-up above — it takes a few seconds',
+            description: 'Log a spit-up above - it takes a few seconds',
           )
         else
           for (final (i, event) in list.indexed) ...[
@@ -308,7 +308,7 @@ class _RefluxScreenState extends ConsumerState<RefluxScreen> {
                     SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
-                        'Severity 5 — tell the parents the same day.',
+                        'Severity 5 - tell the parents the same day.',
                         style: TextStyle(
                           color: AppColors.error,
                           fontWeight: FontWeight.w600,
@@ -397,7 +397,7 @@ class _RefluxScreenState extends ConsumerState<RefluxScreen> {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// Severity pill (1–5)
+// Severity pill (1-5)
 // ──────────────────────────────────────────────────────────────────────
 
 class _SeverityPill extends StatelessWidget {

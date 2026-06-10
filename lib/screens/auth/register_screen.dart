@@ -52,7 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         final msg = e.toString().contains('already registered')
-            ? 'That email is already registered — try signing in instead.'
+            ? 'That email is already registered - try signing in instead.'
             : 'Couldn’t create your account. Check your connection and try again.';
         context.showErrorSnackBar(msg);
       }

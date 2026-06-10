@@ -6,7 +6,7 @@ import '../../config/theme.dart';
 import '../../models/baby_medication.dart';
 import '../../utils/haptics.dart';
 
-/// Short, human schedule line for a catalog med — '2× daily',
+/// Short, human schedule line for a catalog med - '2× daily',
 /// 'As needed · min 4h gap'. The long [BabyMedication.instructions] text
 /// belongs in the detail sheet, never in list rows.
 String medScheduleLabel(BabyMedication med) {

@@ -162,7 +162,7 @@ HistoryEntry _sleepEntry(SleepSession sleep) {
   // defensive so a bad row can't crash the whole page.
   final end = sleep.endTime?.toLocal();
   final range = end != null
-      ? '${AppDateUtils.formatTime(start)} – ${AppDateUtils.formatTime(end)}'
+      ? '${AppDateUtils.formatTime(start)} - ${AppDateUtils.formatTime(end)}'
       : 'Started ${AppDateUtils.formatTime(start)}';
 
   return HistoryEntry(

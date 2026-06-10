@@ -14,7 +14,7 @@ class NextEventPrediction {
   /// How many historical gaps informed the prediction.
   final int sampleSize;
 
-  /// 0..1 — combination of sample size and how consistent the gaps are.
+  /// 0..1 - combination of sample size and how consistent the gaps are.
   final double confidence;
 
   const NextEventPrediction({
@@ -32,7 +32,7 @@ class NextEventPrediction {
 class PredictionService {
   PredictionService._();
 
-  /// Day is 7:00–21:59 local; everything else counts as night. Babies have
+  /// Day is 7:00-21:59 local; everything else counts as night. Babies have
   /// very different rhythms across dayparts, so gaps are bucketed by the
   /// daypart they START in and the prediction prefers gaps from the same
   /// daypart as the most recent event.

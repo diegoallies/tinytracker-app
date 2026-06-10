@@ -1,12 +1,12 @@
 -- ============================================================================
--- Soft delete + audit trail — 2026-06-10
+-- Soft delete + audit trail - 2026-06-10
 -- Diego: "Nothing truly gets deleted, only marked as deleted" + full
 -- created/modified audit columns. Applied live via the Management API.
 --
 -- Per data table:
 --   created_at (existed) + user_id (creator, existed) stay as-is
---   updated_at / updated_by  — maintained automatically by trigger
---   deleted_at / deleted_by  — set by the app instead of DELETE
+--   updated_at / updated_by  - maintained automatically by trigger
+--   deleted_at / deleted_by  - set by the app instead of DELETE
 -- Access-control tables (baby_shares, baby_invites) keep HARD deletes:
 -- a soft-deleted share would still grant access through RLS.
 -- ============================================================================

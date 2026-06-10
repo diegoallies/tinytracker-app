@@ -24,7 +24,7 @@ class DiaperScreen extends ConsumerStatefulWidget {
 class _DiaperScreenState extends ConsumerState<DiaperScreen> {
   String _selectedType = 'wet';
   String? _selectedColor;
-  int? _stoolType; // Bristol-style 1–7, only for dirty/both
+  int? _stoolType; // Bristol-style 1-7, only for dirty/both
   final TextEditingController _notesController = TextEditingController();
   bool _isSaving = false;
   DateTime _loggedAt = DateTime.now();
@@ -383,7 +383,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Quick options — most-used live here.
+            // Quick options - most-used live here.
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -715,7 +715,7 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Optional — 1 to 7, tap again to clear',
+              'Optional - 1 to 7, tap again to clear',
               style: TextStyle(color: context.palette.muted, fontSize: 12),
             ),
             const SizedBox(height: 14),

@@ -38,9 +38,9 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
             const _RedFlagsCard(
               index: 0,
               icon: Icons.emergency_rounded,
-              title: 'Red flags — call immediately',
+              title: 'Red flags - call immediately',
               intro: 'Don\'t wait for the weekly report. When in doubt, call '
-                  '— better to call for nothing than to wait.',
+                  '- better to call for nothing than to wait.',
               flags: CarePackData.redFlags,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -62,26 +62,26 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
             const SizedBox(height: AppSpacing.sm),
             const _ScaleCard(
               icon: Icons.water_drop_rounded,
-              title: 'Reflux severity (1–5)',
+              title: 'Reflux severity (1-5)',
               points: CarePackData.refluxSeverity,
             ),
             const SizedBox(height: AppSpacing.sm),
             const _ScaleCard(
               icon: Icons.baby_changing_station_rounded,
-              title: 'Stool types (1–7)',
+              title: 'Stool types (1-7)',
               points: CarePackData.stoolTypes,
             ),
             const SizedBox(height: AppSpacing.sm),
             const _ScaleCard(
               icon: Icons.air_rounded,
-              title: 'Cramps & gas (0–3)',
+              title: 'Cramps & gas (0-3)',
               points: CarePackData.crampsGasScale,
             ),
             const SizedBox(height: AppSpacing.xl),
             Text('Emergency contacts', style: context.textTheme.titleLarge),
             const SizedBox(height: AppSpacing.xxs),
             Text(
-              'The digital fridge sheet — keep it filled in so it’s there '
+              'The digital fridge sheet - keep it filled in so it’s there '
               'the day you need it.',
               style: context.textTheme.bodySmall,
             ),
@@ -745,7 +745,7 @@ class _ContactEditSheetState extends State<_ContactEditSheet> {
 }
 
 // ---------------------------------------------------------------------------
-// Status cards (contacts section only — the rest of the guide is static)
+// Status cards (contacts section only - the rest of the guide is static)
 // ---------------------------------------------------------------------------
 
 class _SchemaPendingCard extends StatelessWidget {

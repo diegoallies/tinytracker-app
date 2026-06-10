@@ -1,5 +1,5 @@
 -- ============================================================================
--- TinyTrack production upgrade — 2026-06-09
+-- TinyTrack production upgrade - 2026-06-09
 -- Generated from a live-schema audit (see docs/SUPABASE-AUDIT.md).
 --
 -- Idempotent: safe to re-run. No destructive statements (no DROP TABLE,
@@ -36,7 +36,7 @@ alter table public.ai_cache
   alter column cached_date type text using cached_date::text;
 
 -- Read-path index for: .eq('baby_id', ...).eq('cache_key', ...).maybeSingle()
--- NOTE: intentionally NOT unique — two legacy rows share (baby_id,'insights').
+-- NOTE: intentionally NOT unique - two legacy rows share (baby_id,'insights').
 -- New-format cache keys embed the date+period so they never collide.
 create index if not exists idx_ai_cache_baby_key
   on public.ai_cache (baby_id, cache_key);
@@ -103,7 +103,7 @@ create index if not exists idx_baby_medications_baby
 -- profiles and baby_medications. The statements below give every member of
 -- a baby's share list full CRUD on that baby's logs, using the existing
 -- SECURITY DEFINER helper public.user_has_baby_access(uuid)
--- (created in fix_rls_and_sharing.sql — run that file first if this errors).
+-- (created in fix_rls_and_sharing.sql - run that file first if this errors).
 --
 -- Idempotent: drops only its own policy names before recreating.
 -- If the dashboard already holds owner-only policies, these are additive
@@ -144,7 +144,7 @@ end $$;
 -- baby_invites: creator manages their invites; acceptance goes through a
 -- SECURITY DEFINER RPC so tokens are never readable by other accounts.
 -- (A `using (true)` select policy would let any logged-in user harvest
--- tokens and grant themselves access — including owner role.)
+-- tokens and grant themselves access - including owner role.)
 alter table public.baby_invites enable row level security;
 
 drop policy if exists "members create invites" on public.baby_invites;
@@ -167,7 +167,7 @@ using (
 );
 
 -- Acceptance: validates the token, creates the share with the role the
--- INVITER chose (never client-supplied), and marks the invite used —
+-- INVITER chose (never client-supplied), and marks the invite used -
 -- atomically, server-side.
 create or replace function public.accept_invite(invite_token text)
 returns jsonb

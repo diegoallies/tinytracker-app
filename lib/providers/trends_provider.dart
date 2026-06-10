@@ -28,7 +28,7 @@ class TrendsDayEntry {
   final int dirtyCount;
   final int refluxCount;
 
-  /// 0 when no reflux events that day, otherwise 1–5.
+  /// 0 when no reflux events that day, otherwise 1-5.
   final int maxRefluxSeverity;
 }
 
@@ -83,7 +83,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
   final baby = ref.watch(selectedBabyProvider);
 
   // Local midnights for the 14-day window, oldest → newest (today last).
-  // Day-component arithmetic, not Duration math — DST-safe.
+  // Day-component arithmetic, not Duration math - DST-safe.
   final now = DateTime.now();
   final dayStarts = List<DateTime>.generate(
     14,
@@ -136,7 +136,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
           .isFilter('deleted_at', null)
           .gte('logged_at', startIso));
     } catch (e) {
-      // Table may predate the Care Pack migration — treat as "no events".
+      // Table may predate the Care Pack migration - treat as "no events".
       debugPrint('trendsDataProvider reflux query failed: $e');
       return const [];
     }

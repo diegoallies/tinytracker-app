@@ -7,7 +7,7 @@ class BabyMedication {
   /// Scheduled meds: how many times a day (1 = once). Null for as-needed.
   final int? frequencyPerDay;
 
-  /// Calpol/Panado style — only given when needed.
+  /// Calpol/Panado style - only given when needed.
   final bool asNeeded;
 
   /// Minimum gap between doses, in hours (e.g. 4).

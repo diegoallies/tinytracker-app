@@ -20,7 +20,7 @@ import '../../widgets/common/loading_skeleton.dart';
 
 /// Digitises the paper "Weekly Report by Age" the nanny hands to parents
 /// every Friday: auto-filled metrics, the stage milestone checklist, the
-/// stage focus questions, and the free-text sections — savable as a draft,
+/// stage focus questions, and the free-text sections - savable as a draft,
 /// submittable to the parents, and shareable as a PDF.
 class WeeklyReportScreen extends ConsumerStatefulWidget {
   const WeeklyReportScreen({super.key});
@@ -85,7 +85,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
     final endFmt = _weekStart.month == _weekEnd.month
         ? DateFormat('d')
         : DateFormat('MMM d');
-    return '${fmt.format(_weekStart)} – ${endFmt.format(_weekEnd)}';
+    return '${fmt.format(_weekStart)} - ${endFmt.format(_weekEnd)}';
   }
 
   String _ageLabel(Baby baby) {
@@ -221,7 +221,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
 
   String _metricValue(Map<String, dynamic> metrics, String key) {
     final raw = metrics[key];
-    if (raw == null) return '—';
+    if (raw == null) return '-';
     switch (key) {
       case 'avg_ml_per_feed':
         return '$raw ml';
@@ -307,7 +307,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
     pw.Widget textBlock(String label, String? value) {
       final text = (value ?? '').trim();
       return section(label, [
-        pw.Text(text.isEmpty ? '—' : text, style: bodyStyle),
+        pw.Text(text.isEmpty ? '-' : text, style: bodyStyle),
       ]);
     }
 
@@ -326,7 +326,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
           ),
         ),
         build: (context) => [
-          pw.Text('Weekly Report — ${baby.name}',
+          pw.Text('Weekly Report - ${baby.name}',
               style: pw.TextStyle(
                   fontSize: 20,
                   fontWeight: pw.FontWeight.bold,
@@ -401,9 +401,9 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
     final metrics =
         ref.read(weeklyMetricsProvider(_weekStart)).valueOrNull ?? {};
     final buffer = StringBuffer()
-      ..writeln('Weekly Report — ${baby.name}')
+      ..writeln('Weekly Report - ${baby.name}')
       ..writeln('Week of ${_weekRangeLabel()}, ${_weekStart.year}')
-      ..writeln('Stage: ${stage.label} — ${stage.subtitle}')
+      ..writeln('Stage: ${stage.label} - ${stage.subtitle}')
       ..writeln()
       ..writeln('BY THE NUMBERS');
     for (final (key, label) in _metricRows) {
@@ -444,7 +444,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
     textSection('Questions / things I need from you', _questionsCtrl.text);
 
     await Share.share(buffer.toString(),
-        subject: 'Weekly Report — ${baby.name}');
+        subject: 'Weekly Report - ${baby.name}');
   }
 
   // ---------------------------------------------------------------------
@@ -560,7 +560,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
                     Text(
                       _isCurrentWeek
                           ? _weekRangeLabel()
-                          : 'Mon – Sun, ${_weekStart.year}',
+                          : 'Mon - Sun, ${_weekStart.year}',
                       style: context.textTheme.bodySmall,
                       textAlign: TextAlign.center,
                     ),
@@ -659,7 +659,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Calculated automatically from the logs — no manual tallying.',
+            'Calculated automatically from the logs - no manual tallying.',
             style: context.textTheme.bodySmall,
           ),
         ],
@@ -730,7 +730,7 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(
-            'The most important section — anything marked "Not yet", '
+            'The most important section - anything marked "Not yet", '
             'anything hard, frustrating, or upsetting.',
             style: context.textTheme.bodySmall,
           ),

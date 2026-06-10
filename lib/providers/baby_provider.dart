@@ -161,7 +161,7 @@ class BabyNotifier extends StateNotifier<BabyState> {
 
     if (rows.isEmpty) {
       throw StateError(
-        'Update returned no rows — check RLS on babies table for user ${SupabaseService.userId}',
+        'Update returned no rows - check RLS on babies table for user ${SupabaseService.userId}',
       );
     }
 
@@ -169,7 +169,7 @@ class BabyNotifier extends StateNotifier<BabyState> {
 
     if (photoUrl != null && updated.photoUrl != photoUrl) {
       throw StateError(
-        'photo_url did not persist — column may be missing or blocked by RLS',
+        'photo_url did not persist - column may be missing or blocked by RLS',
       );
     }
 
@@ -242,7 +242,7 @@ class BabyNotifier extends StateNotifier<BabyState> {
 
     if (rows.isEmpty) {
       throw StateError(
-        'Role update returned no rows — only owners can change roles',
+        'Role update returned no rows - only owners can change roles',
       );
     }
   }

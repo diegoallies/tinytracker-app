@@ -80,7 +80,7 @@ class AiService {
     final result = await _callGroq(promptBuilder(), maxTokens: maxTokens);
     if (result == null) return null;
 
-    // Store in cache. user_id is NOT NULL in the live schema — omitting it
+    // Store in cache. user_id is NOT NULL in the live schema - omitting it
     // made every write fail silently for months.
     try {
       await client.from('ai_cache').insert({
@@ -153,9 +153,9 @@ class AiService {
       cacheKey: 'daily-summary-$fp',
       promptBuilder: () =>
           'You are writing a short daily summary for the parents of a baby named $babyName (gender: $gender). '
-          'It is currently $timeOfDay — the day is NOT over yet. '
+          'It is currently $timeOfDay - the day is NOT over yet. '
           'Data logged SO FAR today: ${jsonEncode(todayData)}. Yesterday\'s full-day data: ${jsonEncode(yesterdayData)}. '
-          'RULES ABOUT HONESTY: Describe only what the data shows. If little has been logged so far, say the day is just getting started — NEVER call a day with zero or near-zero activity "great" or "consistent", and NEVER praise a routine that has no data behind it. '
+          'RULES ABOUT HONESTY: Describe only what the data shows. If little has been logged so far, say the day is just getting started - NEVER call a day with zero or near-zero activity "great" or "consistent", and NEVER praise a routine that has no data behind it. '
           'Only compare against yesterday when today has enough data for the comparison to be fair (e.g. don\'t compare a half-finished day\'s totals against yesterday\'s full day as if something dropped). '
           'Write 2-4 warm, plain sentences for tired parents. Use simple, mom-friendly language. For times use formats like "1:00 AM" or "around 3 PM". NEVER use ISO timestamps, timezone offsets, or computer date formats. Refer to the baby by name. Use correct pronouns (he/him for boys, she/her for girls). Do not use dashes longer than a hyphen.',
     );

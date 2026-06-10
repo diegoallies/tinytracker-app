@@ -160,7 +160,7 @@ class MoreScreen extends ConsumerWidget {
             children: [
               _SectionHeader(
                 title: 'Care Pack',
-                subtitle: 'Daily care, reports & safety — the paper pack, digitised',
+                subtitle: 'Daily care, reports & safety - the paper pack, digitised',
               ),
               const SizedBox(height: 16),
               _FeatureGrid(items: _carePack),
@@ -299,7 +299,7 @@ class _FeatureCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              // Two lines before ellipsizing — "Daily Journal" and
+              // Two lines before ellipsizing - "Daily Journal" and
               // "Immunisations" must never render as "Daily Jo…".
               SizedBox(
                 height: 32,
