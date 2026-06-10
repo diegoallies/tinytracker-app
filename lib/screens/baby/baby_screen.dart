@@ -535,22 +535,28 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       final baby = ref.read(selectedBabyProvider);
       final babyName = baby?.name ?? 'our baby';
 
-      // Clipboard as backup, then the system share sheet (WhatsApp etc.).
+      // The invite EXISTS from here on - clipboard, then best-effort share.
       await Clipboard.setData(ClipboardData(text: inviteLink));
-      await Share.share(
-        'You’ve been invited to help track $babyName on TinyTrack! 🍼\n\n'
-        'Open this link on your phone (or paste it in the app under '
-        'More → Invites):\n$inviteLink\n\n'
-        'The link expires in 7 days.',
-      );
-
       if (mounted) {
-        context.showSuccessSnackBar('Invite created - link also copied to clipboard');
+        context.showSuccessSnackBar('Invite created - link copied to clipboard');
+      }
+
+      // The share sheet is a bonus: it can throw on some iOS versions or
+      // when dismissed - that must never read as "invite failed".
+      try {
+        await Share.share(
+          'You\'re invited to help track $babyName on TinyTrack! 🍼\n\n'
+          'Open this link on your phone (or paste it in the app under '
+          'More > Invites):\n$inviteLink\n\n'
+          'The link expires in 7 days.',
+        );
+      } catch (e) {
+        debugPrint('share sheet failed (link already on clipboard): $e');
       }
     } catch (e) {
       if (mounted) {
         context.showErrorSnackBar(
-          'Couldn’t create the invite. Check your connection and try again.',
+          'Couldn\'t create the invite. Check your connection and try again.',
         );
       }
     }
