@@ -136,3 +136,23 @@ Diego's family runs a paper "Baby Care Tracking & Reporting Pack" with the nanny
 - `flutter analyze`: 0 issues. `flutter test`: 13/13 green. APK + iOS builds green.
 - End-to-end emulator test: login → dark mode on → every tab + 16 feature screens + live writes (diaper/reflux/journal) → all passing, with screenshots reviewed by Claude frame-by-frame.
 - Three adversarial review rounds; every finding fixed same-night.
+
+## Round 4 (morning of 10 June — Diego testing live, rapid-fire fixes)
+
+### 26. Invite system, end to end
+- Invites are email-bound: the inviter must enter the invitee's email and only that address can accept. Share message restored in full, link last so WhatsApp renders it tappable; the https invite page 302-redirects into the app with an HTML fallback (button + copyable code).
+- Register screen: arriving via an invite link (or "I have an invite code" + pasted link/code) pulls the invite, prefills the email and locks it. Works with email confirmation on: the token is parked on disk and auto-redeemed after confirm + first sign-in.
+- Inviters can now cancel pending invites: the Baby page Sharing card lists outstanding invites (email, role, expiry) with a cancel button.
+
+### 27. "Confirm email first" instead of a lie
+- Signing in before clicking the confirmation link used to show "Invalid email or password". Supabase's email_not_confirmed error is now detected and a sheet explains the real situation, with a one-tap "Resend confirmation email".
+
+### 28. Stuck keyboard fixed globally
+- The keyboard never went away after typing then navigating (Diego's More-page screenshot). Focus is now dropped on every route change, and tapping any dead space dismisses the keyboard app-wide.
+
+### 29. Nanny can give medicine
+- The logger role (shown as Nanny) was locked out of meds on both the feeding flow and the Health page. Anyone who can log can now give medicine; MedicationGuard still enforces every dose-safety rule. Viewers stay read-only.
+
+### 30. Export is the report hub, with a normalized design
+- New "All reports" card links every report from Export: Weekly Report, Monthly Milestone Review, Daily Journal, Trends. The weekly/monthly care-pack screens and the owner-only Family Report all support any past week/month, exported as PDF.
+- The old Time Period / Preview / What's Included trio collapsed into one Data export card matching the doctor/family card shape; the 7/14/30 selector and stat chips moved to the palette surface+border style so dark mode is correct.
