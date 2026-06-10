@@ -8,6 +8,7 @@ import '../models/baby.dart';
 import '../utils/care_pack_data.dart';
 import '../utils/immunisation_data.dart';
 import '../utils/who_growth_data.dart';
+import 'report_math.dart';
 import 'supabase_service.dart';
 
 /// Builds the "Family Report" PDF: an owner-facing weekly or monthly summary
@@ -19,6 +20,9 @@ import 'supabase_service.dart';
 /// of crashing (Care Pack tables/columns may not have been migrated yet),
 /// and every string that reaches the PDF is sanitized to the WinAnsi-safe
 /// ASCII range so the built-in Helvetica fonts never choke on user content.
+///
+/// This class owns fetching and PDF layout only; every number it prints is
+/// computed by the pure, unit-tested functions in report_math.dart.
 class FamilyReportService {
   FamilyReportService._();
 
@@ -83,8 +87,8 @@ class FamilyReportService {
     }) async {
       try {
         final since =
-            dateOnly ? _dateKey(start) : start.toUtc().toIso8601String();
-        final until = dateOnly ? _dateKey(end) : end.toUtc().toIso8601String();
+            dateOnly ? dayKey(start) : start.toUtc().toIso8601String();
+        final until = dateOnly ? dayKey(end) : end.toUtc().toIso8601String();
         final data = await client
             .from(table)
             .select('*')
@@ -354,7 +358,7 @@ class FamilyReportService {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
     if (ref.isAfter(todayDate)) ref = todayDate;
-    final days = _daysBetween(dob, ref);
+    final days = daysBetween(dob, ref);
     if (days < 0) return 'not yet born';
     final months = days ~/ 30;
     final rem = days % 30;
@@ -367,10 +371,22 @@ class FamilyReportService {
   // -------------------------------------------------------------------
 
   static List<pw.Widget> _atAGlanceSection(_ReportData d) {
-    final cur = _Aggregates.of(d.feedings, d.sleeps, d.diapers, d.tummyTimes,
-        d.reflux, d.healthLogs);
-    final prev = _Aggregates.of(d.prevFeedings, d.prevSleeps, d.prevDiapers,
-        d.prevTummyTimes, d.prevReflux, d.prevHealthLogs);
+    final cur = GlanceAggregates.of(
+      feedings: d.feedings,
+      sleeps: d.sleeps,
+      diapers: d.diapers,
+      tummyTimes: d.tummyTimes,
+      reflux: d.reflux,
+      healthLogs: d.healthLogs,
+    );
+    final prev = GlanceAggregates.of(
+      feedings: d.prevFeedings,
+      sleeps: d.prevSleeps,
+      diapers: d.prevDiapers,
+      tummyTimes: d.prevTummyTimes,
+      reflux: d.prevReflux,
+      healthLogs: d.prevHealthLogs,
+    );
     final days = d.activeDays.toDouble();
     final prevDays = d.prevDays.toDouble();
 
@@ -381,7 +397,7 @@ class FamilyReportService {
       double prevMetric, {
       bool downIsGood = false,
     }) {
-      final delta = _delta(curMetric, prevMetric);
+      final delta = deltaLabel(curMetric, prevMetric);
       PdfColor deltaColor = _muted;
       if (delta.startsWith('+') || delta == 'new') {
         deltaColor = downIsGood ? _bad : _good;
@@ -481,31 +497,14 @@ class FamilyReportService {
       return widgets;
     }
 
-    // Per-bucket feed counts.
-    final counts = List<double>.filled(d.bucketCount, 0);
-    final perDay = <String, int>{};
-    final hourBuckets = <String, int>{};
-    final mlValues = <double>[];
-    final qualityValues = <double>[];
-    var spitupKnown = 0;
-    var spitupYes = 0;
-
-    for (final f in d.feedings) {
-      final dt = _ts(f['logged_at']);
-      if (dt == null) continue;
-      counts[d.bucketOf(dt)] += 1;
-      perDay.update(_dateKey(dt), (v) => v + 1, ifAbsent: () => 1);
-      final daypart = _daypartOf(dt.hour);
-      hourBuckets.update(daypart, (v) => v + 1, ifAbsent: () => 1);
-      final ml = f['amount_ml'];
-      if (ml is num) mlValues.add(ml.toDouble());
-      final q = f['quality'];
-      if (q is num) qualityValues.add(q.toDouble());
-      if (f.containsKey('had_spitup') && f['had_spitup'] is bool) {
-        spitupKnown++;
-        if (f['had_spitup'] == true) spitupYes++;
-      }
-    }
+    final stats = FeedingStats.fromRows(d.feedings);
+    final counts = bucketTotals(
+      d.feedings,
+      timeField: 'logged_at',
+      periodStart: d.periodStart,
+      isMonthly: d.isMonthly,
+      bucketCount: d.bucketCount,
+    );
 
     widgets.add(_barChart(
       values: counts,
@@ -519,39 +518,31 @@ class FamilyReportService {
     widgets.add(pw.SizedBox(height: 10));
 
     // Busiest day.
-    String busiest = '-';
-    var busiestCount = 0;
-    perDay.forEach((day, c) {
-      if (c > busiestCount) {
-        busiestCount = c;
-        busiest = day;
-      }
-    });
-    if (busiestCount > 0) {
-      final dt = DateTime.tryParse(busiest);
+    var busiest = '-';
+    if (stats.busiestDay != null) {
+      final dt = DateTime.tryParse(stats.busiestDay!);
       if (dt != null) {
-        busiest =
-            '${DateFormat('EEE d MMM').format(dt)} ($busiestCount feeds)';
+        busiest = '${DateFormat('EEE d MMM').format(dt)} '
+            '(${stats.busiestDayCount} feeds)';
       }
     }
 
-    final avgMl = mlValues.isEmpty
+    final avgMl =
+        stats.avgMl == null ? '-' : '${stats.avgMl!.round()} ml';
+    final avgQuality = stats.avgQuality == null
         ? '-'
-        : '${(mlValues.reduce((a, b) => a + b) / mlValues.length).round()} ml';
-    final avgQuality = qualityValues.isEmpty
+        : '${stats.avgQuality!.toStringAsFixed(1)} / 5';
+    final spitupRate = stats.spitUpRate == null
         ? '-'
-        : '${(qualityValues.reduce((a, b) => a + b) / qualityValues.length).toStringAsFixed(1)} / 5';
-    final spitupRate = spitupKnown == 0
-        ? '-'
-        : '${(spitupYes / spitupKnown * 100).round()}%';
+        : '${(stats.spitUpRate! * 100).round()}%';
 
     widgets.add(_zebraTable(
       ['Total feeds', 'Avg / day', 'Avg amount', 'Avg quality',
           'Spit-up rate', 'Busiest day'],
       [
         [
-          '${d.feedings.length}',
-          _num1(d.feedings.length / d.activeDays),
+          '${stats.total}',
+          _num1(perDay(stats.total, d.activeDays)),
           avgMl,
           avgQuality,
           spitupRate,
@@ -561,10 +552,10 @@ class FamilyReportService {
     ));
 
     // One computed insight, only when the data genuinely supports it.
-    if (d.feedings.length >= 8 && hourBuckets.isNotEmpty) {
-      final top = hourBuckets.entries
+    if (stats.total >= 8 && stats.daypartCounts.isNotEmpty) {
+      final top = stats.daypartCounts.entries
           .reduce((a, b) => a.value >= b.value ? a : b);
-      final share = top.value / d.feedings.length;
+      final share = top.value / stats.total;
       if (share >= 0.35) {
         widgets.add(pw.SizedBox(height: 8));
         widgets.add(_insight(
@@ -577,13 +568,6 @@ class FamilyReportService {
     return widgets;
   }
 
-  static String _daypartOf(int hour) {
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    if (hour >= 18) return 'evening';
-    return 'night';
-  }
-
   // -------------------------------------------------------------------
   // 4. Sleep
   // -------------------------------------------------------------------
@@ -593,37 +577,21 @@ class FamilyReportService {
       _sectionHeader('Sleep', _accentSleep),
     ];
 
-    final completed = d.sleeps.where((s) => s['end_time'] != null).toList();
-    if (completed.isEmpty) {
+    final stats = SleepStats.fromRows(d.sleeps);
+    if (stats.stretchCount == 0) {
       widgets.add(_noData('No completed sleep sessions this period.'));
       return widgets;
     }
 
-    final hours = List<double>.filled(d.bucketCount, 0);
-    var totalMin = 0;
-    var longestMin = 0;
-    var nightMin = 0;
-    var dayMin = 0;
-
-    for (final s in completed) {
-      final start = _ts(s['start_time']);
-      if (start == null) continue;
-      var mins = (s['duration_minutes'] as num?)?.toInt() ?? 0;
-      if (mins <= 0) {
-        final end = _ts(s['end_time']);
-        if (end != null) mins = end.difference(start).inMinutes;
-      }
-      if (mins <= 0) continue;
-      hours[d.bucketOf(start)] += mins / 60.0;
-      totalMin += mins;
-      if (mins > longestMin) longestMin = mins;
-      // Night vs day attribution by session start (19:00 - 07:00 = night).
-      if (start.hour >= 19 || start.hour < 7) {
-        nightMin += mins;
-      } else {
-        dayMin += mins;
-      }
-    }
+    final completed = d.sleeps.where((s) => s['end_time'] != null).toList();
+    final hours = bucketTotals(
+      completed,
+      timeField: 'start_time',
+      periodStart: d.periodStart,
+      isMonthly: d.isMonthly,
+      bucketCount: d.bucketCount,
+      weight: (s) => sessionMinutes(s) / 60.0,
+    );
 
     widgets.add(_barChart(
       values: hours,
@@ -636,22 +604,25 @@ class FamilyReportService {
         'Hours of sleep per ${d.isMonthly ? 'week' : 'day'} this period'));
     widgets.add(pw.SizedBox(height: 10));
 
-    final splitTotal = nightMin + dayMin;
-    final nightPct =
-        splitTotal == 0 ? 0 : (nightMin / splitTotal * 100).round();
     widgets.add(_zebraTable(
       ['Total sleep', 'Avg / day', 'Longest stretch', 'Stretches / day',
-          'Night (19:00-07:00)', 'Day (07:00-19:00)'],
+          'Night (starts 19:00-07:00)', 'Day (starts 07:00-19:00)'],
       [
         [
-          _hm(totalMin),
-          '${_num1(totalMin / d.activeDays / 60)} h',
-          _hm(longestMin),
-          _num1(completed.length / d.activeDays),
-          '${_hm(nightMin)} ($nightPct%)',
-          '${_hm(dayMin)} (${splitTotal == 0 ? 0 : 100 - nightPct}%)',
+          _hm(stats.totalMinutes),
+          '${_num1(perDay(stats.totalMinutes, d.activeDays) / 60)} h',
+          _hm(stats.longestMinutes),
+          _num1(perDay(stats.stretchCount, d.activeDays)),
+          '${_hm(stats.nightMinutes)} (${stats.nightPct}%)',
+          '${_hm(stats.dayMinutes)} (${stats.dayPct}%)',
         ],
       ],
+    ));
+    widgets.add(pw.SizedBox(height: 4));
+    widgets.add(pw.Text(
+      'Each stretch counts as night or day by its start time; stretches '
+      'crossing 19:00 or 07:00 are not split.',
+      style: pw.TextStyle(fontSize: 7.5, color: _muted),
     ));
     return widgets;
   }
@@ -670,18 +641,31 @@ class FamilyReportService {
       return widgets;
     }
 
+    final stats = NappyStats.fromRows(d.diapers);
+
     if (d.diapers.isNotEmpty) {
-      // Wet = wet or both; dirty = dirty or both (matches weeklyMetrics).
-      final wet = List<double>.filled(d.bucketCount, 0);
-      final dirty = List<double>.filled(d.bucketCount, 0);
-      for (final dp in d.diapers) {
-        final dt = _ts(dp['logged_at']);
-        if (dt == null) continue;
-        final b = d.bucketOf(dt);
+      // Wet = wet or both; dirty = dirty or both ('both' counts in each).
+      double typeWeight(Map<String, dynamic> dp, String wanted) {
         final type = (dp['type'] ?? '').toString();
-        if (type != 'dirty') wet[b] += 1;
-        if (type != 'wet') dirty[b] += 1;
+        return (type == wanted || type == 'both') ? 1 : 0;
       }
+
+      final wet = bucketTotals(
+        d.diapers,
+        timeField: 'logged_at',
+        periodStart: d.periodStart,
+        isMonthly: d.isMonthly,
+        bucketCount: d.bucketCount,
+        weight: (dp) => typeWeight(dp, 'wet'),
+      );
+      final dirty = bucketTotals(
+        d.diapers,
+        timeField: 'logged_at',
+        periodStart: d.periodStart,
+        isMonthly: d.isMonthly,
+        bucketCount: d.bucketCount,
+        weight: (dp) => typeWeight(dp, 'dirty'),
+      );
 
       widgets.add(_pairedBarChart(
         seriesA: wet,
@@ -708,11 +692,7 @@ class FamilyReportService {
     }
 
     // Stool type distribution (Bristol-style; column ships with Care Pack).
-    final stoolCounts = <int, int>{};
-    for (final dp in d.diapers) {
-      final t = dp['stool_type'];
-      if (t is int) stoolCounts.update(t, (v) => v + 1, ifAbsent: () => 1);
-    }
+    final stoolCounts = stats.stoolTypeCounts;
     if (stoolCounts.isNotEmpty) {
       widgets.add(_zebraTable(
         ['Stool type', 'Description', 'Count'],
@@ -739,17 +719,10 @@ class FamilyReportService {
 
     // Cramps/gas from the daily journals (0-3 scale; >= 2 is notable).
     if (d.journals.isNotEmpty) {
-      final uncomfortable = <String>{};
-      for (final j in d.journals) {
-        final cramps = (j['cramps'] as num?)?.toInt() ?? 0;
-        final gas = (j['gas'] as num?)?.toInt() ?? 0;
-        if (cramps >= 2 || gas >= 2) {
-          uncomfortable.add((j['journal_date'] ?? '').toString());
-        }
-      }
       widgets.add(pw.Text(
         'Days with cramps or gas rated 2+ (on the 0-3 scale): '
-        '${uncomfortable.length} of ${d.journals.length} journalled days.',
+        '${uncomfortableDayCount(d.journals)} of ${d.journals.length} '
+        'journalled days.',
         style: pw.TextStyle(fontSize: 9, color: _ink),
       ));
     }
@@ -770,24 +743,14 @@ class FamilyReportService {
       return widgets;
     }
 
-    final counts = List<double>.filled(d.bucketCount, 0);
-    final severityCounts = <int, int>{};
-    final triggers = <String, int>{};
-    var painful = 0;
-    for (final r in d.reflux) {
-      final dt = _ts(r['logged_at']);
-      if (dt != null) counts[d.bucketOf(dt)] += 1;
-      final sev = r['severity'];
-      if (sev is int) {
-        severityCounts.update(sev, (v) => v + 1, ifAbsent: () => 1);
-      }
-      if (r['painful_crying'] == true) painful++;
-      final trigger =
-          _ascii((r['trigger_noticed'] ?? '').toString().trim().toLowerCase());
-      if (trigger.isNotEmpty) {
-        triggers.update(trigger, (v) => v + 1, ifAbsent: () => 1);
-      }
-    }
+    final stats = RefluxStats.fromRows(d.reflux);
+    final counts = bucketTotals(
+      d.reflux,
+      timeField: 'logged_at',
+      periodStart: d.periodStart,
+      isMonthly: d.isMonthly,
+      bucketCount: d.bucketCount,
+    );
 
     widgets.add(_barChart(
       values: counts,
@@ -808,7 +771,7 @@ class FamilyReportService {
             [
               '${point.value}',
               _ascii(point.label),
-              '${severityCounts[point.value] ?? 0}',
+              '${stats.severityCounts[point.value] ?? 0}',
             ],
         ],
         widths: {
@@ -820,14 +783,13 @@ class FamilyReportService {
       widgets.add(pw.SizedBox(height: 8));
 
       final lines = <String>[
-        'Painful episodes (crying with the event): $painful of '
-            '${d.reflux.length}.',
+        'Painful episodes (crying with the event): ${stats.painfulCount} of '
+            '${stats.total}.',
       ];
-      if (triggers.isNotEmpty) {
-        final top = triggers.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
+      if (stats.triggerCounts.isNotEmpty) {
+        final top = stats.topTriggers;
         lines.add('Top noticed triggers: '
-            '${top.take(3).map((e) => '${e.key} (${e.value})').join(', ')}.');
+            '${top.take(3).map((e) => '${_ascii(e.key)} (${e.value})').join(', ')}.');
       }
       for (final line in lines) {
         widgets.add(pw.Padding(
@@ -838,8 +800,8 @@ class FamilyReportService {
     }
 
     // Improving / worse vs the previous period (per-day rates).
-    final curRate = d.reflux.length / d.activeDays;
-    final prevRate = d.prevReflux.length / d.prevDays;
+    final curRate = perDay(d.reflux.length, d.activeDays);
+    final prevRate = perDay(d.prevReflux.length, d.prevDays);
     String? statement;
     if (prevRate == 0 && curRate > 0) {
       statement = 'Reflux events appeared this period; none were recorded '
@@ -876,12 +838,9 @@ class FamilyReportService {
     final temps = d.healthLogs
         .where((h) => h['temperature_c'] != null)
         .toList();
-    final doses = d.healthLogs
-        .where((h) =>
-            (h['medication'] ?? '').toString().trim().isNotEmpty)
-        .toList();
+    final doseCount = medicationDoseCount(d.healthLogs);
 
-    if (temps.isEmpty && doses.isEmpty && d.medications.isEmpty) {
+    if (temps.isEmpty && doseCount == 0 && d.medications.isEmpty) {
       widgets.add(_noData(
           'No temperature readings or medicine doses this period.'));
       return widgets;
@@ -889,23 +848,16 @@ class FamilyReportService {
 
     // Temperature readings.
     if (temps.isNotEmpty) {
-      String status(double t) {
-        if (t < 36) return 'Low';
-        if (t <= 37.5) return 'Normal';
-        if (t <= 38.5) return 'Fever';
-        return 'High fever';
-      }
-
       widgets.add(_subLabel('Temperature readings'));
       widgets.add(_zebraTable(
         ['Date', 'Time', 'Temp (C)', 'Status', 'Symptoms'],
         [
           for (final h in temps)
             [
-              _fmtDate(_ts(h['logged_at'])),
-              _fmtTime(_ts(h['logged_at'])),
+              _fmtDate(parseTimestamp(h['logged_at'])),
+              _fmtTime(parseTimestamp(h['logged_at'])),
               '${h['temperature_c']}',
-              status((h['temperature_c'] as num).toDouble()),
+              temperatureStatus((h['temperature_c'] as num).toDouble()),
               _orDash(h['symptoms']),
             ],
         ],
@@ -913,48 +865,36 @@ class FamilyReportService {
       widgets.add(pw.SizedBox(height: 10));
     }
 
-    // Doses given in this period, grouped by lowercased medication name.
-    final givenByName = <String, int>{};
-    for (final h in doses) {
-      final name = (h['medication'] as String).trim().toLowerCase();
-      givenByName.update(name, (v) => v + 1, ifAbsent: () => 1);
-    }
+    // Adherence math (expected = schedule x counted days) lives in
+    // report_math so it is unit-tested; this just renders the rows.
+    final adherence = MedicationAdherence.compute(
+      catalog: d.medications,
+      healthLogs: d.healthLogs,
+      days: d.activeDays,
+    );
 
-    final scheduled = <List<String>>[];
-    final asNeeded = <List<String>>[];
-    final matchedNames = <String>{};
-    for (final m in d.medications) {
-      final name = (m['name'] ?? '').toString();
-      if (name.trim().isEmpty) continue;
-      final key = name.trim().toLowerCase();
-      matchedNames.add(key);
-      final given = givenByName[key] ?? 0;
-      final freq = (m['frequency_per_day'] as num?)?.toInt();
-      final isAsNeeded = m['as_needed'] == true || freq == null || freq <= 0;
-      final dose = _orDash(m['default_dosage'] ?? m['instructions']);
-      if (isAsNeeded) {
-        asNeeded.add([_ascii(name), 'As needed', '$given', dose]);
-      } else {
-        final expected = freq * d.activeDays;
-        final pct =
-            expected == 0 ? '-' : '${(given / expected * 100).round()}%';
-        scheduled.add([
-          _ascii(name),
-          '${freq}x / day',
-          '$given of $expected',
-          pct,
-          dose,
-        ]);
-      }
-    }
-    // Doses logged for meds not in the catalog still deserve a row.
-    givenByName.forEach((key, count) {
-      if (!matchedNames.contains(key)) {
-        asNeeded.add([_ascii(key), 'Not in catalog', '$count', '-']);
-      }
-    });
+    final scheduled = [
+      for (final s in adherence.scheduled)
+        [
+          _ascii(s.name),
+          '${s.frequencyPerDay}x / day',
+          '${s.given} of ${s.expected}',
+          s.adherence == null ? '-' : '${(s.adherence! * 100).round()}%',
+          _orDash(s.source['default_dosage'] ?? s.source['instructions']),
+        ],
+    ];
+    final asNeeded = [
+      for (final a in adherence.asNeeded)
+        [
+          _ascii(a.name),
+          a.inCatalog ? 'As needed' : 'Not in catalog',
+          '${a.given}',
+          _orDash(a.source['default_dosage'] ?? a.source['instructions']),
+        ],
+    ];
 
     if (scheduled.isNotEmpty) {
+      final isLive = DateTime.now().isBefore(d.periodEnd);
       widgets.add(_subLabel('Scheduled medication adherence'));
       widgets.add(_zebraTable(
         ['Medication', 'Schedule', 'Doses given', 'Adherence',
@@ -963,8 +903,8 @@ class FamilyReportService {
       ));
       widgets.add(pw.SizedBox(height: 4));
       widgets.add(pw.Text(
-        'Expected doses = schedule x ${d.activeDays} elapsed day(s) in '
-        'this period.',
+        'Expected doses = schedule x ${d.activeDays} '
+        '${isLive ? 'day(s) elapsed so far in this period' : 'day(s) in this period'}.',
         style: pw.TextStyle(fontSize: 7.5, color: _muted),
       ));
       widgets.add(pw.SizedBox(height: 8));
@@ -1010,7 +950,7 @@ class FamilyReportService {
         final v = value.toDouble();
         if (at == null) return _num1(v);
         final ageMonths =
-            _daysBetween(d.baby.dateOfBirth, at) / 30.44;
+            daysBetween(d.baby.dateOfBirth, at) / 30.44;
         if (ageMonths < 0 || ageMonths > 24.5) return _num1(v);
         final p = WhoGrowthData.getPercentiles(
           ageMonths: ageMonths,
@@ -1028,10 +968,10 @@ class FamilyReportService {
         [
           for (final g in d.growth)
             [
-              _fmtDate(_ts(g['measured_at'])),
-              withPercentile(g['weight_kg'], 'weight', _ts(g['measured_at'])),
-              withPercentile(g['height_cm'], 'height', _ts(g['measured_at'])),
-              withPercentile(g['head_cm'], 'head', _ts(g['measured_at'])),
+              _fmtDate(parseTimestamp(g['measured_at'])),
+              withPercentile(g['weight_kg'], 'weight', parseTimestamp(g['measured_at'])),
+              withPercentile(g['height_cm'], 'height', parseTimestamp(g['measured_at'])),
+              withPercentile(g['head_cm'], 'head', parseTimestamp(g['measured_at'])),
             ],
         ],
       ));
@@ -1041,7 +981,7 @@ class FamilyReportService {
     if (d.milestones.isNotEmpty) {
       widgets.add(_subLabel('Milestones achieved'));
       for (final m in d.milestones) {
-        final when = _fmtDate(_ts(m['achieved_at']));
+        final when = _fmtDate(parseTimestamp(m['achieved_at']));
         final category = _orDash(m['category']);
         widgets.add(_bullet(
           '${_ascii((m['title'] ?? '').toString())} - $when '
@@ -1091,14 +1031,8 @@ class FamilyReportService {
       'fussy': 'Fussy',
       'very_fussy': 'Very fussy',
     };
-    final moodCounts = <String, int>{};
-    for (final j in d.journals) {
-      final mood = (j['mood'] ?? '').toString();
-      if (moodLabels.containsKey(mood)) {
-        moodCounts.update(mood, (v) => v + 1, ifAbsent: () => 1);
-      }
-    }
-    if (moodCounts.isNotEmpty) {
+    final moods = moodCounts(d.journals);
+    if (moods.isNotEmpty) {
       widgets.add(_subLabel(
           'Mood across ${d.journals.length} journalled day(s)'));
       widgets.add(pw.Row(
@@ -1115,7 +1049,7 @@ class FamilyReportService {
                 child: pw.Column(
                   children: [
                     pw.Text(
-                      '${moodCounts[entry.key] ?? 0}',
+                      '${moods[entry.key] ?? 0}',
                       style: pw.TextStyle(
                         fontSize: 13,
                         fontWeight: pw.FontWeight.bold,
@@ -1538,19 +1472,11 @@ class FamilyReportService {
     return s.isEmpty ? '-' : s;
   }
 
-  static DateTime? _ts(dynamic raw) {
-    if (raw == null) return null;
-    return DateTime.tryParse(raw.toString())?.toLocal();
-  }
-
   static String _fmtDate(DateTime? dt) =>
       dt == null ? '-' : DateFormat('EEE d MMM').format(dt);
 
   static String _fmtTime(DateTime? dt) =>
       dt == null ? '-' : DateFormat('HH:mm').format(dt);
-
-  static String _dateKey(DateTime dt) =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
   static String _rangeShort(DateTime start, DateTime end) {
     final endInclusive = DateTime(end.year, end.month, end.day - 1);
@@ -1570,21 +1496,6 @@ class FamilyReportService {
     return '${m}m';
   }
 
-  /// Calendar-day difference. Hour-rounded so DST shifts cannot drop a day.
-  static int _daysBetween(DateTime a, DateTime b) {
-    final from = DateTime(a.year, a.month, a.day);
-    final to = DateTime(b.year, b.month, b.day);
-    return ((to.difference(from).inHours) + 12) ~/ 24;
-  }
-
-  /// '+12%' / '-8%' / 'no change' / 'new' against the previous period.
-  static String _delta(double current, double previous) {
-    if (previous <= 0 && current <= 0) return 'no change';
-    if (previous <= 0) return 'new';
-    final pct = ((current - previous) / previous * 100).round();
-    if (pct == 0) return 'no change';
-    return '${pct > 0 ? '+' : ''}$pct%';
-  }
 }
 
 // ---------------------------------------------------------------------
@@ -1645,25 +1556,18 @@ class _ReportData {
   });
 
   /// Total calendar days in the period.
-  int get totalDays =>
-      FamilyReportService._daysBetween(periodStart, periodEnd);
+  int get totalDays => periodLengthDays(periodStart, periodEnd);
 
-  /// Days of the period that have actually happened - averages divide by
-  /// this so a report generated mid-week never under-reports the rates.
-  int get activeDays {
-    final now = DateTime.now();
-    if (!now.isBefore(periodEnd)) return totalDays.clamp(1, 366);
-    final elapsed =
-        FamilyReportService._daysBetween(periodStart, now) + 1;
-    return elapsed.clamp(1, totalDays.clamp(1, 366));
-  }
+  /// The divisor for every "/ day" average: days elapsed so far when the
+  /// period includes today, the full period length when it is in the past.
+  int get activeDays =>
+      divisorDays(periodStart: periodStart, periodEnd: periodEnd);
 
-  int get prevDays =>
-      FamilyReportService._daysBetween(prevStart, prevEnd).clamp(1, 366);
+  int get prevDays => periodLengthDays(prevStart, prevEnd);
 
   /// Weekly: 7 day buckets. Monthly: W1..W5 week buckets.
-  int get bucketCount =>
-      isMonthly ? ((totalDays - 1) ~/ 7) + 1 : 7;
+  int get bucketCount => bucketCountFor(
+      periodStart: periodStart, periodEnd: periodEnd, isMonthly: isMonthly);
 
   List<String> get bucketLabels {
     if (!isMonthly) {
@@ -1674,90 +1578,5 @@ class _ReportData {
       ];
     }
     return [for (var i = 1; i <= bucketCount; i++) 'W$i'];
-  }
-
-  int bucketOf(DateTime dt) {
-    final dayIndex = FamilyReportService._daysBetween(periodStart, dt);
-    if (!isMonthly) return dayIndex.clamp(0, 6);
-    return (dayIndex ~/ 7).clamp(0, bucketCount - 1);
-  }
-}
-
-// ---------------------------------------------------------------------
-// Aggregates for the "At a glance" grid (computed identically for the
-// current and the previous period so the deltas compare like with like).
-// ---------------------------------------------------------------------
-
-class _Aggregates {
-  final int feeds;
-  final double? avgMl;
-  final int sleepMinutes;
-  final int longestSleepMin;
-  final int nappies;
-  final int tummyMinutes;
-  final int refluxEvents;
-  final int medicineDoses;
-
-  _Aggregates({
-    required this.feeds,
-    required this.avgMl,
-    required this.sleepMinutes,
-    required this.longestSleepMin,
-    required this.nappies,
-    required this.tummyMinutes,
-    required this.refluxEvents,
-    required this.medicineDoses,
-  });
-
-  static _Aggregates of(
-    List<Map<String, dynamic>> feedings,
-    List<Map<String, dynamic>> sleeps,
-    List<Map<String, dynamic>> diapers,
-    List<Map<String, dynamic>> tummyTimes,
-    List<Map<String, dynamic>> reflux,
-    List<Map<String, dynamic>> healthLogs,
-  ) {
-    final mlValues = [
-      for (final f in feedings)
-        if (f['amount_ml'] is num) (f['amount_ml'] as num).toDouble(),
-    ];
-
-    var sleepMin = 0;
-    var longest = 0;
-    for (final s in sleeps) {
-      if (s['end_time'] == null) continue;
-      var mins = (s['duration_minutes'] as num?)?.toInt() ?? 0;
-      if (mins <= 0) {
-        final start = FamilyReportService._ts(s['start_time']);
-        final end = FamilyReportService._ts(s['end_time']);
-        if (start != null && end != null) {
-          mins = end.difference(start).inMinutes;
-        }
-      }
-      if (mins <= 0) continue;
-      sleepMin += mins;
-      if (mins > longest) longest = mins;
-    }
-
-    final tummyMin = tummyTimes.fold<int>(
-        0, (sum, t) => sum + ((t['duration_minutes'] as num?)?.toInt() ?? 0));
-
-    final doses = healthLogs
-        .where(
-            (h) => (h['medication'] ?? '').toString().trim().isNotEmpty)
-        .length;
-
-    return _Aggregates(
-      feeds: feedings.length,
-      avgMl: mlValues.isEmpty
-          ? null
-          : mlValues.reduce((a, b) => a + b) / mlValues.length,
-      sleepMinutes: sleepMin,
-      longestSleepMin: longest,
-      nappies: diapers.length,
-      tummyMinutes: tummyMin,
-      refluxEvents: reflux.length,
-      medicineDoses: doses,
-    );
   }
 }

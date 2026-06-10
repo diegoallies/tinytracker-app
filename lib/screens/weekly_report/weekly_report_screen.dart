@@ -443,8 +443,8 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
     textSection('Overall summary', _summaryCtrl.text);
     textSection('Questions / things I need from you', _questionsCtrl.text);
 
-    await Share.share(buffer.toString(),
-        subject: 'Weekly Report - ${baby.name}');
+    await SharePlus.instance.share(ShareParams(
+        text: buffer.toString(), subject: 'Weekly Report - ${baby.name}'));
   }
 
   // ---------------------------------------------------------------------
