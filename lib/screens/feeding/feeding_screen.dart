@@ -45,12 +45,12 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
   static const _allFeedTypes = [
     ('breast_left', 'Left Breast', Icons.woman),
     ('breast_right', 'Right Breast', Icons.woman),
-    ('bottle', 'Bottle', Icons.baby_changing_station),
+    ('bottle', 'Bottle', Icons.local_drink_rounded),
     ('solids', 'Solids', Icons.restaurant),
   ];
 
   static const _bottleOnlyFeedTypes = [
-    ('bottle', 'Bottle', Icons.baby_changing_station),
+    ('bottle', 'Bottle', Icons.local_drink_rounded),
     ('solids', 'Solids', Icons.restaurant),
   ];
 
@@ -1195,7 +1195,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
             : '';
         break;
       case 'bottle':
-        icon = Icons.baby_changing_station;
+        icon = Icons.local_drink_rounded;
         label = 'Bottle';
         detail = feeding.amountMl != null ? '${feeding.amountMl} ml' : '';
         break;

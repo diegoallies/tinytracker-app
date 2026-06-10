@@ -500,7 +500,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     color: _activityColor(item.type),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Icon(_activityIcon(item.type), size: 18, color: context.palette.text),
+                                  // Fixed dark ink on the pastel chip (see _QuickAction).
+                                  child: Icon(_activityIcon(item.type), size: 18, color: AppColors.text),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -654,7 +655,10 @@ class _QuickAction extends StatelessWidget {
                 color: color,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, color: context.palette.text, size: 24),
+              // The chip stays pastel in both themes, so the glyph must be
+              // the FIXED dark ink — palette.text goes white in dark mode
+              // and vanishes against the light pastel.
+              child: Icon(icon, color: AppColors.text, size: 24),
             ),
             const SizedBox(height: 6),
             Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), textAlign: TextAlign.center),

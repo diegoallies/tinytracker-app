@@ -115,7 +115,7 @@ class _QuickLogFeedingSheetState extends ConsumerState<_QuickLogFeedingSheet> {
   static const _feedTypes = [
     ('breast_left', 'Left', Icons.woman),
     ('breast_right', 'Right', Icons.woman),
-    ('bottle', 'Bottle', Icons.baby_changing_station),
+    ('bottle', 'Bottle', Icons.local_drink_rounded),
     ('solids', 'Solids', Icons.restaurant),
   ];
 

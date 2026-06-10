@@ -769,22 +769,28 @@ class _ProfileField extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 22),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.pastelPurple.withValues(
-                  alpha: dimmed ? 0.2 : 0.5,
+            child: Builder(builder: (context) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  // Translucent pastel goes murky on dark cards; use a
+                  // primary tint with a bright glyph instead.
+                  color: isDark
+                      ? AppColors.primary
+                          .withValues(alpha: dimmed ? 0.12 : 0.22)
+                      : AppColors.pastelPurple
+                          .withValues(alpha: dimmed ? 0.2 : 0.5),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                size: 18,
-                color: AppColors.primary.withValues(
-                  alpha: dimmed ? 0.4 : 1.0,
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: (isDark ? AppColors.primaryLight : AppColors.primary)
+                      .withValues(alpha: dimmed ? 0.45 : 1.0),
                 ),
-              ),
-            ),
+              );
+            }),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -942,13 +948,16 @@ class _EditActions extends StatelessWidget {
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _IconButton(
       icon: Icons.edit_rounded,
       color: enabled
-          ? AppColors.primary
+          ? (isDark ? AppColors.primaryLight : AppColors.primary)
           : context.palette.muted.withValues(alpha: 0.4),
       background: enabled
-          ? AppColors.pastelPurple.withValues(alpha: 0.5)
+          ? (isDark
+              ? AppColors.primary.withValues(alpha: 0.22)
+              : AppColors.pastelPurple.withValues(alpha: 0.5))
           : context.palette.surface,
       onTap: enabled ? onEdit : null,
       tooltip: 'Edit',

@@ -107,7 +107,7 @@ class AiService {
       babyId: babyId,
       cacheKey: 'insights',
       promptBuilder: () =>
-          'Here is a baby named $babyName\'s (gender: $gender) complete tracking data for the past week: ${jsonEncode(weekData)}. Generate 3 interesting, actionable insights about $babyName\'s patterns. Examples: sleep trends, feeding preferences, growth observations. The data may also include reflux and digestion records - insights about reflux trends or digestion changes are especially valuable to these parents, since their boy has reflux. Keep each insight to 1 sentence. Be warm and helpful. IMPORTANT: Use simple, mom-friendly language. For times use formats like "1:00 AM" or "around 3 PM". NEVER use ISO timestamps, timezone offsets, or computer date formats. Do not use dashes longer than a hyphen. Return ONLY a JSON array of 3 strings, no other text.',
+          'Here is a baby named $babyName\'s (gender: $gender) complete tracking data for the past week: ${jsonEncode(weekData)}. Generate 3 interesting, actionable insights about $babyName\'s patterns. Examples: sleep trends, feeding preferences, growth observations. The data may also include reflux and digestion records - insights about reflux trends or digestion changes are especially valuable to these parents, since their boy has reflux. HONESTY RULES: every insight must be grounded in the actual numbers provided - never invent patterns, never praise consistency that the data does not show, and skip any topic with too little data rather than guessing. Keep each insight to 1 sentence. Be warm and helpful. IMPORTANT: Use simple, mom-friendly language. For times use formats like "1:00 AM" or "around 3 PM". NEVER use ISO timestamps, timezone offsets, or computer date formats. Do not use dashes longer than a hyphen. Return ONLY a JSON array of 3 strings, no other text.',
     );
 
     if (result == null) return [];
@@ -133,11 +133,31 @@ class AiService {
     required Map<String, dynamic> todayData,
     required Map<String, dynamic> yesterdayData,
   }) async {
+    final now = DateTime.now();
+    final hour = now.hour;
+    final timeOfDay = hour < 6
+        ? 'the very early morning'
+        : hour < 12
+            ? 'the morning'
+            : hour < 17
+                ? 'the afternoon'
+                : 'the evening';
+
+    // The cache key carries a data fingerprint: when today's counts change,
+    // a fresh summary is generated instead of serving a stale narrative.
+    final fp =
+        'f${todayData['feedings']}d${todayData['diapers']}s${todayData['sleep_minutes']}';
+
     return _getCachedOrGenerate(
       babyId: babyId,
-      cacheKey: 'daily-summary',
+      cacheKey: 'daily-summary-$fp',
       promptBuilder: () =>
-          'Here is a baby boy named $babyName\'s (gender: $gender) complete data for today: ${jsonEncode(todayData)}. Yesterday\'s data: ${jsonEncode(yesterdayData)}. Generate a friendly, conversational daily summary. Include: total feeds, diapers, sleep hours, comparisons to yesterday, and any notable patterns. Keep it warm and encouraging for new parents. Keep it to 3-4 sentences. IMPORTANT: Use simple, mom-friendly language. For times use formats like "1:00 AM" or "around 3 PM". NEVER use ISO timestamps, timezone offsets, or computer date formats. Always refer to the baby by name instead of saying "the baby". The baby\'s gender is provided in the request - use correct pronouns (he/him for boys, she/her for girls). Do not use dashes longer than a hyphen.',
+          'You are writing a short daily summary for the parents of a baby named $babyName (gender: $gender). '
+          'It is currently $timeOfDay — the day is NOT over yet. '
+          'Data logged SO FAR today: ${jsonEncode(todayData)}. Yesterday\'s full-day data: ${jsonEncode(yesterdayData)}. '
+          'RULES ABOUT HONESTY: Describe only what the data shows. If little has been logged so far, say the day is just getting started — NEVER call a day with zero or near-zero activity "great" or "consistent", and NEVER praise a routine that has no data behind it. '
+          'Only compare against yesterday when today has enough data for the comparison to be fair (e.g. don\'t compare a half-finished day\'s totals against yesterday\'s full day as if something dropped). '
+          'Write 2-4 warm, plain sentences for tired parents. Use simple, mom-friendly language. For times use formats like "1:00 AM" or "around 3 PM". NEVER use ISO timestamps, timezone offsets, or computer date formats. Refer to the baby by name. Use correct pronouns (he/him for boys, she/her for girls). Do not use dashes longer than a hyphen.',
     );
   }
 

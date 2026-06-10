@@ -101,7 +101,7 @@ HistoryEntry _feedingEntry(Feeding feeding) {
       detail =
           feeding.durationMinutes != null ? '${feeding.durationMinutes} min' : '';
     case 'bottle':
-      icon = Icons.baby_changing_station;
+      icon = Icons.local_drink_rounded;
       detail = feeding.amountMl != null ? '${feeding.amountMl} ml' : '';
     case 'solids':
       icon = Icons.restaurant;
