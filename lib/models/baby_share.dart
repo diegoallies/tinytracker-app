@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class BabyShare {
   final String id;
   final String babyId;
@@ -27,7 +28,7 @@ class BabyShare {
       babyId: json['baby_id'] as String,
       userId: json['user_id'] as String,
       role: json['role'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
       userName: json['profiles'] != null
           ? (json['profiles'] as Map<String, dynamic>)['display_name'] as String?
           : null,

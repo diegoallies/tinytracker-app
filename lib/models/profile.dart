@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class Profile {
   final String id;
   final String? email;
@@ -25,7 +26,7 @@ class Profile {
       avatarUrl: json['avatar_url'] as String?,
       phone: json['phone'] as String?,
       bio: json['bio'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 

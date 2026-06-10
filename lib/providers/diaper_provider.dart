@@ -72,7 +72,7 @@ final lastDiaperAtProvider = FutureProvider<DateTime?>((ref) async {
       .maybeSingle();
 
   if (data == null) return null;
-  return DateTime.parse(data['logged_at'] as String);
+  return parseDbTime(data['logged_at'] as String);
 });
 
 class DiaperActions {

@@ -74,3 +74,13 @@ class AppDateUtils {
     return DateTime.now().difference(dob).inDays / 30.44;
   }
 }
+
+/// Parses a database timestamp into LOCAL time. Supabase returns timestamptz
+/// as ISO-8601 in UTC; bare DateTime.parse keeps it UTC, so every formatter
+/// and day-bucket downstream silently shows UTC (2h off in SAST). Date-only
+/// strings carry no zone, parse as local, and toLocal() is then a no-op,
+/// so this is safe for both kinds of column.
+DateTime parseDbTime(String s) => DateTime.parse(s).toLocal();
+
+DateTime? tryParseDbTime(String? s) =>
+    s == null ? null : DateTime.tryParse(s)?.toLocal();

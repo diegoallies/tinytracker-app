@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class HealthLog {
   final String id;
   final String babyId;
@@ -41,8 +42,8 @@ class HealthLog {
       dosage: json['dosage'] as String?,
       symptoms: json['symptoms'] as String?,
       notes: json['notes'] as String?,
-      loggedAt: DateTime.parse(json['logged_at'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
+      loggedAt: parseDbTime(json['logged_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 
@@ -54,6 +55,6 @@ class HealthLog {
     'dosage': dosage,
     'symptoms': symptoms,
     'notes': notes,
-    'logged_at': loggedAt.toIso8601String(),
+    'logged_at': loggedAt.toUtc().toIso8601String(),
   };
 }

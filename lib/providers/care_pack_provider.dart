@@ -6,6 +6,7 @@ import '../models/care_pack_models.dart';
 import '../services/supabase_service.dart';
 import '../utils/care_pack_data.dart';
 import 'baby_provider.dart';
+import '../utils/date_utils.dart';
 
 /// The Care Pack tables ship in supabase/2026-06-10_care_pack.sql. Until that
 /// migration runs, queries fail with undefined-table/column errors; screens
@@ -297,7 +298,7 @@ final weeklyMetricsProvider = FutureProvider.autoDispose
   for (final s in sleeps) {
     final mins = (s['duration_minutes'] as num?)?.toInt() ?? 0;
     if (mins > longestSleepMin) longestSleepMin = mins;
-    final startT = DateTime.parse(s['start_time'] as String).toLocal();
+    final startT = parseDbTime(s['start_time'] as String).toLocal();
     if (startT.hour >= 7 && startT.hour < 19) totalNapMin += mins;
   }
 

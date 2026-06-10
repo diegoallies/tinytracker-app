@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class BabyInvite {
   final String id;
   final String babyId;
@@ -32,10 +33,10 @@ class BabyInvite {
       token: json['token'] as String,
       role: json['role'] as String,
       expiresAt: json['expires_at'] != null
-          ? DateTime.parse(json['expires_at'] as String)
+          ? parseDbTime(json['expires_at'] as String)
           : null,
       usedBy: json['used_by'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 }

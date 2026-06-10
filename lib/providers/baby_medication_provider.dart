@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/baby_medication.dart';
 import '../services/supabase_service.dart';
 import 'baby_provider.dart';
+import '../utils/date_utils.dart';
 
 final babyMedicationsProvider =
     FutureProvider.autoDispose<List<BabyMedication>>((ref) async {
@@ -48,7 +49,7 @@ final medicationDosesTodayProvider =
     if (name == null || name.isEmpty) continue;
     byName
         .putIfAbsent(name, () => [])
-        .add(DateTime.parse(row['logged_at'] as String).toLocal());
+        .add(parseDbTime(row['logged_at'] as String).toLocal());
   }
   return byName;
 });
@@ -85,7 +86,7 @@ final medDoseLogsTodayProvider = FutureProvider.autoDispose
   return data
       .map<MedDoseLog>((row) => MedDoseLog(
             id: row['id'] as String,
-            at: DateTime.parse(row['logged_at'] as String).toLocal(),
+            at: parseDbTime(row['logged_at'] as String).toLocal(),
             dosage: row['dosage'] as String?,
           ))
       .toList();
@@ -222,7 +223,7 @@ class BabyMedicationActions {
 
     return data
         .map<DateTime>(
-            (row) => DateTime.parse(row['logged_at'] as String).toLocal())
+            (row) => parseDbTime(row['logged_at'] as String).toLocal())
         .toList();
   }
 

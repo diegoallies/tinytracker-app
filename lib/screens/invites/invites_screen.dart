@@ -422,7 +422,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
     final babyName = _getBabyName(invite);
     final role = invite['role'] as String? ?? 'viewer';
     final expiresAt = invite['expires_at'] != null
-        ? DateTime.tryParse(invite['expires_at'] as String)
+        ? tryParseDbTime(invite['expires_at'] as String)
         : null;
     final isAccepting = _acceptingIds.contains(inviteId);
 
@@ -574,7 +574,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
     final babyName = _getBabyName(invite);
     final role = invite['role'] as String? ?? 'viewer';
     final expiresAt = invite['expires_at'] != null
-        ? DateTime.tryParse(invite['expires_at'] as String)
+        ? tryParseDbTime(invite['expires_at'] as String)
         : null;
 
     return Padding(

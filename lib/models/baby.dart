@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class Baby {
   final String id;
   final String userId;
@@ -34,10 +35,10 @@ class Baby {
       userId: json['user_id'] as String,
       ownerId: json['owner_id'] as String?,
       name: json['name'] as String,
-      dateOfBirth: DateTime.parse(json['date_of_birth'] as String),
+      dateOfBirth: parseDbTime(json['date_of_birth'] as String),
       gender: json['gender'] as String?,
       photoUrl: json['photo_url'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 

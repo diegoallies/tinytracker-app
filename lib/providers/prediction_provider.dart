@@ -4,6 +4,7 @@ import '../services/prediction_service.dart';
 import '../services/supabase_service.dart';
 import 'baby_provider.dart';
 import 'sleep_provider.dart';
+import '../utils/date_utils.dart';
 
 /// Look-back window for pattern detection.
 const _patternWindow = Duration(days: 7);
@@ -28,7 +29,7 @@ final nextFeedingPredictionProvider =
         .limit(120);
 
     final times = data
-        .map((row) => DateTime.parse(row['logged_at'] as String).toLocal())
+        .map((row) => parseDbTime(row['logged_at'] as String).toLocal())
         .toList();
     return PredictionService.predictNextFromEvents(times);
   } catch (e, st) {
@@ -63,8 +64,8 @@ final nextNapPredictionProvider =
 
     final sessions = data
         .map((row) => (
-              start: DateTime.parse(row['start_time'] as String).toLocal(),
-              end: DateTime.parse(row['end_time'] as String).toLocal(),
+              start: parseDbTime(row['start_time'] as String).toLocal(),
+              end: parseDbTime(row['end_time'] as String).toLocal(),
             ))
         .toList();
     return PredictionService.predictNextNap(sessions);

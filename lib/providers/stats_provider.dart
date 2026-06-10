@@ -87,12 +87,12 @@ final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
     feedCount: feeds.length,
     diaperCount: diapers.length,
     sleepMinutes: sleepMins,
-    lastFeedTime: lastFeed.isNotEmpty ? DateTime.parse(lastFeed[0]['logged_at']) : null,
+    lastFeedTime: lastFeed.isNotEmpty ? parseDbTime(lastFeed[0]['logged_at']) : null,
     lastFeedType: lastFeed.isNotEmpty ? lastFeed[0]['type'] as String? : null,
-    lastDiaperTime: lastDiaper.isNotEmpty ? DateTime.parse(lastDiaper[0]['logged_at']) : null,
+    lastDiaperTime: lastDiaper.isNotEmpty ? parseDbTime(lastDiaper[0]['logged_at']) : null,
     lastDiaperType: lastDiaper.isNotEmpty ? lastDiaper[0]['type'] as String? : null,
     isSleeping: activeSleep.isNotEmpty,
-    sleepStartTime: activeSleep.isNotEmpty ? DateTime.parse(activeSleep[0]['start_time']) : null,
+    sleepStartTime: activeSleep.isNotEmpty ? parseDbTime(activeSleep[0]['start_time']) : null,
     sleepId: activeSleep.isNotEmpty ? activeSleep[0]['id'] as String? : null,
     latestPhotoUrl: latestPhoto.isNotEmpty ? latestPhoto[0]['url'] as String? : null,
   );
@@ -146,7 +146,7 @@ final weeklyDataProvider = FutureProvider<List<WeeklyDataPoint>>((ref) async {
   }
 
   for (final f in feeds) {
-    final dt = DateTime.parse(f['logged_at']);
+    final dt = parseDbTime(f['logged_at']);
     final key = '${dt.year}-${dt.month}-${dt.day}';
     if (days.containsKey(key)) {
       final prev = days[key]!;
@@ -155,7 +155,7 @@ final weeklyDataProvider = FutureProvider<List<WeeklyDataPoint>>((ref) async {
   }
 
   for (final d in diapers) {
-    final dt = DateTime.parse(d['logged_at']);
+    final dt = parseDbTime(d['logged_at']);
     final key = '${dt.year}-${dt.month}-${dt.day}';
     if (days.containsKey(key)) {
       final prev = days[key]!;
@@ -164,7 +164,7 @@ final weeklyDataProvider = FutureProvider<List<WeeklyDataPoint>>((ref) async {
   }
 
   for (final s in sleeps) {
-    final dt = DateTime.parse(s['start_time']);
+    final dt = parseDbTime(s['start_time']);
     final key = '${dt.year}-${dt.month}-${dt.day}';
     if (days.containsKey(key)) {
       final prev = days[key]!;

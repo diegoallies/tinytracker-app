@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class Growth {
   final String id;
   final String babyId;
@@ -29,9 +30,9 @@ class Growth {
       weightKg: (json['weight_kg'] as num?)?.toDouble(),
       heightCm: (json['height_cm'] as num?)?.toDouble(),
       headCm: (json['head_cm'] as num?)?.toDouble(),
-      measuredAt: DateTime.parse(json['measured_at'] as String),
+      measuredAt: parseDbTime(json['measured_at'] as String),
       notes: json['notes'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 
@@ -41,7 +42,7 @@ class Growth {
     'weight_kg': weightKg,
     'height_cm': heightCm,
     'head_cm': headCm,
-    'measured_at': measuredAt.toIso8601String(),
+    'measured_at': measuredAt.toUtc().toIso8601String(),
     'notes': notes,
   };
 }

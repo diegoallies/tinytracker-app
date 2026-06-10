@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class Photo {
   final String id;
   final String babyId;
@@ -25,9 +26,9 @@ class Photo {
       url: json['url'] as String,
       caption: json['caption'] as String?,
       takenAt: json['taken_at'] != null
-          ? DateTime.parse(json['taken_at'] as String)
+          ? parseDbTime(json['taken_at'] as String)
           : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 
@@ -36,6 +37,6 @@ class Photo {
     'user_id': userId,
     'url': url,
     'caption': caption,
-    'taken_at': (takenAt ?? DateTime.now()).toIso8601String(),
+    'taken_at': (takenAt ?? DateTime.now()).toUtc().toIso8601String(),
   };
 }

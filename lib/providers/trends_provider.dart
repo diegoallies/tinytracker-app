@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/supabase_service.dart';
 import 'baby_provider.dart';
+import '../utils/date_utils.dart';
 
 /// One day's aggregated activity for the Trends screen.
 class TrendsDayEntry {
@@ -156,7 +157,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
   var prevMlSum = 0.0, prevMlCount = 0, currMlSum = 0.0, currMlCount = 0;
 
   for (final row in feedings) {
-    final at = DateTime.parse(row['logged_at'] as String).toLocal();
+    final at = parseDbTime(row['logged_at'] as String).toLocal();
     final i = indexFor(at);
     if (i == null) continue;
     final ml = (row['amount_ml'] as num?)?.toDouble();
@@ -174,12 +175,12 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
   }
 
   for (final row in sleeps) {
-    final start = DateTime.parse(row['start_time'] as String).toLocal();
+    final start = parseDbTime(row['start_time'] as String).toLocal();
     final i = indexFor(start);
     if (i == null) continue;
     var minutes = (row['duration_minutes'] as num?)?.toInt() ?? 0;
     if (minutes <= 0 && row['end_time'] != null) {
-      final end = DateTime.parse(row['end_time'] as String).toLocal();
+      final end = parseDbTime(row['end_time'] as String).toLocal();
       minutes = end.difference(start).inMinutes;
     }
     if (minutes <= 0) continue;
@@ -190,7 +191,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
   }
 
   for (final row in diapers) {
-    final at = DateTime.parse(row['logged_at'] as String).toLocal();
+    final at = parseDbTime(row['logged_at'] as String).toLocal();
     final i = indexFor(at);
     if (i == null) continue;
     final type = row['type'] as String?;
@@ -200,7 +201,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
   }
 
   for (final row in reflux) {
-    final at = DateTime.parse(row['logged_at'] as String).toLocal();
+    final at = parseDbTime(row['logged_at'] as String).toLocal();
     final i = indexFor(at);
     if (i == null) continue;
     final severity = (row['severity'] as num?)?.toInt() ?? 0;

@@ -2,6 +2,8 @@
 /// dose from the SA EPI schedule (lib/utils/immunisation_data.dart) as given.
 library;
 
+import '../utils/date_utils.dart';
+
 class Immunisation {
   final String id;
   final String babyId;
@@ -33,10 +35,10 @@ class Immunisation {
       userId: json['user_id'] as String,
       vaccineKey: json['vaccine_key'] as String,
       // Column is enforced NOT NULL, but stay defensive about legacy rows.
-      givenOn: DateTime.parse(
+      givenOn: parseDbTime(
           (json['given_on'] ?? json['created_at']) as String),
       notes: json['notes'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 }

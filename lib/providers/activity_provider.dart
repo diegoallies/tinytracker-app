@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/supabase_service.dart';
 import 'baby_provider.dart';
+import '../utils/date_utils.dart';
 
 class ActivityItem {
   final String id;
@@ -51,7 +52,7 @@ final activityFeedProvider = FutureProvider<List<ActivityItem>>((ref) async {
       id: f['id'],
       type: 'feeding',
       label: label,
-      time: DateTime.parse(f['logged_at']),
+      time: parseDbTime(f['logged_at']),
     ));
   }
 
@@ -61,7 +62,7 @@ final activityFeedProvider = FutureProvider<List<ActivityItem>>((ref) async {
       id: d['id'],
       type: 'diaper',
       label: '${type[0].toUpperCase()}${type.substring(1)} diaper',
-      time: DateTime.parse(d['logged_at']),
+      time: parseDbTime(d['logged_at']),
     ));
   }
 
@@ -75,7 +76,7 @@ final activityFeedProvider = FutureProvider<List<ActivityItem>>((ref) async {
       id: s['id'],
       type: 'sleep',
       label: label,
-      time: DateTime.parse(s['start_time']),
+      time: parseDbTime(s['start_time']),
     ));
   }
 

@@ -79,7 +79,7 @@ class BadgeEvaluator {
     // Sleep streaks: count consecutive days with 8+ hours
     final sleepByDay = <String, int>{};
     for (final s in recentSleeps) {
-      final dt = DateTime.parse(s['start_time']);
+      final dt = parseDbTime(s['start_time']);
       final key = '${dt.year}-${dt.month}-${dt.day}';
       sleepByDay[key] = (sleepByDay[key] ?? 0) + ((s['duration_minutes'] as int?) ?? 0);
     }
@@ -92,7 +92,7 @@ class BadgeEvaluator {
     // Feeding consistency: 6+ feeds/day for 3 consecutive days
     final feedsByDay = <String, int>{};
     for (final f in recentFeedings) {
-      final dt = DateTime.parse(f['logged_at']);
+      final dt = parseDbTime(f['logged_at']);
       final key = '${dt.year}-${dt.month}-${dt.day}';
       feedsByDay[key] = (feedsByDay[key] ?? 0) + 1;
     }
@@ -107,7 +107,7 @@ class BadgeEvaluator {
 
     // Days tracking
     if (firstFeed.isNotEmpty) {
-      final firstDate = DateTime.parse(firstFeed[0]['logged_at']);
+      final firstDate = parseDbTime(firstFeed[0]['logged_at']);
       final daysTracking = now.difference(firstDate).inDays;
       earnedMap['first_week'] = daysTracking >= 7;
       earnedMap['thirty_days'] = daysTracking >= 30;
@@ -115,7 +115,7 @@ class BadgeEvaluator {
 
     // Night owl / early bird
     for (final f in recentFeedings) {
-      final dt = DateTime.parse(f['logged_at']);
+      final dt = parseDbTime(f['logged_at']);
       if (dt.hour >= 0 && dt.hour < 3) earnedMap['night_owl'] = true;
       if (dt.hour >= 3 && dt.hour < 5) earnedMap['early_bird'] = true;
     }

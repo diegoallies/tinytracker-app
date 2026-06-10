@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class Milestone {
   final String id;
   final String babyId;
@@ -35,11 +36,11 @@ class Milestone {
       description: json['description'] as String?,
       achieved: json['achieved'] as bool? ?? false,
       achievedAt: json['achieved_at'] != null
-          ? DateTime.parse(json['achieved_at'] as String)
+          ? parseDbTime(json['achieved_at'] as String)
           : null,
       expectedAgeMonths: json['expected_age_months'] as int? ?? 0,
       photoUrl: json['photo_url'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 
@@ -51,7 +52,7 @@ class Milestone {
     'description': description,
     'expected_age_months': expectedAgeMonths,
     'achieved': achieved,
-    'achieved_at': achievedAt?.toIso8601String(),
+    'achieved_at': achievedAt?.toUtc().toIso8601String(),
   };
 
   Milestone copyWith({

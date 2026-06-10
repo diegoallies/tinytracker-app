@@ -3,6 +3,8 @@
 /// evolve together with supabase/2026-06-10_care_pack.sql.
 library;
 
+import '../utils/date_utils.dart';
+
 class RefluxEvent {
   final String id;
   final String babyId;
@@ -40,8 +42,8 @@ class RefluxEvent {
       archingBack: (json['arching_back'] as bool?) ?? false,
       triggerNoticed: json['trigger_noticed'] as String?,
       notes: json['notes'] as String?,
-      loggedAt: DateTime.parse(json['logged_at'] as String).toLocal(),
-      createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
+      loggedAt: parseDbTime(json['logged_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 }
@@ -80,7 +82,7 @@ class DailyJournal {
       id: json['id'] as String,
       babyId: json['baby_id'] as String,
       userId: json['user_id'] as String,
-      journalDate: DateTime.parse(json['journal_date'] as String),
+      journalDate: parseDbTime(json['journal_date'] as String),
       mood: json['mood'] as String?,
       cramps: json['cramps'] as int?,
       gas: json['gas'] as int?,
@@ -129,7 +131,7 @@ class WeeklyCareReport {
       id: json['id'] as String,
       babyId: json['baby_id'] as String,
       userId: json['user_id'] as String,
-      weekStart: DateTime.parse(json['week_start'] as String),
+      weekStart: parseDbTime(json['week_start'] as String),
       ageStage: json['age_stage'] as String,
       summary: json['summary'] as String?,
       struggles: json['struggles'] as String?,
@@ -138,7 +140,7 @@ class WeeklyCareReport {
       focusAnswers: _stringMap(json['focus_answers']),
       metrics: (json['metrics'] as Map?)?.cast<String, dynamic>() ?? const {},
       submittedAt: json['submitted_at'] != null
-          ? DateTime.parse(json['submitted_at'] as String).toLocal()
+          ? parseDbTime(json['submitted_at'] as String)
           : null,
     );
   }
@@ -173,7 +175,7 @@ class MonthlyReview {
       id: json['id'] as String,
       babyId: json['baby_id'] as String,
       userId: json['user_id'] as String,
-      reviewMonth: DateTime.parse(json['review_month'] as String),
+      reviewMonth: parseDbTime(json['review_month'] as String),
       ageStage: json['age_stage'] as String,
       checklist: WeeklyCareReport._stringMap(json['checklist']),
       comments: json['comments'] as String?,

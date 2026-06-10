@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class Diaper {
   final String id;
   final String babyId;
@@ -36,8 +37,8 @@ class Diaper {
       type: json['type'] as String,
       color: json['color'] as String?,
       notes: json['notes'] as String?,
-      loggedAt: DateTime.parse(json['logged_at'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
+      loggedAt: parseDbTime(json['logged_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 
@@ -47,6 +48,6 @@ class Diaper {
     'type': type,
     'color': color,
     'notes': notes,
-    'logged_at': loggedAt.toIso8601String(),
+    'logged_at': loggedAt.toUtc().toIso8601String(),
   };
 }

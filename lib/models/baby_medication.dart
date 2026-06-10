@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class BabyMedication {
   final String id;
   final String babyId;
@@ -40,7 +41,7 @@ class BabyMedication {
       asNeeded: json['as_needed'] as bool? ?? false,
       minIntervalHours: _toDouble(json['min_interval_hours']),
       instructions: json['instructions'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 

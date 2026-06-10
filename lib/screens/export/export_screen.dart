@@ -521,7 +521,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   String _formatPdfDate(dynamic dateStr) {
     if (dateStr == null) return '-';
     try {
-      final dt = DateTime.parse(dateStr.toString());
+      final dt = parseDbTime(dateStr.toString());
       return AppDateUtils.formatDate(dt);
     } catch (_) {
       return dateStr.toString();
@@ -531,7 +531,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   String _formatPdfTime(dynamic dateStr) {
     if (dateStr == null) return '-';
     try {
-      final dt = DateTime.parse(dateStr.toString());
+      final dt = parseDbTime(dateStr.toString());
       return AppDateUtils.formatTime(dt);
     } catch (_) {
       return dateStr.toString();

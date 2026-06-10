@@ -73,7 +73,7 @@ final recentFeedingsWithMedsProvider =
 
     final meds = medsData
         .map((m) => (
-              loggedAt: DateTime.parse(m['logged_at'] as String),
+              loggedAt: parseDbTime(m['logged_at'] as String),
               medication: m['medication'] as String?,
               dosage: m['dosage'] as String?,
             ))

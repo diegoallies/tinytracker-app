@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class Feeding {
   final String id;
   final String babyId;
@@ -40,8 +41,8 @@ class Feeding {
       durationMinutes: json['duration_minutes'] as int?,
       amountMl: json['amount_ml'] as int?,
       notes: json['notes'] as String?,
-      loggedAt: DateTime.parse(json['logged_at'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
+      loggedAt: parseDbTime(json['logged_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 
@@ -52,6 +53,6 @@ class Feeding {
     'duration_minutes': durationMinutes,
     'amount_ml': amountMl,
     'notes': notes,
-    'logged_at': loggedAt.toIso8601String(),
+    'logged_at': loggedAt.toUtc().toIso8601String(),
   };
 }

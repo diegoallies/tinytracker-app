@@ -1,3 +1,4 @@
+import '../utils/date_utils.dart';
 class SleepSession {
   final String id;
   final String babyId;
@@ -38,21 +39,21 @@ class SleepSession {
       id: json['id'] as String,
       babyId: json['baby_id'] as String,
       userId: json['user_id'] as String,
-      startTime: DateTime.parse(json['start_time'] as String),
+      startTime: parseDbTime(json['start_time'] as String),
       endTime: json['end_time'] != null
-          ? DateTime.parse(json['end_time'] as String)
+          ? parseDbTime(json['end_time'] as String)
           : null,
       durationMinutes: json['duration_minutes'] as int?,
       quality: json['quality'] as String?,
       wakeCount: json['wake_count'] as int?,
       notes: json['notes'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: parseDbTime(json['created_at'] as String),
     );
   }
 
   Map<String, dynamic> toInsertJson() => {
     'baby_id': babyId,
     'user_id': userId,
-    'start_time': startTime.toIso8601String(),
+    'start_time': startTime.toUtc().toIso8601String(),
   };
 }
