@@ -192,7 +192,8 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/dashboard'),
         ),
         title: const Text(
           'Diaper',

@@ -7,6 +7,7 @@ import '../../providers/baby_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
+import '../../utils/role_labels.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
@@ -476,7 +477,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
                         Icon(_roleIcon(role), size: 14, color: _roleIconColor(role)),
                         const SizedBox(width: 6),
                         Text(
-                          role.capitalize,
+                          roleDisplayName(role),
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -616,7 +617,7 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
                                   size: 12, color: _roleIconColor(role)),
                               const SizedBox(width: 4),
                               Text(
-                                role.capitalize,
+                                roleDisplayName(role),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,

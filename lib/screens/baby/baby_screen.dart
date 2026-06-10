@@ -12,6 +12,7 @@ import '../../models/baby_share.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
+import '../../utils/role_labels.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
@@ -294,7 +295,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                   ),
                   const SizedBox(height: 20),
                   _RoleOption(
-                    label: 'Nanny / Caregiver',
+                    label: 'Nanny',
                     description: 'Can log feedings, diapers, sleep (no meds)',
                     icon: Icons.child_care_rounded,
                     color: AppColors.pastelPink,
@@ -304,7 +305,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                   ),
                   const SizedBox(height: 8),
                   _RoleOption(
-                    label: 'Family Member',
+                    label: 'Family',
                     description: 'Can add entries and give medication',
                     icon: Icons.family_restroom_rounded,
                     color: AppColors.pastelBlue,
@@ -452,7 +453,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                   ),
                   const SizedBox(height: 12),
                   _RoleOption(
-                    label: 'Nanny / Caregiver',
+                    label: 'Nanny',
                     description: 'Can log feedings, diapers, sleep (no meds)',
                     icon: Icons.child_care_rounded,
                     color: AppColors.pastelPink,
@@ -462,7 +463,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                   ),
                   const SizedBox(height: 8),
                   _RoleOption(
-                    label: 'Family Member',
+                    label: 'Family',
                     description: 'Can add entries and give medication',
                     icon: Icons.family_restroom_rounded,
                     color: AppColors.pastelBlue,
@@ -1022,7 +1023,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                                         ),
                                       ),
                                       Text(
-                                        share.userEmail ?? share.role.capitalize,
+                                        share.userEmail ?? roleDisplayName(share.role),
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: context.palette.muted,
@@ -1048,7 +1049,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          share.role.capitalize,
+                                          roleDisplayName(share.role),
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,

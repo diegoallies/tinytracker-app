@@ -170,7 +170,8 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/dashboard'),
         ),
         title: const Text(
           'Sleep',

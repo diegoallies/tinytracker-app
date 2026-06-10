@@ -20,6 +20,10 @@ class AppScaffold extends ConsumerWidget {
     ref.watch(pendingWritesFlusherProvider);
 
     return Scaffold(
+      // The shell must NOT resize for the keyboard — every screen inside has
+      // its own Scaffold that already does. Both resizing at once collapses
+      // the page to just the focused field over a void.
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
           const OfflineBanner(),
