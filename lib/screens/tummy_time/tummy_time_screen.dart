@@ -55,6 +55,52 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
     });
   }
 
+  /// Start the timer from an earlier time today (baby's already been on
+  /// their tummy a while) - mirrors the sleep screen's "Start earlier".
+  Future<void> _handleStartEarlier() async {
+    final baby = ref.read(selectedBabyProvider);
+    if (baby == null) return;
+
+    final now = DateTime.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(
+          now.subtract(const Duration(minutes: 10))),
+      helpText: 'When did tummy time start?',
+    );
+    if (picked == null || !mounted) return;
+
+    final start =
+        DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+    if (start.isAfter(now)) {
+      context.showErrorSnackBar('Start time can\'t be in the future.');
+      return;
+    }
+
+    Haptics.mediumTap();
+    setState(() => _isStarting = true);
+    try {
+      final session =
+          await TummyTimeActions.startAt(babyId: baby.id, start: start);
+      if (session != null && mounted) {
+        setState(() {
+          _activeSessionId = session.id;
+          _sessionStartTime = session.startTime;
+        });
+        _startTimer();
+      }
+    } catch (e) {
+      if (mounted) {
+        context.showErrorSnackBar(
+          'Couldn\'t start the session. Check your connection and try again.',
+          onRetry: _handleStartEarlier,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isStarting = false);
+    }
+  }
+
   Future<void> _handleStart() async {
     final baby = ref.read(selectedBabyProvider);
     if (baby == null) return;
@@ -637,7 +683,45 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: (isRunning || _isStarting)
+                            ? null
+                            : _handleStartEarlier,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.history_rounded, size: 18),
+                              SizedBox(width: 4),
+                              Text(
+                                'Start earlier',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: SizedBox(
                       height: 52,
@@ -663,7 +747,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
                               Text(
                                 'Log past',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

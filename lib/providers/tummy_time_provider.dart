@@ -97,6 +97,28 @@ class TummyTimeActions {
     return TummyTime.fromJson(data);
   }
 
+  /// Start an active session with an explicit (backdated) start time -
+  /// for when baby has already been on their tummy a while.
+  static Future<TummyTime?> startAt({
+    required String babyId,
+    required DateTime start,
+  }) async {
+    final userId = SupabaseService.userId;
+    if (userId == null) return null;
+
+    if (start.isAfter(DateTime.now())) {
+      throw ArgumentError('Start time cannot be in the future');
+    }
+
+    final data = await SupabaseService.client.from('tummy_times').insert({
+      'baby_id': babyId,
+      'user_id': userId,
+      'start_time': start.toUtc().toIso8601String(),
+    }).select().single();
+
+    return TummyTime.fromJson(data);
+  }
+
   static Future<void> stop(String tummyTimeId, DateTime startTime) async {
     final now = DateTime.now();
     final duration = now.difference(startTime).inMinutes;
