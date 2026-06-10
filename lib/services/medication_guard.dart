@@ -38,8 +38,9 @@ class MedicationGuard {
       // Scheduled meds: already at (or over) today's count.
       final freq = med.frequencyPerDay;
       if (freq != null && dosesToday.length >= freq) {
-        final schedule = med.instructions ??
-            (freq == 1 ? 'once a day' : '${freq}x a day');
+        // Always the canonical phrase — `instructions` is free text and
+        // reads badly mid-sentence.
+        final schedule = freq == 1 ? 'once a day' : '$freq× a day';
         final n = dosesToday.length;
         warnings.add(
           '"${med.name}" is $schedule — already given $n '
@@ -48,17 +49,24 @@ class MedicationGuard {
         );
       }
 
-      // Minimum gap between doses (scheduled or as-needed).
+      // Minimum gap between doses (scheduled or as-needed). For backdated
+      // logging, the gap is measured to the nearest dose BEFORE the chosen
+      // time — a later dose shouldn't produce a negative-gap warning here.
       final gap = med.minIntervalHours;
       if (gap != null) {
         final last = await BabyMedicationActions.lastDose(babyId, med.name);
-        if (last != null) {
-          final elapsed = now.difference(last);
+        final lastBefore = last != null && !last.isAfter(now)
+            ? last
+            : (dosesToday.where((d) => !d.isAfter(now)).isEmpty
+                ? null
+                : dosesToday.firstWhere((d) => !d.isAfter(now)));
+        if (lastBefore != null) {
+          final elapsed = now.difference(lastBefore);
           if (elapsed < Duration(minutes: (gap * 60).round())) {
             final hoursAgo =
                 (elapsed.inMinutes / 60).clamp(0, double.infinity);
             warnings.add(
-              '"${med.name}" was given at ${_timeFmt.format(last)} — '
+              '"${med.name}" was given at ${_timeFmt.format(lastBefore)} — '
               'that\'s only ${_fmtHours(hoursAgo)}h ago. '
               'The minimum gap is ${_fmtHours(gap)} hours.',
             );
@@ -66,13 +74,16 @@ class MedicationGuard {
         }
       }
 
-      // As-needed meds: cap on doses in any rolling 24h window.
+      // As-needed meds: cap on doses in the 24h window ending at the dose
+      // time being checked.
       if (med.asNeeded) {
-        final recent = await BabyMedicationActions.dosesSince(
+        final recent = (await BabyMedicationActions.dosesSince(
           babyId,
           med.name,
           now.subtract(const Duration(hours: 24)),
-        );
+        ))
+            .where((d) => !d.isAfter(now))
+            .toList();
         if (recent.length >= _asNeededMaxPer24h) {
           warnings.add(
             '"${med.name}" has already been given ${recent.length} times '

@@ -41,6 +41,7 @@ class DoctorReportService {
             .from(table)
             .select('*')
             .eq('baby_id', baby.id)
+            .isFilter('deleted_at', null)
             .gte(timeCol, sinceValue)
             .order(timeCol, ascending: true);
         return List<Map<String, dynamic>>.from(data);

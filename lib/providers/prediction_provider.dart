@@ -21,6 +21,7 @@ final nextFeedingPredictionProvider =
         .from('feedings')
         .select('logged_at')
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .gte('logged_at', since.toUtc().toIso8601String())
         // Descending so the limit drops the OLDEST events when over the cap.
         .order('logged_at', ascending: false)
@@ -54,6 +55,7 @@ final nextNapPredictionProvider =
         .select('start_time, end_time')
         .eq('baby_id', baby.id)
         .not('end_time', 'is', null)
+        .isFilter('deleted_at', null)
         .gte('start_time', since.toUtc().toIso8601String())
         // Descending so the limit drops the OLDEST sessions when over the cap.
         .order('start_time', ascending: false)

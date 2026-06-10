@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tinytrack_app/main.dart' as app;
+import 'package:tinytrack_app/widgets/common/night_mode_toggle.dart';
 import 'package:tinytrack_app/widgets/layout/bottom_nav_bar.dart';
 
 const _email = 'smoketest@tinytrack.dev';
@@ -95,7 +96,8 @@ void main() {
     await shot(tester, 'light_dashboard');
 
     // Flip to DARK MODE so the whole walk verifies dark-mode rendering.
-    final nightToggle = find.byIcon(Icons.nightlight_round);
+    // byType, not byIcon — four other widgets use the nightlight icon.
+    final nightToggle = find.byType(NightModeToggle);
     if (nightToggle.evaluate().isNotEmpty) {
       await tester.tap(nightToggle.first, warnIfMissed: false);
       await settleABit(tester, const Duration(seconds: 1));
@@ -210,8 +212,51 @@ void main() {
     expect(tester.takeException(), isNull,
         reason: 'journal save should not throw');
 
-    // Land back on the dashboard to finish.
+    // ----- Extended dark-mode coverage -----
+
+    // Profile tab.
+    await tapTab('Profile');
+    expect(tester.takeException(), isNull, reason: 'profile should render');
+    await shot(tester, 'dark_profile');
+
+    // Feeding history (Feed tab → View all).
+    await tapTab('Feed');
+    final viewAll = find.text('View all');
+    if (viewAll.evaluate().isNotEmpty) {
+      await tester.tap(viewAll.first, warnIfMissed: false);
+      await settleABit(tester, const Duration(seconds: 2));
+      expect(tester.takeException(), isNull,
+          reason: 'history screen should render');
+      await shot(tester, 'dark_history_feeding');
+      final back = find.byType(BackButton);
+      if (back.evaluate().isNotEmpty) {
+        await tester.tap(back.first, warnIfMissed: false);
+        await settleABit(tester, const Duration(seconds: 1));
+      }
+    }
+
+    // Quick-log sheet from the dashboard FAB.
     await tapTab('Home');
+    final fab = find.byType(FloatingActionButton);
+    if (fab.evaluate().isNotEmpty) {
+      await tester.tap(fab.first, warnIfMissed: false);
+      await settleABit(tester, const Duration(seconds: 1));
+      expect(tester.takeException(), isNull,
+          reason: 'quick-log sheet should render');
+      await shot(tester, 'dark_quicklog');
+      // Dismiss the sheet.
+      await tester.tapAt(const Offset(20, 80));
+      await settleABit(tester, const Duration(seconds: 1));
+    }
+
+    // Sign out via Supabase directly and screenshot the dark login screen.
+    try {
+      await Supabase.instance.client.auth.signOut();
+    } catch (_) {}
+    await settleABit(tester, const Duration(seconds: 2));
+    if (find.widgetWithText(TextField, 'Email').evaluate().isNotEmpty) {
+      await shot(tester, 'dark_login');
+    }
     expect(tester.takeException(), isNull);
   });
 }

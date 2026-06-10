@@ -61,30 +61,35 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             .from('feedings')
             .select()
             .eq('baby_id', baby.id)
+            .isFilter('deleted_at', null)
             .gte('created_at', startDate)
             .order('created_at', ascending: false),
         supabase
             .from('diapers')
             .select()
             .eq('baby_id', baby.id)
+            .isFilter('deleted_at', null)
             .gte('created_at', startDate)
             .order('created_at', ascending: false),
         supabase
             .from('sleeps')
             .select()
             .eq('baby_id', baby.id)
+            .isFilter('deleted_at', null)
             .gte('created_at', startDate)
             .order('created_at', ascending: false),
         supabase
             .from('growth')
             .select()
             .eq('baby_id', baby.id)
+            .isFilter('deleted_at', null)
             .gte('created_at', startDate)
             .order('created_at', ascending: false),
         supabase
             .from('health_logs')
             .select()
             .eq('baby_id', baby.id)
+            .isFilter('deleted_at', null)
             .gte('created_at', startDate)
             .order('created_at', ascending: false),
       ]);

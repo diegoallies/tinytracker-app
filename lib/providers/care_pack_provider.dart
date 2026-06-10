@@ -73,6 +73,7 @@ final recentRefluxEventsProvider =
         .from('reflux_events')
         .select('*')
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .gte('logged_at', since.toUtc().toIso8601String())
         .order('logged_at', ascending: false);
     return data.map<RefluxEvent>(RefluxEvent.fromJson).toList();
@@ -107,7 +108,9 @@ class RefluxActions {
   }
 
   static Future<void> delete(String id) async {
-    await SupabaseService.client.from('reflux_events').delete().eq('id', id);
+    await SupabaseService.client.from('reflux_events').update({
+      'deleted_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
   }
 }
 
@@ -127,6 +130,7 @@ final journalForDateProvider =
         .select('*')
         .eq('baby_id', baby.id)
         .eq('journal_date', _dateString(date))
+        .isFilter('deleted_at', null)
         .limit(1);
     if (rows.isEmpty) return null;
     return DailyJournal.fromJson(rows.first);
@@ -145,6 +149,7 @@ final recentJournalsProvider =
         .from('daily_journals')
         .select('*')
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .order('journal_date', ascending: false)
         .limit(14);
     return data.map<DailyJournal>(DailyJournal.fromJson).toList();
@@ -181,6 +186,8 @@ class JournalActions {
         'new_things': _orNull(newThings),
         'upsets': _orNull(upsets),
         'notes': _orNull(notes),
+        // Resurrect a soft-deleted journal occupying this unique key.
+        'deleted_at': null,
       },
       onConflict: 'baby_id,journal_date',
     );
@@ -206,6 +213,7 @@ final weeklyReportProvider =
         .select('*')
         .eq('baby_id', baby.id)
         .eq('week_start', _dateString(weekStartOf(anchor)))
+        .isFilter('deleted_at', null)
         .limit(1);
     if (rows.isEmpty) return null;
     return WeeklyCareReport.fromJson(rows.first);
@@ -224,6 +232,7 @@ final pastWeeklyReportsProvider =
         .from('weekly_reports')
         .select('*')
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .order('week_start', ascending: false)
         .limit(12);
     return data.map<WeeklyCareReport>(WeeklyCareReport.fromJson).toList();
@@ -253,6 +262,7 @@ final weeklyMetricsProvider = FutureProvider.autoDispose
           .from(table)
           .select(cols)
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte(timeCol, startIso)
           .lt(timeCol, endIso);
       return List<Map<String, dynamic>>.from(data);
@@ -339,6 +349,8 @@ class WeeklyReportActions {
         'focus_answers': ?focusAnswers,
         'metrics': ?metrics,
         if (submit) 'submitted_at': DateTime.now().toUtc().toIso8601String(),
+        // Resurrect a soft-deleted report occupying this unique key.
+        'deleted_at': null,
       },
       onConflict: 'baby_id,week_start',
     );
@@ -360,6 +372,7 @@ final monthlyReviewProvider =
         .select('*')
         .eq('baby_id', baby.id)
         .eq('review_month', _dateString(DateTime(month.year, month.month, 1)))
+        .isFilter('deleted_at', null)
         .limit(1);
     if (rows.isEmpty) return null;
     return MonthlyReview.fromJson(rows.first);
@@ -378,6 +391,7 @@ final pastMonthlyReviewsProvider =
         .from('monthly_reviews')
         .select('*')
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .order('review_month', ascending: false)
         .limit(12);
     return data.map<MonthlyReview>(MonthlyReview.fromJson).toList();
@@ -404,6 +418,8 @@ class MonthlyReviewActions {
         'age_stage': ageStage,
         'checklist': checklist,
         'comments': JournalActions._orNull(comments),
+        // Resurrect a soft-deleted review occupying this unique key.
+        'deleted_at': null,
       },
       onConflict: 'baby_id,review_month',
     );
@@ -424,6 +440,7 @@ final emergencyContactsProvider =
         .from('emergency_contacts')
         .select('*')
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .order('sort_order');
     return data.map<EmergencyContact>(EmergencyContact.fromJson).toList();
   } catch (e, st) {
@@ -482,7 +499,7 @@ class EmergencyContactActions {
   static Future<void> delete(String id) async {
     await SupabaseService.client
         .from('emergency_contacts')
-        .delete()
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
 }

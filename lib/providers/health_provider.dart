@@ -11,6 +11,7 @@ final healthLogsProvider = FutureProvider.autoDispose<List<HealthLog>>((ref) asy
       .from('health_logs')
       .select()
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .order('logged_at', ascending: false)
       .limit(20);
 

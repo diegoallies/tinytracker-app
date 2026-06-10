@@ -17,6 +17,7 @@ final recentFeedingsProvider = FutureProvider<List<Feeding>>((ref) async {
         .from('feedings')
         .select('*')
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .order('logged_at', ascending: false)
         .limit(10);
 
@@ -66,6 +67,7 @@ final recentFeedingsWithMedsProvider =
         .select('logged_at, medication, dosage')
         .eq('baby_id', baby.id)
         .not('medication', 'is', null)
+        .isFilter('deleted_at', null)
         .gte('logged_at', earliest.toUtc().toIso8601String())
         .lte('logged_at', latest.toUtc().toIso8601String());
 
@@ -105,6 +107,7 @@ final todayFeedCountProvider = FutureProvider<int>((ref) async {
       .from('feedings')
       .select('id')
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .gte('logged_at', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   return data.length;
@@ -182,7 +185,7 @@ class FeedingActions {
   static Future<void> deleteFeeding(String feedingId) async {
     await SupabaseService.client
         .from('feedings')
-        .delete()
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', feedingId);
   }
 }

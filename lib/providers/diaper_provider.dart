@@ -15,6 +15,7 @@ final recentDiapersProvider = FutureProvider<List<Diaper>>((ref) async {
       .from('diapers')
       .select('*')
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .order('logged_at', ascending: false)
       .limit(10);
 
@@ -29,6 +30,7 @@ final todayDiaperCountProvider = FutureProvider<int>((ref) async {
       .from('diapers')
       .select('id')
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .gte('logged_at', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   return data.length;
@@ -42,6 +44,7 @@ final todayDiaperStatsProvider = FutureProvider<Map<String, int>>((ref) async {
       .from('diapers')
       .select('type')
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .gte('logged_at', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   int wet = 0, dirty = 0, both = 0;
@@ -63,6 +66,7 @@ final lastDiaperAtProvider = FutureProvider<DateTime?>((ref) async {
       .from('diapers')
       .select('logged_at')
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .order('logged_at', ascending: false)
       .limit(1)
       .maybeSingle();
@@ -123,7 +127,7 @@ class DiaperActions {
   static Future<void> deleteDiaper(String diaperId) async {
     await SupabaseService.client
         .from('diapers')
-        .delete()
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', diaperId);
   }
 }

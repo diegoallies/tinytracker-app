@@ -39,6 +39,7 @@ final activeTummyTimeProvider = FutureProvider.autoDispose<TummyTime?>((ref) asy
       .select()
       .eq('baby_id', baby.id)
       .isFilter('end_time', null)
+      .isFilter('deleted_at', null)
       .order('start_time', ascending: false)
       .limit(1)
       .maybeSingle();
@@ -56,6 +57,7 @@ final recentTummyTimesProvider = FutureProvider.autoDispose<List<TummyTime>>((re
       .select()
       .eq('baby_id', baby.id)
       .not('end_time', 'is', null)
+      .isFilter('deleted_at', null)
       .order('start_time', ascending: false)
       .limit(10);
 
@@ -71,6 +73,7 @@ final todayTummyTimeMinutesProvider = FutureProvider.autoDispose<int>((ref) asyn
       .select('duration_minutes')
       .eq('baby_id', baby.id)
       .not('end_time', 'is', null)
+      .isFilter('deleted_at', null)
       .gte('start_time', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   int total = 0;
@@ -105,7 +108,9 @@ class TummyTimeActions {
   }
 
   static Future<void> delete(String id) async {
-    await SupabaseService.client.from('tummy_times').delete().eq('id', id);
+    await SupabaseService.client.from('tummy_times').update({
+      'deleted_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
   }
 
   /// Insert a completed session with explicit start/end times (for backdating).

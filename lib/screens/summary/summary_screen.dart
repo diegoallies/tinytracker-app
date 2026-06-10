@@ -61,6 +61,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .from('feedings')
           .select('id')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('created_at', todayStart.toUtc().toIso8601String())
           .lte('created_at', now);
 
@@ -68,6 +69,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .from('diapers')
           .select('id')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('created_at', todayStart.toUtc().toIso8601String())
           .lte('created_at', now);
 
@@ -75,6 +77,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .from('sleeps')
           .select('duration_minutes')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('created_at', todayStart.toUtc().toIso8601String())
           .lte('created_at', now);
 
@@ -83,6 +86,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .from('feedings')
           .select('id')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('created_at', yesterdayStart.toUtc().toIso8601String())
           .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
 
@@ -90,6 +94,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .from('diapers')
           .select('id')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('created_at', yesterdayStart.toUtc().toIso8601String())
           .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
 
@@ -97,6 +102,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           .from('sleeps')
           .select('duration_minutes')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('created_at', yesterdayStart.toUtc().toIso8601String())
           .lte('created_at', yesterdayEnd.toUtc().toIso8601String());
 

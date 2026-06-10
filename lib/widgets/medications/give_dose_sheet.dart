@@ -81,6 +81,12 @@ class _GiveDoseSheetState extends ConsumerState<GiveDoseSheet> {
         ? now
         : DateTime(now.year, now.month, now.day, t.hour, t.minute);
 
+    // A future time would slip past the min-gap guard entirely.
+    if (at.isAfter(now)) {
+      context.showErrorSnackBar('Dose time can’t be in the future.');
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       // Dose-safety check before anything is inserted.

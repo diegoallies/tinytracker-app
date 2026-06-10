@@ -43,13 +43,17 @@ class _SmartInsightsState extends State<SmartInsights> {
       // Fetch week data
       final results = await Future.wait([
         client.from('feedings').select('type, logged_at, duration_minutes, amount_ml')
-            .eq('baby_id', widget.babyId).gte('logged_at', weekAgo),
+            .eq('baby_id', widget.babyId).isFilter('deleted_at', null)
+            .gte('logged_at', weekAgo),
         client.from('diapers').select('type, color, logged_at')
-            .eq('baby_id', widget.babyId).gte('logged_at', weekAgo),
+            .eq('baby_id', widget.babyId).isFilter('deleted_at', null)
+            .gte('logged_at', weekAgo),
         client.from('sleeps').select('start_time, end_time, duration_minutes')
-            .eq('baby_id', widget.babyId).gte('start_time', weekAgo),
+            .eq('baby_id', widget.babyId).isFilter('deleted_at', null)
+            .gte('start_time', weekAgo),
         client.from('growth').select('weight_kg, height_cm, measured_at')
-            .eq('baby_id', widget.babyId).gte('measured_at', weekAgo),
+            .eq('baby_id', widget.babyId).isFilter('deleted_at', null)
+            .gte('measured_at', weekAgo),
       ]);
 
       final totalEvents = (results[0] as List).length +
@@ -79,6 +83,7 @@ class _SmartInsightsState extends State<SmartInsights> {
             .from('reflux_events')
             .select('severity, painful_crying')
             .eq('baby_id', widget.babyId)
+            .isFilter('deleted_at', null)
             .gte('logged_at', weekAgo);
         if (reflux.isNotEmpty) {
           weekData['reflux'] = {
@@ -101,6 +106,7 @@ class _SmartInsightsState extends State<SmartInsights> {
             .from('daily_journals')
             .select('cramps, gas')
             .eq('baby_id', widget.babyId)
+            .isFilter('deleted_at', null)
             .gte('journal_date', startDate);
         final diapers = results[1] as List;
         final digestion = <String, dynamic>{
@@ -120,6 +126,7 @@ class _SmartInsightsState extends State<SmartInsights> {
               .from('diapers')
               .select('stool_type')
               .eq('baby_id', widget.babyId)
+              .isFilter('deleted_at', null)
               .gte('logged_at', weekAgo)
               .not('stool_type', 'is', null);
           digestion['stool_types_seen'] = stools
@@ -136,6 +143,7 @@ class _SmartInsightsState extends State<SmartInsights> {
             .from('feedings')
             .select('quality, had_spitup')
             .eq('baby_id', widget.babyId)
+            .isFilter('deleted_at', null)
             .gte('logged_at', weekAgo);
         final qualities = [
           for (final f in feeds)

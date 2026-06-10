@@ -38,6 +38,7 @@ final immunisationsProvider =
         .from('immunisations')
         .select('*')
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .order('given_on', ascending: true);
     return data.map<Immunisation>(Immunisation.fromJson).toList();
   } catch (e, st) {
@@ -63,6 +64,8 @@ class ImmunisationActions {
         'vaccine_key': vaccineKey,
         'given_on': _dateString(givenOn),
         'notes': _orNull(notes),
+        // Resurrect a soft-deleted record occupying this unique key.
+        'deleted_at': null,
       },
       onConflict: 'baby_id,vaccine_key',
     );
@@ -75,7 +78,7 @@ class ImmunisationActions {
   }) async {
     await SupabaseService.client
         .from('immunisations')
-        .delete()
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('baby_id', babyId)
         .eq('vaccine_key', vaccineKey);
   }

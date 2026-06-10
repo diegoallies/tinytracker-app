@@ -56,6 +56,7 @@ final historyPageProvider = FutureProvider.autoDispose
           .from('feedings')
           .select('*')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .order('logged_at', ascending: false)
           .range(from, to);
       return data
@@ -67,6 +68,7 @@ final historyPageProvider = FutureProvider.autoDispose
           .from('diapers')
           .select('*')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .order('logged_at', ascending: false)
           .range(from, to);
       return data
@@ -80,6 +82,7 @@ final historyPageProvider = FutureProvider.autoDispose
           .select('*')
           .eq('baby_id', baby.id)
           .not('end_time', 'is', null)
+          .isFilter('deleted_at', null)
           .order('start_time', ascending: false)
           .range(from, to);
       return data

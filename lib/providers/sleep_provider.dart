@@ -13,6 +13,7 @@ final activeSleepProvider = FutureProvider<SleepSession?>((ref) async {
       .select()
       .eq('baby_id', baby.id)
       .isFilter('end_time', null)
+      .isFilter('deleted_at', null)
       .order('start_time', ascending: false)
       .limit(1)
       .maybeSingle();
@@ -30,6 +31,7 @@ final recentSleepsProvider = FutureProvider<List<SleepSession>>((ref) async {
       .select('*')
       .eq('baby_id', baby.id)
       .not('end_time', 'is', null)
+      .isFilter('deleted_at', null)
       .order('start_time', ascending: false)
       .limit(10);
 
@@ -45,6 +47,7 @@ final todaySleepMinutesProvider = FutureProvider<int>((ref) async {
       .select('duration_minutes')
       .eq('baby_id', baby.id)
       .not('end_time', 'is', null)
+      .isFilter('deleted_at', null)
       .gte('start_time', AppDateUtils.todayStart.toUtc().toIso8601String());
 
   int total = 0;
@@ -81,7 +84,7 @@ class SleepActions {
   static Future<void> deleteSleep(String sleepId) async {
     await SupabaseService.client
         .from('sleeps')
-        .delete()
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', sleepId);
   }
 

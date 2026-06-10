@@ -48,17 +48,22 @@ class BadgeEvaluator {
     final results = await Future.wait([
       // Feedings last 14 days
       client.from('feedings').select('logged_at').eq('baby_id', babyId)
+          .isFilter('deleted_at', null)
           .gte('logged_at', fourteenDaysAgo),
       // Sleeps last 14 days
       client.from('sleeps').select('start_time, duration_minutes').eq('baby_id', babyId)
           .not('end_time', 'is', null)
+          .isFilter('deleted_at', null)
           .gte('start_time', fourteenDaysAgo),
       // Total feeds ever
-      client.from('feedings').select('id').eq('baby_id', babyId),
+      client.from('feedings').select('id').eq('baby_id', babyId)
+          .isFilter('deleted_at', null),
       // Total diapers ever
-      client.from('diapers').select('id').eq('baby_id', babyId),
+      client.from('diapers').select('id').eq('baby_id', babyId)
+          .isFilter('deleted_at', null),
       // First activity date (oldest feed)
       client.from('feedings').select('logged_at').eq('baby_id', babyId)
+          .isFilter('deleted_at', null)
           .order('logged_at', ascending: true).limit(1),
     ]);
 

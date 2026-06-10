@@ -58,7 +58,9 @@ class BabyNotifier extends StateNotifier<BabyState> {
       final sharesData = await _client
           .from('baby_shares')
           .select('*, babies(*)')
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          // Soft-deleted babies come back as a null embed and are skipped below.
+          .isFilter('babies.deleted_at', null);
 
       final babies = <Baby>[];
       String? role;

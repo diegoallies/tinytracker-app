@@ -107,6 +107,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
           .from('feedings')
           .select('logged_at, amount_ml')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('logged_at', startIso));
 
   Future<List<Map<String, dynamic>>> sleepsQuery() async =>
@@ -115,6 +116,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
           .select('start_time, end_time, duration_minutes')
           .eq('baby_id', baby.id)
           .not('end_time', 'is', null)
+          .isFilter('deleted_at', null)
           .gte('start_time', startIso));
 
   Future<List<Map<String, dynamic>>> diapersQuery() async =>
@@ -122,6 +124,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
           .from('diapers')
           .select('logged_at, type')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('logged_at', startIso));
 
   Future<List<Map<String, dynamic>>> refluxQuery() async {
@@ -130,6 +133,7 @@ final trendsDataProvider = FutureProvider.autoDispose<TrendsData>((ref) async {
           .from('reflux_events')
           .select('logged_at, severity')
           .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
           .gte('logged_at', startIso));
     } catch (e) {
       // Table may predate the Care Pack migration — treat as "no events".

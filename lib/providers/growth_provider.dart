@@ -11,6 +11,7 @@ final growthEntriesProvider = FutureProvider.autoDispose<List<Growth>>((ref) asy
       .from('growth')
       .select()
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .order('measured_at', ascending: true);
 
   return data.map<Growth>((json) => Growth.fromJson(json)).toList();
@@ -39,6 +40,8 @@ class GrowthActions {
   }
 
   static Future<void> deleteGrowth(String growthId) async {
-    await SupabaseService.client.from('growth').delete().eq('id', growthId);
+    await SupabaseService.client.from('growth').update({
+      'deleted_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', growthId);
   }
 }

@@ -2,13 +2,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
+import '../../models/baby_medication.dart';
 import '../../providers/baby_provider.dart';
+import '../../providers/baby_medication_provider.dart';
 import '../../providers/feeding_provider.dart';
 import '../../providers/diaper_provider.dart';
 import '../../providers/sleep_provider.dart';
+import '../../services/medication_guard.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
+import '../medications/dose_row.dart' show medScheduleLabel;
+import '../medications/give_dose_sheet.dart';
 
 class QuickLogSheets {
   static void show(BuildContext context, WidgetRef ref, int navIndex) {
@@ -689,6 +695,266 @@ class _QuickLogSleepSheetState extends ConsumerState<_QuickLogSleepSheet> {
         ),
         const SizedBox(height: 8),
       ],
+    );
+  }
+}
+
+// ─── Quick Log Medicine ──────────────────────────────────────────────
+
+/// Standalone medicine quick-log: lists the selected baby's catalog meds;
+/// tapping one closes this sheet and opens the full [GiveDoseSheet]
+/// (guard warnings, time, dosage, notes) — no feed log required.
+Future<void> showQuickMedicineSheet(BuildContext context, WidgetRef ref) async {
+  HapticFeedback.mediumImpact();
+
+  final baby = ref.read(selectedBabyProvider);
+  if (baby == null) {
+    context.showErrorSnackBar('Please add a baby first');
+    return;
+  }
+
+  final med = await showModalBottomSheet<BabyMedication>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _QuickLogMedicineSheet(),
+  );
+  if (med == null || !context.mounted) return;
+
+  // Open the existing give-dose flow, exactly like the Health screen does.
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) => GiveDoseSheet(
+      babyId: baby.id,
+      med: med,
+      canEdit: ref.read(babyProvider).isOwner,
+    ),
+  );
+}
+
+class _QuickLogMedicineSheet extends ConsumerWidget {
+  const _QuickLogMedicineSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final medsAsync = ref.watch(babyMedicationsProvider);
+    final dosesToday =
+        ref.watch(medicationDosesTodayProvider).asData?.value ??
+            const <String, List<DateTime>>{};
+
+    return _SheetContainer(
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'Give Medicine',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: context.palette.text,
+          ),
+        ),
+        const SizedBox(height: 16),
+        medsAsync.when(
+          loading: () => const SizedBox(
+            height: 64,
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+          error: (_, _) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Text(
+              'Couldn’t load medications. Check your connection and try again.',
+              style: TextStyle(fontSize: 13, color: context.palette.muted),
+            ),
+          ),
+          data: (meds) {
+            if (meds.isEmpty) return const _EmptyMedicineCatalog();
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final med in meds)
+                      _QuickMedicineRow(
+                        med: med,
+                        dosesToday:
+                            dosesToday[med.name.trim().toLowerCase()] ??
+                                const [],
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _EmptyMedicineCatalog extends StatelessWidget {
+  const _EmptyMedicineCatalog();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.medication_rounded, size: 32, color: palette.muted),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'No medications saved yet',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Add your baby’s daily meds on the Health page, '
+            'then log doses here in one tap.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: palette.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One catalog med row: icon, name, short schedule line, and a compact
+/// today-status chip ('1/3 today' / 'last 14:30'). Tap selects the med.
+class _QuickMedicineRow extends StatelessWidget {
+  final BabyMedication med;
+
+  /// Today's administered doses, newest first.
+  final List<DateTime> dosesToday;
+
+  const _QuickMedicineRow({required this.med, required this.dosesToday});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final status = MedicationGuard.todayStatus(med, dosesToday);
+    final accent = status.done ? AppColors.success : AppColors.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Material(
+        color: status.done
+            ? AppColors.success.withValues(alpha: 0.10)
+            : palette.surface,
+        borderRadius: AppRadius.lgAll,
+        child: InkWell(
+          onTap: () {
+            Haptics.lightTap();
+            Navigator.of(context).pop(med);
+          },
+          borderRadius: AppRadius.lgAll,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 64),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: AppRadius.lgAll,
+              border: Border.all(
+                color: status.done
+                    ? AppColors.success.withValues(alpha: 0.35)
+                    : palette.border,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.medication_rounded,
+                    size: 19,
+                    color: accent,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        med.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                          color: palette.text,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        medScheduleLabel(med),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: palette.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  status.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: status.done ? AppColors.success : palette.muted,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xxs),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: palette.muted,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

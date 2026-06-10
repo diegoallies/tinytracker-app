@@ -12,6 +12,7 @@ final milestonesProvider = FutureProvider.autoDispose<List<Milestone>>((ref) asy
       .from('milestones')
       .select()
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .order('expected_age_months', ascending: true);
 
   if (data.isEmpty) {
@@ -21,6 +22,7 @@ final milestonesProvider = FutureProvider.autoDispose<List<Milestone>>((ref) asy
         .from('milestones')
         .select()
         .eq('baby_id', baby.id)
+        .isFilter('deleted_at', null)
         .order('expected_age_months', ascending: true);
     return seeded.map<Milestone>((json) => Milestone.fromJson(json)).toList();
   }

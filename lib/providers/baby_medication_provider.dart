@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/baby_medication.dart';
 import '../services/supabase_service.dart';
 import 'baby_provider.dart';
@@ -12,6 +13,7 @@ final babyMedicationsProvider =
       .from('baby_medications')
       .select()
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .order('name', ascending: true);
 
   return data
@@ -36,6 +38,7 @@ final medicationDosesTodayProvider =
       .select('medication, logged_at')
       .eq('baby_id', baby.id)
       .not('medication', 'is', null)
+      .isFilter('deleted_at', null)
       .gte('logged_at', since.toUtc().toIso8601String())
       .order('logged_at', ascending: false);
 
@@ -74,7 +77,8 @@ final medDoseLogsTodayProvider = FutureProvider.autoDispose
       .from('health_logs')
       .select('id, dosage, logged_at')
       .eq('baby_id', baby.id)
-      .ilike('medication', medName.trim())
+      .ilike('medication', _likeEscape(medName.trim()))
+      .isFilter('deleted_at', null)
       .gte('logged_at', since.toUtc().toIso8601String())
       .order('logged_at', ascending: false);
 
@@ -86,6 +90,11 @@ final medDoseLogsTodayProvider = FutureProvider.autoDispose
           ))
       .toList();
 });
+
+
+/// Escapes LIKE wildcards so a med name containing % or _ matches literally.
+String _likeEscape(String s) =>
+    s.replaceAll(r'\\', r'\\\\').replaceAll('%', r'\\%').replaceAll('_', r'\\_');
 
 class BabyMedicationActions {
   static Future<BabyMedication?> add({
@@ -100,26 +109,53 @@ class BabyMedicationActions {
     final userId = SupabaseService.userId;
     if (userId == null) return null;
 
-    final data = await SupabaseService.client
-        .from('baby_medications')
-        .insert({
-          'baby_id': babyId,
-          'name': name,
-          'default_dosage':
-              (defaultDosage?.trim().isNotEmpty ?? false) ? defaultDosage : null,
-          'created_by': userId,
-          // Only send schedule columns when set, so the insert still works
-          // against an older schema that lacks them.
-          'frequency_per_day': ?frequencyPerDay,
-          'min_interval_hours': ?minIntervalHours,
-          if (asNeeded) 'as_needed': true,
-          if (instructions?.trim().isNotEmpty ?? false)
-            'instructions': instructions!.trim(),
-        })
-        .select()
-        .single();
+    try {
+      final data = await SupabaseService.client
+          .from('baby_medications')
+          .insert({
+            'baby_id': babyId,
+            'name': name,
+            'default_dosage':
+                (defaultDosage?.trim().isNotEmpty ?? false) ? defaultDosage : null,
+            'created_by': userId,
+            // Only send schedule columns when set, so the insert still works
+            // against an older schema that lacks them.
+            'frequency_per_day': ?frequencyPerDay,
+            'min_interval_hours': ?minIntervalHours,
+            if (asNeeded) 'as_needed': true,
+            if (instructions?.trim().isNotEmpty ?? false)
+              'instructions': instructions!.trim(),
+          })
+          .select()
+          .single();
 
-    return BabyMedication.fromJson(data);
+      return BabyMedication.fromJson(data);
+    } on PostgrestException catch (e) {
+      // Unique violation on (baby_id, lower(name)): a soft-deleted med with
+      // this name still occupies the key. PostgREST upsert can't target an
+      // expression index, so resurrect the existing row with the new values.
+      if (e.code != '23505') rethrow;
+      final data = await SupabaseService.client
+          .from('baby_medications')
+          .update({
+            'name': name,
+            'default_dosage':
+                (defaultDosage?.trim().isNotEmpty ?? false) ? defaultDosage : null,
+            'frequency_per_day': frequencyPerDay,
+            'min_interval_hours': minIntervalHours,
+            'as_needed': asNeeded,
+            'instructions': (instructions?.trim().isNotEmpty ?? false)
+                ? instructions!.trim()
+                : null,
+            'deleted_at': null,
+          })
+          .eq('baby_id', babyId)
+          .ilike('name', _likeEscape(name.trim()))
+          .select()
+          .single();
+
+      return BabyMedication.fromJson(data);
+    }
   }
 
   /// Update an existing catalog medication. Sends every schedule column
@@ -158,14 +194,14 @@ class BabyMedicationActions {
   static Future<void> deleteDoseLog(String healthLogId) async {
     await SupabaseService.client
         .from('health_logs')
-        .delete()
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', healthLogId);
   }
 
   static Future<void> delete(String id) async {
     await SupabaseService.client
         .from('baby_medications')
-        .delete()
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
 
@@ -179,7 +215,8 @@ class BabyMedicationActions {
         .from('health_logs')
         .select('logged_at')
         .eq('baby_id', babyId)
-        .ilike('medication', medName.trim())
+        .ilike('medication', _likeEscape(medName.trim()))
+        .isFilter('deleted_at', null)
         .gte('logged_at', since.toUtc().toIso8601String())
         .order('logged_at', ascending: false);
 

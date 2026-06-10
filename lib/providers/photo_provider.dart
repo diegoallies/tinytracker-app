@@ -13,6 +13,7 @@ final photosProvider = FutureProvider<List<Photo>>((ref) async {
       .from('photos')
       .select()
       .eq('baby_id', baby.id)
+      .isFilter('deleted_at', null)
       .order('taken_at', ascending: false);
 
   return data.map<Photo>((json) => Photo.fromJson(json)).toList();
@@ -53,21 +54,11 @@ class PhotoActions {
   }
 
   static Future<void> deletePhoto(Photo photo) async {
-    // Soft delete
+    // Soft delete the DB row only. The storage object is intentionally kept
+    // so the photo can be restored by clearing deleted_at later.
     await SupabaseService.client
         .from('photos')
-        .delete()
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', photo.id);
-
-    // Try to remove from storage
-    try {
-      final uri = Uri.parse(photo.url);
-      final pathSegments = uri.pathSegments;
-      final storageIndex = pathSegments.indexOf('photos');
-      if (storageIndex >= 0 && storageIndex < pathSegments.length - 1) {
-        final storagePath = pathSegments.sublist(storageIndex + 1).join('/');
-        await SupabaseService.client.storage.from('photos').remove([storagePath]);
-      }
-    } catch (_) {}
   }
 }

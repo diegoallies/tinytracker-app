@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
+import '../quick_log/quick_log_sheets.dart';
 
-class QuickLogFAB extends StatefulWidget {
+class QuickLogFAB extends ConsumerStatefulWidget {
   const QuickLogFAB({super.key});
 
   @override
-  State<QuickLogFAB> createState() => _QuickLogFABState();
+  ConsumerState<QuickLogFAB> createState() => _QuickLogFABState();
 }
 
-class _QuickLogFABState extends State<QuickLogFAB>
+class _QuickLogFABState extends ConsumerState<QuickLogFAB>
     with SingleTickerProviderStateMixin {
   bool _isOpen = false;
   late AnimationController _controller;
@@ -51,7 +53,7 @@ class _QuickLogFABState extends State<QuickLogFAB>
   Widget build(BuildContext context) {
     return SizedBox(
       width: 200,
-      height: 280,
+      height: 344,
       child: AnimatedBuilder(
         animation: _expandAnimation,
         builder: (context, _) {
@@ -67,6 +69,17 @@ class _QuickLogFABState extends State<QuickLogFAB>
                   ),
                 ),
               // Mini FABs
+              _buildMiniFAB(
+                index: 3,
+                icon: Icons.medication_rounded,
+                label: 'Medicine',
+                color: AppColors.pastelPurple,
+                iconColor: AppColors.primary,
+                onTap: () {
+                  _close();
+                  showQuickMedicineSheet(context, ref);
+                },
+              ),
               _buildMiniFAB(
                 index: 2,
                 icon: Icons.nightlight_round,
