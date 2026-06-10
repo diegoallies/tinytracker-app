@@ -34,7 +34,8 @@ class WeeklyReportReminderEnabledNotifier extends StateNotifier<bool> {
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  static const _appVersion = '1.0.0';
+  // Keep in sync with pubspec.yaml's version.
+  static const _appVersion = '1.1.0';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
