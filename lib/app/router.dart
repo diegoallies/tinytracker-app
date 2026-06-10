@@ -46,7 +46,9 @@ final appRouter = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
     final isAuthenticated = SupabaseService.currentUser != null;
-    final path = state.uri.toString();
+    // uri.path, NOT uri.toString(): '/register?invite=x' must still count
+    // as an auth route or invitees get bounced to login.
+    final path = state.uri.path;
     final isAuthRoute = path == '/login' || path == '/register';
     final isSplash = path == '/';
 

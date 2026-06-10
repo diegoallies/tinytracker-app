@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/deep_links.dart';
 import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../services/auth_service.dart';
@@ -37,22 +38,92 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  Future<void> _loadInvite(String token) async {
+  /// Manual path: paste/type the invite code (or the whole link) and the
+  /// invited email gets pulled and locked, same as arriving via deep link.
+  Future<void> _promptForInviteCode() async {
+    final controller = TextEditingController();
+    final code = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          AppSpacing.xs,
+          AppSpacing.gutter,
+          MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Register with an invite',
+                style: Theme.of(ctx).textTheme.titleLarge,
+                textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Paste the invite link or code you received.',
+              style: Theme.of(ctx).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'Invite link or code',
+                prefixIcon: Icon(Icons.card_giftcard_rounded),
+              ),
+              onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+              child: const Text('Use invite'),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    if (code == null || code.isEmpty || !mounted) return;
+
+    // Accept a bare code, the scheme link, or the https ?t= link.
+    var token = code;
+    final uri = Uri.tryParse(code);
+    if (uri != null && (uri.queryParameters['t']?.isNotEmpty ?? false)) {
+      token = uri.queryParameters['t']!;
+    } else if (code.contains('/')) {
+      token = code.split('/').last.split('?').first;
+    }
+    final found = await _loadInvite(token);
+    if (!mounted) return;
+    if (!found) {
+      context.showErrorSnackBar(
+          'That invite wasn\'t found - it may be expired or already used.');
+    }
+  }
+
+  Future<bool> _loadInvite(String token) async {
     try {
       final info = await SupabaseService.client
           .rpc('get_invite_info', params: {'invite_token': token});
-      if (!mounted || info == null) return;
+      if (!mounted || info == null) return false;
       final map = (info as Map).cast<String, dynamic>();
       final email = map['invited_email'] as String?;
+      await parkPendingInvite(token); // auto-redeem after confirm + sign-in
+      if (!mounted) return true;
       setState(() {
         if (email != null && email.isNotEmpty) {
           _emailController.text = email;
           _emailLocked = true;
         }
-        _inviteBabyName = map['baby_name'] as String?;
+        _inviteBabyName = (map['baby_name'] as String?) ?? 'the baby';
       });
+      return true;
     } catch (e) {
       debugPrint('invite lookup failed: $e');
+      return false;
     }
   }
 
@@ -167,6 +238,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ?.copyWith(color: context.palette.muted),
               ).animate().fadeIn(delay: 150.ms, duration: AppMotion.entrance),
               const SizedBox(height: AppSpacing.xxl),
+              if (_inviteBabyName == null && !_emailLocked) ...[
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _promptForInviteCode,
+                    icon: const Icon(Icons.card_giftcard_rounded, size: 18),
+                    label: const Text('I have an invite code'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+              ],
               if (_inviteBabyName != null) ...[
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
