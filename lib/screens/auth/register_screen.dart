@@ -42,13 +42,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _loading = true);
     try {
       final auth = AuthService();
-      await auth.signUp(
+      final response = await auth.signUp(
         email: email,
         password: _passwordController.text,
         displayName: _nameController.text.trim(),
       );
       Haptics.mediumTap();
-      if (mounted) context.go('/onboarding');
+      if (!mounted) return;
+      if (response.session == null) {
+        // Email confirmation is on: no session until the link is clicked.
+        context.showSuccessSnackBar(
+            'Almost there - check $email for a confirmation link, then sign in.');
+        context.go('/login');
+      } else {
+        context.go('/onboarding');
+      }
     } catch (e) {
       if (mounted) {
         final msg = e.toString().contains('already registered')

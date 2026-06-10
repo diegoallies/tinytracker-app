@@ -80,8 +80,12 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
       await _loadInvites();
     } catch (e) {
       if (mounted) {
+        final mismatch = e.toString().contains('INVITE_EMAIL_MISMATCH');
         context.showErrorSnackBar(
-          'That invite link didn’t work - it may be expired or already used.',
+          mismatch
+              ? 'This invite was sent to a different email address. Sign in '
+                  'with the email it was sent to.'
+              : 'That invite link didn\'t work - it may be expired or already used.',
         );
       }
     } finally {

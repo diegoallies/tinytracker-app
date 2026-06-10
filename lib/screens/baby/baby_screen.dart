@@ -397,6 +397,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
 
   Future<void> _showCreateInviteSheet(String babyId) async {
     String selectedRole = 'logger';
+    final emailController = TextEditingController();
 
     await showModalBottomSheet(
       context: context,
@@ -442,7 +443,18 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                     'Create an invite link to share access to your baby\'s profile.',
                     style: TextStyle(fontSize: 14, color: context.palette.muted),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    decoration: const InputDecoration(
+                      labelText: 'Their email address',
+                      hintText: 'Only this email can accept the invite',
+                      prefixIcon: Icon(Icons.alternate_email_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     'Select Role',
                     style: TextStyle(
@@ -487,7 +499,13 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
                     height: 52,
                     child: ElevatedButton(
                       onPressed: () async {
-                        await _createInvite(babyId, selectedRole);
+                        final email = emailController.text.trim();
+                        if (!email.contains('@') || !email.contains('.')) {
+                          context.showErrorSnackBar(
+                              'Enter the email of the person being invited.');
+                          return;
+                        }
+                        await _createInvite(babyId, selectedRole, email);
                         if (context.mounted) Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
@@ -513,7 +531,8 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
     );
   }
 
-  Future<void> _createInvite(String babyId, String role) async {
+  Future<void> _createInvite(
+      String babyId, String role, String invitedEmail) async {
     try {
       final userId = SupabaseService.client.auth.currentUser?.id;
       if (userId == null) return;
@@ -528,6 +547,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
         'invited_by': userId,
         'token': token,
         'role': role,
+        'invited_email': invitedEmail.toLowerCase(),
         'expires_at': expiresAt.toUtc().toIso8601String(),
       });
 
@@ -551,6 +571,7 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
           text: 'You\'re invited to help track $babyName on TinyTrack! 🍼\n\n'
               'Open this link on your phone (or paste it in the app under '
               'More > Invites):\n$inviteLink\n\n'
+              'Sign up with $invitedEmail - the invite only works for that email. '
               'The link expires in 7 days.',
         ));
       } catch (e) {

@@ -269,3 +269,10 @@ using ( bucket_id = 'milestones' );
 -- 6. Done
 -- ============================================================
 notify pgrst, 'reload schema';
+
+-- ----------------------------------------------------------------------------
+-- Email-bound invites (2026-06-10, applied live): invites carry the invitee's
+-- email; accept_invite enforces the match; the invitee sees their own pending
+-- invites; signups now require email confirmation (auth config).
+-- ----------------------------------------------------------------------------
+alter table public.baby_invites add column if not exists invited_email text;
