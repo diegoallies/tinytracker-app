@@ -33,6 +33,14 @@ void main() async {
   setupDeepLinks();
   // Push any logs that were saved offline last session.
   PendingWrites.flush();
+
+  // Password-recovery emails deep-link back into the app; supabase_flutter
+  // consumes the link and emits this event once the recovery session is live.
+  Supabase.instance.client.auth.onAuthStateChange.listen((state) {
+    if (state.event == AuthChangeEvent.passwordRecovery) {
+      appRouter.go('/reset-password');
+    }
+  });
 }
 
 class TinyTrackApp extends ConsumerWidget {

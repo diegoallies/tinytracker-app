@@ -4,6 +4,7 @@ import '../services/supabase_service.dart';
 import '../widgets/layout/app_scaffold.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/reset_password_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/feeding/feeding_screen.dart';
 import '../screens/diaper/diaper_screen.dart';
@@ -74,6 +75,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) => const ResetPasswordScreen(),
     ),
 
     // Main app with bottom nav

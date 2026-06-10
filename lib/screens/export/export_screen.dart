@@ -5,7 +5,9 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
+import '../../providers/care_pack_provider.dart';
 import '../../services/doctor_report_service.dart';
+import '../../services/family_report_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
@@ -24,6 +26,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   bool _isLoadingStats = false;
   bool _isGenerating = false;
   bool _isGeneratingDoctorReport = false;
+  bool _isGeneratingFamilyReport = false;
+
+  // Family report period: weekly (Mon-Sun) or calendar month, current or
+  // previous.
+  bool _familyMonthly = false;
+  bool _familyPrevious = false;
 
   int _feedingsCount = 0;
   int _diapersCount = 0;
@@ -362,6 +370,62 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       }
     } finally {
       if (mounted) setState(() => _isGeneratingDoctorReport = false);
+    }
+  }
+
+  /// [periodStart, periodEnd) for the family report. Weeks run Mon-Sun via
+  /// [weekStartOf]; months are calendar months. Day-component arithmetic,
+  /// not Duration math - DST-safe.
+  (DateTime, DateTime) _familyReportPeriod() {
+    final now = DateTime.now();
+    if (_familyMonthly) {
+      final anchor = _familyPrevious
+          ? DateTime(now.year, now.month - 1, 1)
+          : DateTime(now.year, now.month, 1);
+      return (anchor, DateTime(anchor.year, anchor.month + 1, 1));
+    }
+    var start = weekStartOf(now);
+    if (_familyPrevious) {
+      start = DateTime(start.year, start.month, start.day - 7);
+    }
+    return (start, DateTime(start.year, start.month, start.day + 7));
+  }
+
+  Future<void> _generateFamilyReport() async {
+    final baby = ref.read(selectedBabyProvider);
+    if (baby == null) return;
+
+    setState(() => _isGeneratingFamilyReport = true);
+
+    try {
+      final (start, end) = _familyReportPeriod();
+      final pdfBytes = await FamilyReportService.build(
+        baby: baby,
+        periodStart: start,
+        periodEnd: end,
+        isMonthly: _familyMonthly,
+      );
+
+      final dateTag =
+          '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
+      await Printing.sharePdf(
+        bytes: pdfBytes,
+        filename:
+            'tinytrack_family_report_${_familyMonthly ? 'monthly' : 'weekly'}_$dateTag.pdf',
+      );
+
+      if (mounted) {
+        context.showSuccessSnackBar('Family report generated!');
+      }
+    } catch (e) {
+      if (mounted) {
+        context.showErrorSnackBar(
+          'Couldn’t generate the family report. Please try again.',
+          onRetry: _generateFamilyReport,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGeneratingFamilyReport = false);
     }
   }
 
@@ -751,10 +815,181 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                         ),
                       ),
                     ),
+
+                    // Family Report (owners only)
+                    if (ref.watch(babyProvider).isOwner) ...[
+                      const SizedBox(height: 16),
+                      _buildFamilyReportCard(),
+                    ],
                     const SizedBox(height: 20),
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildFamilyReportCard() {
+    final (start, end) = _familyReportPeriod();
+    final endInclusive = end.subtract(const Duration(days: 1));
+    final periodLabel = _familyMonthly
+        ? AppDateUtils.formatMonthYear(start)
+        : '${AppDateUtils.formatDate(start)} – ${AppDateUtils.formatFull(endInclusive)}';
+
+    return AnimatedCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.auto_stories_rounded,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Family Report',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: context.palette.text,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'The week or month, beautifully summarised - feeding, sleep, digestion, reflux, growth, medicine and milestones in one professional document.',
+              style: TextStyle(
+                fontSize: 14,
+                color: context.palette.muted,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(
+                  label: const Text('This week'),
+                  selected: !_familyMonthly,
+                  selectedColor: AppColors.primary,
+                  checkmarkColor: Colors.white,
+                  labelStyle: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: !_familyMonthly
+                        ? Colors.white
+                        : context.palette.text,
+                  ),
+                  onSelected: (_) => setState(() => _familyMonthly = false),
+                ),
+                ChoiceChip(
+                  label: const Text('This month'),
+                  selected: _familyMonthly,
+                  selectedColor: AppColors.primary,
+                  checkmarkColor: Colors.white,
+                  labelStyle: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _familyMonthly
+                        ? Colors.white
+                        : context.palette.text,
+                  ),
+                  onSelected: (_) => setState(() => _familyMonthly = true),
+                ),
+                FilterChip(
+                  label: Text(
+                      _familyMonthly ? 'Previous month' : 'Previous week'),
+                  selected: _familyPrevious,
+                  selectedColor: AppColors.primary,
+                  checkmarkColor: Colors.white,
+                  labelStyle: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _familyPrevious
+                        ? Colors.white
+                        : context.palette.text,
+                  ),
+                  onSelected: (v) => setState(() => _familyPrevious = v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Period: $periodLabel',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: context.palette.muted,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 52,
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isGeneratingFamilyReport
+                    ? null
+                    : _generateFamilyReport,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      AppColors.primary.withValues(alpha: 0.4),
+                  disabledForegroundColor: Colors.white70,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isGeneratingFamilyReport
+                    ? const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Generating...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.picture_as_pdf_rounded, size: 22),
+                          SizedBox(width: 10),
+                          Text(
+                            'Generate family report',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

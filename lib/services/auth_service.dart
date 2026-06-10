@@ -32,7 +32,12 @@ class AuthService {
 
   Future<bool> resetPassword(String email) async {
     try {
-      await _client.auth.resetPasswordForEmail(email);
+      // Deep-link back into the app (NOT the old website) — handled by
+      // supabase_flutter, which emits AuthChangeEvent.passwordRecovery.
+      await _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'tinytracker://reset-password',
+      );
       return true;
     } catch (e) {
       return false;
