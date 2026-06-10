@@ -565,94 +565,52 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Period Selector
+                    // Data export - one card in the same shape as the
+                    // doctor/family report cards below.
                     AnimatedCard(
                       child: Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Time Period',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: context.palette.text,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
                             Row(
-                              children: [7, 14, 30].map((days) {
-                                final isSelected = _selectedDays == days;
-                                return Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      right: days == 30 ? 0 : 8,
-                                    ),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        setState(() => _selectedDays = days);
-                                        _loadStats();
-                                      },
-                                      child: AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? AppColors.primary
-                                              : AppColors.pastelPurple
-                                                  .withValues(alpha:0.3),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          '$days days',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: isSelected
-                                                ? Colors.white
-                                                : context.palette.text,
-                                          ),
-                                        ),
-                                      ),
+                              children: [
+                                const Icon(
+                                  Icons.table_chart_rounded,
+                                  size: 20,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Data export',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: context.palette.text,
                                     ),
                                   ),
-                                );
-                              }).toList(),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Preview Stats
-                    AnimatedCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                            const SizedBox(height: 8),
                             Text(
-                              'Preview',
+                              'Feeding, diaper, sleep, growth and health '
+                              'records for the selected period, as a PDF.',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: context.palette.text,
+                                fontSize: 14,
+                                color: context.palette.muted,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.md),
+                            _buildDaysToggle(),
+                            const SizedBox(height: AppSpacing.md),
                             if (_isLoadingStats)
                               const LoadingSkeleton()
                             else
                               Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
+                                spacing: 10,
+                                runSpacing: 10,
                                 children: [
                                   _buildStatChip(Icons.restaurant_rounded,
                                       'Feeds', _feedingsCount),
@@ -672,101 +630,77 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                                       _healthCount),
                                 ],
                               ),
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              height: 52,
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: (_isGenerating ||
+                                        _isLoadingStats ||
+                                        totalRecords == 0)
+                                    ? null
+                                    : _generateAndSharePdf,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor:
+                                      AppColors.primary.withValues(alpha: 0.4),
+                                  disabledForegroundColor: Colors.white70,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: _isGenerating
+                                    ? const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Generating...',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                              Icons.picture_as_pdf_rounded,
+                                              size: 22),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            totalRecords == 0
+                                                ? 'No data to export'
+                                                : 'Generate PDF ($totalRecords records)',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // What's Included
-                    AnimatedCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "What's Included",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: context.palette.text,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _buildIncludedItem('Feeding records'),
-                            _buildIncludedItem('Diaper changes'),
-                            _buildIncludedItem('Sleep sessions'),
-                            _buildIncludedItem('Growth measurements'),
-                            _buildIncludedItem('Health logs'),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Generate Button
-                    SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: (_isGenerating || _isLoadingStats || totalRecords == 0)
-                            ? null
-                            : _generateAndSharePdf,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor:
-                              AppColors.primary.withValues(alpha:0.4),
-                          disabledForegroundColor: Colors.white70,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isGenerating
-                            ? const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    'Generating...',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.picture_as_pdf_rounded,
-                                      size: 22),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    totalRecords == 0
-                                        ? 'No data to export'
-                                        : 'Generate PDF ($totalRecords records)',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
 
                     // Doctor Visit Report
                     AnimatedCard(
@@ -1314,12 +1248,57 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     );
   }
 
+  /// 7 | 14 | 30 days segmented control, same shape as the Weekly | Monthly
+  /// toggle on the Family Report card.
+  Widget _buildDaysToggle() {
+    Widget segment(int days) {
+      final selected = _selectedDays == days;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () {
+            setState(() => _selectedDays = days);
+            _loadStats();
+          },
+          child: AnimatedContainer(
+            duration: AppMotion.fast,
+            curve: AppMotion.ease,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.primary : Colors.transparent,
+              borderRadius: AppRadius.mdAll,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '$days days',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : context.palette.text,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: context.palette.surface,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: context.palette.border),
+      ),
+      child: Row(children: [segment(7), segment(14), segment(30)]),
+    );
+  }
+
   Widget _buildStatChip(IconData icon, String label, int count) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.pastelPurple.withValues(alpha:0.3),
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.palette.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1331,29 +1310,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: context.palette.text,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIncludedItem(String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle_rounded,
-            size: 20,
-            color: AppColors.primary,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
               color: context.palette.text,
             ),
           ),
