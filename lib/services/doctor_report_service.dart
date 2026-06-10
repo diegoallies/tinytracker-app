@@ -1,32 +1,57 @@
 import 'dart:typed_data';
 
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../models/baby.dart';
 import '../utils/care_pack_data.dart';
-import '../utils/date_utils.dart';
+import 'report_math.dart';
 import 'supabase_service.dart';
 
-/// Builds the "Doctor visit report" PDF: a clinical summary of the last
-/// 14 days of reflux, digestion, feeding, temperature and medication data.
+/// Builds the "Doctor Visit Report" PDF: a clinical summary of the last
+/// 14 days of reflux, digestion, feeding, temperature and medication data,
+/// styled with the same design system as the family report (ink cover band,
+/// accent-square section headers, zebra tables, running footer).
 ///
 /// Pure data - no AI calls. Tables that ship with the Care Pack migration
 /// (reflux_events, daily_journals) or columns that ship with it (stool_type,
 /// quality) may not exist yet; every query degrades to an empty section
-/// instead of crashing.
+/// instead of crashing. All arithmetic is delegated to the unit-tested
+/// functions in report_math.dart.
 class DoctorReportService {
   DoctorReportService._();
 
   static const int _days = 14;
+
+  // -------------------------------------------------------------------
+  // Palette: shared with the family report design system.
+  // -------------------------------------------------------------------
+  static final PdfColor _primary = PdfColor.fromHex('#9b72cf');
+  static final PdfColor _primarySoft = PdfColor.fromHex('#b89ce0');
+  static final PdfColor _ink = PdfColor.fromHex('#2d2640');
+  static final PdfColor _muted = PdfColor.fromHex('#8b85a0');
+  static final PdfColor _rule = PdfColor.fromHex('#ddd6e8');
+  static final PdfColor _zebra = PdfColor.fromHex('#f5f3f8');
+  static final PdfColor _headerFill = PdfColor.fromHex('#ede4f7');
+  static final PdfColor _bandDivider = PdfColor.fromHex('#463d5c');
+  static final PdfColor _lavender = PdfColor.fromHex('#c9b8e8');
+
+  // Section accents (exactly one per section header).
+  static final PdfColor _accentReflux = PdfColor.fromHex('#cf6a5e');
+  static final PdfColor _accentDigestion = PdfColor.fromHex('#5fa46b');
+  static final PdfColor _accentFeeding = PdfColor.fromHex('#e09c3f');
+  static final PdfColor _accentHealth = PdfColor.fromHex('#46a5a0');
+
+  // -------------------------------------------------------------------
+  // Entry point
+  // -------------------------------------------------------------------
 
   static Future<Uint8List> build({required Baby baby}) async {
     final now = DateTime.now();
     // 14 calendar days, inclusive of today.
     final start = DateTime(now.year, now.month, now.day - (_days - 1));
     final startIso = start.toUtc().toIso8601String();
-    final startDateStr =
-        '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
     final client = SupabaseService.client;
 
     // Each query selects '*' so a missing column never fails the request,
@@ -52,27 +77,21 @@ class DoctorReportService {
 
     final results = await Future.wait([
       rows('reflux_events', 'logged_at', startIso),
-      rows('daily_journals', 'journal_date', startDateStr),
+      rows('daily_journals', 'journal_date', dayKey(start)),
       rows('diapers', 'logged_at', startIso),
       rows('health_logs', 'logged_at', startIso),
       rows('feedings', 'logged_at', startIso),
     ]);
 
-    final reflux = results[0];
-    final journals = results[1];
-    final diapers = results[2];
-    final healthLogs = results[3];
-    final feedings = results[4];
-
     return _buildPdf(
       baby: baby,
       start: start,
       end: now,
-      reflux: reflux,
-      journals: journals,
-      diapers: diapers,
-      healthLogs: healthLogs,
-      feedings: feedings,
+      reflux: results[0],
+      journals: results[1],
+      diapers: results[2],
+      healthLogs: results[3],
+      feedings: results[4],
     );
   }
 
@@ -91,63 +110,70 @@ class DoctorReportService {
     required List<Map<String, dynamic>> feedings,
   }) async {
     final pdf = pw.Document();
-    final primaryColor = PdfColor.fromHex('#9b72cf');
-    final headerStyle = pw.TextStyle(
-      fontSize: 20,
-      fontWeight: pw.FontWeight.bold,
-      color: primaryColor,
-    );
-    final sectionStyle = pw.TextStyle(
-      fontSize: 14,
-      fontWeight: pw.FontWeight.bold,
-      color: PdfColor.fromHex('#2d2640'),
-    );
-    final mutedStyle = pw.TextStyle(
-      fontSize: 9,
-      color: PdfColor.fromHex('#8b85a0'),
-    );
-    final bodyStyle = const pw.TextStyle(fontSize: 10);
+    final periodLabel = '${DateFormat('d MMM').format(start)} - '
+        '${DateFormat('d MMM yyyy').format(end)}';
+    final footerText = _ascii('TinyTrack - ${baby.name} - $periodLabel');
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
-        header: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('Doctor Visit Report', style: headerStyle),
-            pw.SizedBox(height: 4),
-            pw.Text(
-              '${baby.name} - DOB ${AppDateUtils.formatFull(baby.dateOfBirth)} - Age ${baby.ageDisplay}',
-              style: pw.TextStyle(
-                fontSize: 12,
-                color: PdfColor.fromHex('#8b85a0'),
+        margin: const pw.EdgeInsets.fromLTRB(40, 36, 40, 36),
+        header: (context) => context.pageNumber == 1
+            ? pw.SizedBox()
+            : pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 16),
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border(
+                    bottom: pw.BorderSide(color: _rule, width: 0.75),
+                  ),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'TinyTrack Doctor Visit Report',
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _ink,
+                      ),
+                    ),
+                    pw.Text(
+                      _ascii('${baby.name} - $periodLabel'),
+                      style: pw.TextStyle(fontSize: 9, color: _muted),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            pw.Text(
-              '${AppDateUtils.formatFull(start)} - ${AppDateUtils.formatFull(end)} (last $_days days) - Prepared with TinyTrack',
-              style: mutedStyle,
-            ),
-            pw.Divider(color: primaryColor, thickness: 1),
-            pw.SizedBox(height: 8),
-          ],
-        ),
         footer: (context) => pw.Container(
-          alignment: pw.Alignment.centerRight,
-          child: pw.Text(
-            'Page ${context.pageNumber} of ${context.pagesCount}',
-            style: mutedStyle,
+          margin: const pw.EdgeInsets.only(top: 10),
+          padding: const pw.EdgeInsets.only(top: 6),
+          decoration: pw.BoxDecoration(
+            border: pw.Border(top: pw.BorderSide(color: _rule, width: 0.75)),
+          ),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(footerText,
+                  style: pw.TextStyle(fontSize: 8, color: _muted)),
+              pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: pw.TextStyle(fontSize: 8, color: _muted),
+              ),
+            ],
           ),
         ),
         build: (context) => [
-          ..._refluxSection(reflux, sectionStyle, bodyStyle, mutedStyle),
+          _coverBand(baby, periodLabel),
+          pw.SizedBox(height: 22),
+          ..._refluxSection(reflux),
           pw.SizedBox(height: 20),
-          ..._digestionSection(
-              diapers, journals, sectionStyle, bodyStyle, mutedStyle),
+          ..._digestionSection(diapers, journals),
           pw.SizedBox(height: 20),
-          ..._feedingSection(feedings, sectionStyle, bodyStyle),
+          ..._feedingSection(feedings),
           pw.SizedBox(height: 20),
-          ..._healthSection(healthLogs, sectionStyle, bodyStyle),
+          ..._healthSection(healthLogs),
         ],
       ),
     );
@@ -155,200 +181,278 @@ class DoctorReportService {
     return pdf.save();
   }
 
+  // -------------------------------------------------------------------
+  // Cover band (ink variant with a clinical subline)
+  // -------------------------------------------------------------------
+
+  static pw.Widget _coverBand(Baby baby, String periodLabel) {
+    final generated = DateFormat('d MMMM yyyy, HH:mm').format(DateTime.now());
+    final dob = DateFormat('d MMMM yyyy').format(baby.dateOfBirth);
+    final smallStyle = pw.TextStyle(fontSize: 9, color: _lavender);
+
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.fromLTRB(28, 26, 28, 22),
+      decoration: pw.BoxDecoration(
+        color: _ink,
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Row(
+            children: [
+              pw.Container(width: 26, height: 3, color: _primary),
+              pw.SizedBox(width: 8),
+              pw.Text(
+                'TINYTRACK DOCTOR VISIT REPORT',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                  letterSpacing: 2,
+                  color: _lavender,
+                ),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 16),
+          pw.Text(
+            _ascii(baby.name),
+            style: pw.TextStyle(
+              fontSize: 30,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
+            ),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Text(
+            'Clinical summary   |   Last $_days days   |   $periodLabel',
+            style: pw.TextStyle(fontSize: 13, color: _primarySoft),
+          ),
+          pw.SizedBox(height: 14),
+          pw.Container(height: 0.75, color: _bandDivider),
+          pw.SizedBox(height: 10),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                _ascii('DOB $dob   |   Age ${baby.ageDisplay}'),
+                style: smallStyle,
+              ),
+              pw.Text('Generated $generated', style: smallStyle),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------------
-  // Sections
+  // 1. Reflux
   // ---------------------------------------------------------------------
 
-  static List<pw.Widget> _refluxSection(
-    List<Map<String, dynamic>> reflux,
-    pw.TextStyle sectionStyle,
-    pw.TextStyle bodyStyle,
-    pw.TextStyle mutedStyle,
-  ) {
+  static List<pw.Widget> _refluxSection(List<Map<String, dynamic>> reflux) {
     final widgets = <pw.Widget>[
-      pw.Text('Reflux', style: sectionStyle),
-      pw.SizedBox(height: 8),
+      _sectionHeader('Reflux', _accentReflux),
     ];
 
     if (reflux.isEmpty) {
-      widgets.add(pw.Text('No data recorded.', style: bodyStyle));
+      widgets.add(_noData('No reflux events recorded in the last $_days '
+          'days.'));
       return widgets;
     }
 
-    // Events per day: average across the window + worst day.
-    final perDay = <String, int>{};
-    for (final r in reflux) {
-      final dt = _parseDate(r['logged_at']);
-      if (dt == null) continue;
-      final key = _dayKey(dt);
-      perDay[key] = (perDay[key] ?? 0) + 1;
-    }
-    String worstDay = '-';
-    int worstCount = 0;
-    perDay.forEach((day, count) {
-      if (count > worstCount) {
-        worstCount = count;
-        worstDay = day;
+    final stats = RefluxStats.fromRows(reflux);
+    final avg = perDay(stats.total, _days).toStringAsFixed(1);
+    var worst = '-';
+    if (stats.worstDay != null) {
+      final dt = DateTime.tryParse(stats.worstDay!);
+      if (dt != null) {
+        worst = '${DateFormat('EEE d MMM').format(dt)} '
+            '(${stats.worstDayCount} events)';
       }
-    });
-    final avg = (reflux.length / _days).toStringAsFixed(1);
+    }
+
     widgets.add(pw.Text(
-      '${reflux.length} events in $_days days - avg $avg/day - worst day: '
-      '${worstDay == '-' ? '-' : '${_formatDayKey(worstDay)} ($worstCount events)'}',
-      style: bodyStyle,
+      '${stats.total} events in $_days days - avg $avg/day - '
+      'painful (crying): ${stats.painfulCount} - worst day: $worst.',
+      style: pw.TextStyle(fontSize: 9, color: _ink),
     ));
     widgets.add(pw.SizedBox(height: 8));
 
-    widgets.add(pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-      children: [
-        _tableHeaderRow(
-            ['Date', 'Time', 'Severity (1-5)', 'Painful', 'Arching', 'Trigger']),
-        ...reflux.map((r) {
-          final dt = _parseDate(r['logged_at']);
-          return _tableRow([
-            dt != null ? AppDateUtils.formatDate(dt) : '-',
-            dt != null ? AppDateUtils.formatTime(dt) : '-',
+    widgets.add(_zebraTable(
+      ['Date', 'Time', 'Severity (1-5)', 'Painful', 'Arching', 'Trigger'],
+      [
+        for (final r in reflux)
+          [
+            _fmtDate(parseTimestamp(r['logged_at'])),
+            _fmtTime(parseTimestamp(r['logged_at'])),
             (r['severity'] ?? '-').toString(),
             r['painful_crying'] == true ? 'Yes' : '-',
             r['arching_back'] == true ? 'Yes' : '-',
             _orDash(r['trigger_noticed']),
-          ]);
-        }),
+          ],
       ],
     ));
 
-    // Severity scale legend.
-    widgets.add(pw.SizedBox(height: 6));
-    widgets.add(pw.Text('Severity scale:', style: mutedStyle));
-    for (final point in CarePackData.refluxSeverity) {
-      widgets.add(pw.Text('${point.value} - ${point.label}', style: mutedStyle));
+    // Severity scale legend with this fortnight's distribution.
+    widgets.add(pw.SizedBox(height: 8));
+    widgets.add(_subLabel('Severity scale'));
+    widgets.add(_zebraTable(
+      ['Severity', 'Description', 'Events'],
+      [
+        for (final point in CarePackData.refluxSeverity)
+          [
+            '${point.value}',
+            _ascii(point.label),
+            '${stats.severityCounts[point.value] ?? 0}',
+          ],
+      ],
+      widths: {
+        0: const pw.FixedColumnWidth(48),
+        1: const pw.FlexColumnWidth(),
+        2: const pw.FixedColumnWidth(42),
+      },
+    ));
+
+    if (stats.triggerCounts.isNotEmpty) {
+      final top = stats.topTriggers;
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.add(pw.Text(
+        'Top noticed triggers: '
+        '${top.take(3).map((e) => '${_ascii(e.key)} (${e.value})').join(', ')}.',
+        style: pw.TextStyle(fontSize: 9, color: _ink),
+      ));
     }
     return widgets;
   }
+
+  // ---------------------------------------------------------------------
+  // 2. Digestion
+  // ---------------------------------------------------------------------
 
   static List<pw.Widget> _digestionSection(
     List<Map<String, dynamic>> diapers,
     List<Map<String, dynamic>> journals,
-    pw.TextStyle sectionStyle,
-    pw.TextStyle bodyStyle,
-    pw.TextStyle mutedStyle,
   ) {
     final widgets = <pw.Widget>[
-      pw.Text('Digestion', style: sectionStyle),
-      pw.SizedBox(height: 8),
+      _sectionHeader('Digestion', _accentDigestion),
     ];
 
     if (diapers.isEmpty && journals.isEmpty) {
-      widgets.add(pw.Text('No data recorded.', style: bodyStyle));
+      widgets.add(_noData('No nappies or journal entries in the last '
+          '$_days days.'));
       return widgets;
     }
 
-    // Dirty (poo) nappies: anything that isn't wet-only.
-    final poos = diapers.where((d) => d['type'] != 'wet').length;
+    final stats = NappyStats.fromRows(diapers);
     widgets.add(pw.Text(
-      '$poos dirty nappies in $_days days - avg ${(poos / _days).toStringAsFixed(1)}/day',
-      style: bodyStyle,
+      '${stats.dirtyCount} dirty nappies in $_days days - avg '
+      '${perDay(stats.dirtyCount, _days).toStringAsFixed(1)}/day - '
+      '${stats.wetCount} wet ("both" counts in each).',
+      style: pw.TextStyle(fontSize: 9, color: _ink),
     ));
 
     // Stool type distribution (Bristol-style 1-7, post-migration column).
-    final stoolCounts = <int, int>{};
-    for (final d in diapers) {
-      final type = d['stool_type'];
-      if (type is int) stoolCounts[type] = (stoolCounts[type] ?? 0) + 1;
-    }
-    if (stoolCounts.isNotEmpty) {
+    if (stats.stoolTypeCounts.isNotEmpty) {
       widgets.add(pw.SizedBox(height: 8));
-      widgets.add(pw.Table(
-        border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-        children: [
-          _tableHeaderRow(['Stool type', 'Description', 'Count']),
-          ...(stoolCounts.keys.toList()..sort()).map((type) {
-            final label = CarePackData.stoolTypes
-                .where((s) => s.value == type)
-                .map((s) => s.label)
-                .firstOrNull;
-            return _tableRow([
+      widgets.add(_subLabel('Stool type distribution'));
+      widgets.add(_zebraTable(
+        ['Stool type', 'Description', 'Count'],
+        [
+          for (final type in stats.stoolTypeCounts.keys.toList()..sort())
+            [
               'Type $type',
-              label ?? '-',
-              '${stoolCounts[type]}',
-            ]);
-          }),
+              _ascii(CarePackData.stoolTypes
+                      .where((s) => s.value == type)
+                      .map((s) => s.label)
+                      .firstOrNull ??
+                  '-'),
+              '${stats.stoolTypeCounts[type]}',
+            ],
         ],
+        widths: {
+          0: const pw.FixedColumnWidth(55),
+          1: const pw.FlexColumnWidth(),
+          2: const pw.FixedColumnWidth(40),
+        },
       ));
     }
 
     // Days with notable cramps/gas (rated 2 or higher on the 0-3 scale).
-    final uncomfortableDays = <String>{};
-    for (final j in journals) {
-      final cramps = (j['cramps'] as num?)?.toInt() ?? 0;
-      final gas = (j['gas'] as num?)?.toInt() ?? 0;
-      if (cramps >= 2 || gas >= 2) {
-        uncomfortableDays.add((j['journal_date'] ?? '').toString());
+    if (journals.isNotEmpty) {
+      widgets.add(pw.SizedBox(height: 8));
+      widgets.add(pw.Text(
+        'Days with cramps/gas rated 2 or higher (0-3 scale): '
+        '${uncomfortableDayCount(journals)} of ${journals.length} '
+        'journalled days.',
+        style: pw.TextStyle(fontSize: 9, color: _ink),
+      ));
+      final scale2 = CarePackData.crampsGasScale
+          .where((s) => s.value == 2)
+          .map((s) => s.label)
+          .firstOrNull;
+      if (scale2 != null) {
+        widgets.add(pw.SizedBox(height: 2));
+        widgets.add(pw.Text(
+          'Rating 2 = ${_ascii(scale2)}',
+          style: pw.TextStyle(fontSize: 7.5, color: _muted),
+        ));
       }
-    }
-    widgets.add(pw.SizedBox(height: 8));
-    widgets.add(pw.Text(
-      'Days with cramps/gas rated 2 or higher (0-3 scale): ${uncomfortableDays.length} of ${journals.length} journalled days',
-      style: bodyStyle,
-    ));
-    final scale2 = CarePackData.crampsGasScale
-        .where((s) => s.value == 2)
-        .map((s) => s.label)
-        .firstOrNull;
-    if (scale2 != null) {
-      widgets.add(pw.Text('Rating 2 = $scale2', style: mutedStyle));
     }
     return widgets;
   }
 
-  static List<pw.Widget> _feedingSection(
-    List<Map<String, dynamic>> feedings,
-    pw.TextStyle sectionStyle,
-    pw.TextStyle bodyStyle,
-  ) {
+  // ---------------------------------------------------------------------
+  // 3. Feeding
+  // ---------------------------------------------------------------------
+
+  static List<pw.Widget> _feedingSection(List<Map<String, dynamic>> feedings) {
     final widgets = <pw.Widget>[
-      pw.Text('Feeding', style: sectionStyle),
-      pw.SizedBox(height: 8),
+      _sectionHeader('Feeding', _accentFeeding),
     ];
 
     if (feedings.isEmpty) {
-      widgets.add(pw.Text('No data recorded.', style: bodyStyle));
+      widgets.add(_noData('No feeds recorded in the last $_days days.'));
       return widgets;
     }
 
-    final mlValues = [
-      for (final f in feedings)
-        if (f['amount_ml'] != null) (f['amount_ml'] as num).toDouble(),
-    ];
-    final avgMl = mlValues.isEmpty
-        ? null
-        : (mlValues.reduce((a, b) => a + b) / mlValues.length).round();
-
-    final line = StringBuffer(
-      '${feedings.length} feeds in $_days days - avg ${(feedings.length / _days).toStringAsFixed(1)}/day',
-    );
-    if (avgMl != null) line.write(' - avg $avgMl ml per feed');
-
-    // Quality column ships with the Care Pack migration; only report it when
-    // the rows actually carry it.
-    if (feedings.first.containsKey('quality')) {
-      final refused =
-          feedings.where((f) => (f['quality'] as num?)?.toInt() == 1).length;
-      line.write(' - $refused refused/quality-1 feeds');
-    }
-    widgets.add(pw.Text(line.toString(), style: bodyStyle));
+    final stats = FeedingStats.fromRows(feedings);
+    widgets.add(_zebraTable(
+      ['Total feeds', 'Avg / day', 'Avg amount', 'Avg quality',
+          'Refused (quality 1)', 'Spit-up rate'],
+      [
+        [
+          '${stats.total}',
+          perDay(stats.total, _days).toStringAsFixed(1),
+          stats.avgMl == null ? '-' : '${stats.avgMl!.round()} ml',
+          stats.avgQuality == null
+              ? '-'
+              : '${stats.avgQuality!.toStringAsFixed(1)} / 5',
+          stats.qualityKnown == 0 ? '-' : '${stats.refusedCount}',
+          stats.spitUpRate == null
+              ? '-'
+              : '${(stats.spitUpRate! * 100).round()}%',
+        ],
+      ],
+    ));
+    widgets.add(pw.SizedBox(height: 4));
+    widgets.add(pw.Text(
+      'Avg amount covers only feeds with a recorded volume; avg quality '
+      'and spit-up rate cover only feeds where they were recorded.',
+      style: pw.TextStyle(fontSize: 7.5, color: _muted),
+    ));
     return widgets;
   }
 
+  // ---------------------------------------------------------------------
+  // 4. Temperature & medication
+  // ---------------------------------------------------------------------
+
   static List<pw.Widget> _healthSection(
-    List<Map<String, dynamic>> healthLogs,
-    pw.TextStyle sectionStyle,
-    pw.TextStyle bodyStyle,
-  ) {
+      List<Map<String, dynamic>> healthLogs) {
     final widgets = <pw.Widget>[
-      pw.Text('Temperature & Medication', style: sectionStyle),
-      pw.SizedBox(height: 8),
+      _sectionHeader('Temperature & medication', _accentHealth),
     ];
 
     final relevant = healthLogs
@@ -356,84 +460,159 @@ class DoctorReportService {
         .toList();
 
     if (relevant.isEmpty) {
-      widgets.add(pw.Text('No data recorded.', style: bodyStyle));
+      widgets.add(_noData('No temperature readings or medicine doses in '
+          'the last $_days days.'));
       return widgets;
     }
 
-    widgets.add(pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-      children: [
-        _tableHeaderRow(
-            ['Date', 'Time', 'Temp (C)', 'Medication', 'Dosage', 'Symptoms']),
-        ...relevant.map((h) {
-          final dt = _parseDate(h['logged_at']);
-          return _tableRow([
-            dt != null ? AppDateUtils.formatDate(dt) : '-',
-            dt != null ? AppDateUtils.formatTime(dt) : '-',
+    widgets.add(_zebraTable(
+      ['Date', 'Time', 'Temp (C)', 'Status', 'Medication', 'Dosage',
+          'Symptoms'],
+      [
+        for (final h in relevant)
+          [
+            _fmtDate(parseTimestamp(h['logged_at'])),
+            _fmtTime(parseTimestamp(h['logged_at'])),
             h['temperature_c'] != null ? '${h['temperature_c']}' : '-',
+            h['temperature_c'] is num
+                ? temperatureStatus((h['temperature_c'] as num).toDouble())
+                : '-',
             _orDash(h['medication']),
             _orDash(h['dosage']),
             _orDash(h['symptoms']),
-          ]);
-        }),
+          ],
       ],
     ));
+
+    final doseCount = medicationDoseCount(healthLogs);
+    if (doseCount > 0) {
+      widgets.add(pw.SizedBox(height: 6));
+      widgets.add(pw.Text(
+        '$doseCount medicine dose(s) logged in the last $_days days.',
+        style: pw.TextStyle(fontSize: 9, color: _ink),
+      ));
+    }
     return widgets;
   }
 
   // ---------------------------------------------------------------------
-  // Table helpers (same compact style as the main export PDF)
+  // Layout building blocks (family report design system)
   // ---------------------------------------------------------------------
 
-  static pw.TableRow _tableHeaderRow(List<String> cells) {
-    return pw.TableRow(
-      decoration: pw.BoxDecoration(color: PdfColor.fromHex('#e8d5f5')),
-      children: cells
-          .map((c) => pw.Padding(
-                padding: const pw.EdgeInsets.all(6),
-                child: pw.Text(
-                  c,
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#2d2640'),
-                  ),
-                ),
-              ))
-          .toList(),
+  static pw.Widget _sectionHeader(String title, PdfColor accent) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 10),
+      padding: const pw.EdgeInsets.only(bottom: 5),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: _rule, width: 0.75)),
+      ),
+      child: pw.Row(
+        children: [
+          pw.Container(
+            width: 8,
+            height: 8,
+            decoration: pw.BoxDecoration(
+              color: accent,
+              borderRadius: pw.BorderRadius.circular(2),
+            ),
+          ),
+          pw.SizedBox(width: 7),
+          pw.Text(
+            title.toUpperCase(),
+            style: pw.TextStyle(
+              fontSize: 11,
+              fontWeight: pw.FontWeight.bold,
+              letterSpacing: 1.2,
+              color: _ink,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  static pw.TableRow _tableRow(List<String> cells) {
-    return pw.TableRow(
-      children: cells
-          .map((c) => pw.Padding(
-                padding: const pw.EdgeInsets.all(6),
-                child: pw.Text(
-                  c,
-                  style: const pw.TextStyle(fontSize: 9),
-                  maxLines: 2,
-                ),
-              ))
-          .toList(),
+  static pw.Widget _subLabel(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 5),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          fontSize: 9,
+          fontWeight: pw.FontWeight.bold,
+          color: _ink,
+        ),
+      ),
     );
   }
 
-  static DateTime? _parseDate(dynamic raw) {
-    if (raw == null) return null;
-    return DateTime.tryParse(raw.toString())?.toLocal();
+  static pw.Widget _noData(String message) {
+    return pw.Text(message, style: pw.TextStyle(fontSize: 9, color: _muted));
+  }
+
+  /// Zebra-striped table with a light purple header row.
+  static pw.Widget _zebraTable(
+    List<String> headers,
+    List<List<String>> rows, {
+    Map<int, pw.TableColumnWidth>? widths,
+  }) {
+    pw.Widget cell(String text, {bool header = false}) {
+      return pw.Padding(
+        padding: const pw.EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+        child: pw.Text(
+          text,
+          maxLines: 3,
+          style: header
+              ? pw.TextStyle(
+                  fontSize: 8,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _ink,
+                )
+              : pw.TextStyle(fontSize: 8.5, color: _ink),
+        ),
+      );
+    }
+
+    return pw.Table(
+      columnWidths: widths,
+      border: pw.TableBorder.all(color: _rule, width: 0.5),
+      children: [
+        pw.TableRow(
+          decoration: pw.BoxDecoration(color: _headerFill),
+          children: [for (final h in headers) cell(h, header: true)],
+        ),
+        for (var i = 0; i < rows.length; i++)
+          pw.TableRow(
+            decoration: i.isOdd ? pw.BoxDecoration(color: _zebra) : null,
+            children: [for (final c in rows[i]) cell(c)],
+          ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Small helpers
+  // ---------------------------------------------------------------------
+
+  /// Strips anything outside printable ASCII so the WinAnsi-encoded built-in
+  /// fonts never receive emoji or other multi-byte characters.
+  static String _ascii(String input) {
+    final out = StringBuffer();
+    for (final code in input.runes) {
+      if (code == 0x0A || (code >= 0x20 && code <= 0x7E)) {
+        out.writeCharCode(code);
+      }
+    }
+    return out.toString().replaceAll(RegExp(r'[ \t]{2,}'), ' ').trim();
   }
 
   static String _orDash(dynamic value) {
-    final s = value?.toString().trim();
-    return (s == null || s.isEmpty) ? '-' : s;
+    final s = _ascii(value?.toString() ?? '');
+    return s.isEmpty ? '-' : s;
   }
 
-  static String _dayKey(DateTime dt) =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  static String _fmtDate(DateTime? dt) =>
+      dt == null ? '-' : DateFormat('EEE d MMM').format(dt);
 
-  static String _formatDayKey(String key) {
-    final dt = DateTime.tryParse(key);
-    return dt != null ? AppDateUtils.formatDate(dt) : key;
-  }
+  static String _fmtTime(DateTime? dt) =>
+      dt == null ? '-' : DateFormat('HH:mm').format(dt);
 }

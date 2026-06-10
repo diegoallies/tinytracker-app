@@ -59,7 +59,15 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
   Future<void> _redeemCode() async {
     final raw = _codeController.text.trim();
     if (raw.isEmpty) return;
-    final token = raw.contains('/') ? raw.split('/').last : raw;
+    // Accept: a bare code, tinytracker://invite/<code>, or the https
+    // function link with ?t=<code>.
+    String token = raw;
+    final uri = Uri.tryParse(raw);
+    if (uri != null && (uri.queryParameters['t']?.isNotEmpty ?? false)) {
+      token = uri.queryParameters['t']!;
+    } else if (raw.contains('/')) {
+      token = raw.split('/').last.split('?').first;
+    }
 
     setState(() => _isRedeeming = true);
     try {

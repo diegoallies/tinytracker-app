@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/care_pack_provider.dart';
@@ -28,10 +30,11 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   bool _isGeneratingDoctorReport = false;
   bool _isGeneratingFamilyReport = false;
 
-  // Family report period: weekly (Mon-Sun) or calendar month, current or
-  // previous.
+  // Family report period: weekly (Mon-Sun) or calendar month. Any past
+  // period can be selected; [_familyAnchor] is a date INSIDE the selected
+  // period and the bounds are derived from it.
   bool _familyMonthly = false;
-  bool _familyPrevious = false;
+  DateTime _familyAnchor = DateTime.now();
 
   int _feedingsCount = 0;
   int _diapersCount = 0;
@@ -373,22 +376,71 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     }
   }
 
-  /// [periodStart, periodEnd) for the family report. Weeks run Mon-Sun via
-  /// [weekStartOf]; months are calendar months. Day-component arithmetic,
-  /// not Duration math - DST-safe.
+  /// [periodStart, periodEnd) for the family report, derived from
+  /// [_familyAnchor]. Weeks run Mon-Sun via [weekStartOf]; months are
+  /// calendar months. Day-component arithmetic, not Duration math -
+  /// DST-safe.
   (DateTime, DateTime) _familyReportPeriod() {
-    final now = DateTime.now();
     if (_familyMonthly) {
-      final anchor = _familyPrevious
-          ? DateTime(now.year, now.month - 1, 1)
-          : DateTime(now.year, now.month, 1);
-      return (anchor, DateTime(anchor.year, anchor.month + 1, 1));
+      final start = DateTime(_familyAnchor.year, _familyAnchor.month, 1);
+      return (start, DateTime(start.year, start.month + 1, 1));
     }
-    var start = weekStartOf(now);
-    if (_familyPrevious) {
-      start = DateTime(start.year, start.month, start.day - 7);
-    }
+    final start = weekStartOf(_familyAnchor);
     return (start, DateTime(start.year, start.month, start.day + 7));
+  }
+
+  /// Steps the selected period by [delta] weeks/months (negative = back).
+  void _stepFamilyPeriod(int delta) {
+    setState(() {
+      if (_familyMonthly) {
+        _familyAnchor =
+            DateTime(_familyAnchor.year, _familyAnchor.month + delta, 1);
+      } else {
+        final start = weekStartOf(_familyAnchor);
+        _familyAnchor =
+            DateTime(start.year, start.month, start.day + 7 * delta);
+      }
+    });
+  }
+
+  /// Jump straight to any date; the week/month containing it gets selected.
+  /// The picker is clamped to the baby's date of birth .. today.
+  Future<void> _pickFamilyPeriodDate() async {
+    final baby = ref.read(selectedBabyProvider);
+    if (baby == null) return;
+    final today = DateTime.now();
+    final dob = DateTime(baby.dateOfBirth.year, baby.dateOfBirth.month,
+        baby.dateOfBirth.day);
+    final firstDate = dob.isAfter(today) ? today : dob;
+    var initial = _familyAnchor;
+    if (initial.isBefore(firstDate)) initial = firstDate;
+    if (initial.isAfter(today)) initial = today;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: firstDate,
+      lastDate: today,
+      helpText: _familyMonthly
+          ? 'Pick any day in the month'
+          : 'Pick any day in the week',
+    );
+    if (picked != null && mounted) {
+      setState(() => _familyAnchor = picked);
+    }
+  }
+
+  /// Human label for the selected period: "Mon 2 - Sun 8 Jun 2026" for
+  /// weeks, "June 2026" for months.
+  String _familyPeriodLabel(DateTime start, DateTime end) {
+    if (_familyMonthly) return DateFormat('MMMM yyyy').format(start);
+    final endInclusive = DateTime(end.year, end.month, end.day - 1);
+    final sameMonth = start.month == endInclusive.month &&
+        start.year == endInclusive.year;
+    final startFmt = sameMonth
+        ? DateFormat('EEE d').format(start)
+        : DateFormat('EEE d MMM').format(start);
+    return '$startFmt - ${DateFormat('EEE d MMM yyyy').format(endInclusive)}';
   }
 
   Future<void> _generateFamilyReport() async {
@@ -830,15 +882,47 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   }
 
   Widget _buildFamilyReportCard() {
+    final baby = ref.watch(selectedBabyProvider);
     final (start, end) = _familyReportPeriod();
-    final endInclusive = end.subtract(const Duration(days: 1));
-    final periodLabel = _familyMonthly
-        ? AppDateUtils.formatMonthYear(start)
-        : '${AppDateUtils.formatDate(start)} - ${AppDateUtils.formatFull(endInclusive)}';
+    final periodLabel = _familyPeriodLabel(start, end);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Forward stepping stops at the period containing today.
+    final canStepForward = !end.isAfter(today);
+
+    // A period that starts before the baby's birth month has nothing to
+    // report on.
+    final dob = baby?.dateOfBirth;
+    final beforeBirth =
+        dob != null && start.isBefore(DateTime(dob.year, dob.month, 1));
+
+    final thisStart =
+        _familyMonthly ? DateTime(now.year, now.month, 1) : weekStartOf(now);
+    final lastStart = _familyMonthly
+        ? DateTime(now.year, now.month - 1, 1)
+        : DateTime(thisStart.year, thisStart.month, thisStart.day - 7);
+    final isThisPeriod = start.isAtSameMomentAs(thisStart);
+    final isLastPeriod = start.isAtSameMomentAs(lastStart);
+
+    Widget quickChip(String label, bool selected, DateTime anchor) {
+      return ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        selectedColor: AppColors.primary,
+        checkmarkColor: Colors.white,
+        labelStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: selected ? Colors.white : context.palette.text,
+        ),
+        onSelected: (_) => setState(() => _familyAnchor = anchor),
+      );
+    }
 
     return AnimatedCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -864,77 +948,68 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'The week or month, beautifully summarised - feeding, sleep, digestion, reflux, growth, medicine and milestones in one professional document.',
+              'Any week or month, beautifully summarised - feeding, sleep, digestion, reflux, growth, medicine and milestones in one professional document.',
               style: TextStyle(
                 fontSize: 14,
                 color: context.palette.muted,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
+            _buildFamilyModeToggle(),
+            const SizedBox(height: AppSpacing.sm),
+            _buildFamilyPeriodStepper(periodLabel, canStepForward),
+            const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                ChoiceChip(
-                  label: const Text('This week'),
-                  selected: !_familyMonthly,
-                  selectedColor: AppColors.primary,
-                  checkmarkColor: Colors.white,
-                  labelStyle: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: !_familyMonthly
-                        ? Colors.white
-                        : context.palette.text,
-                  ),
-                  onSelected: (_) => setState(() => _familyMonthly = false),
-                ),
-                ChoiceChip(
-                  label: const Text('This month'),
-                  selected: _familyMonthly,
-                  selectedColor: AppColors.primary,
-                  checkmarkColor: Colors.white,
-                  labelStyle: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: _familyMonthly
-                        ? Colors.white
-                        : context.palette.text,
-                  ),
-                  onSelected: (_) => setState(() => _familyMonthly = true),
-                ),
-                FilterChip(
-                  label: Text(
-                      _familyMonthly ? 'Previous month' : 'Previous week'),
-                  selected: _familyPrevious,
-                  selectedColor: AppColors.primary,
-                  checkmarkColor: Colors.white,
-                  labelStyle: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: _familyPrevious
-                        ? Colors.white
-                        : context.palette.text,
-                  ),
-                  onSelected: (v) => setState(() => _familyPrevious = v),
-                ),
+                quickChip(_familyMonthly ? 'This month' : 'This week',
+                    isThisPeriod, thisStart),
+                quickChip(_familyMonthly ? 'Last month' : 'Last week',
+                    isLastPeriod, lastStart),
               ],
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Period: $periodLabel',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: context.palette.muted,
+            if (beforeBirth) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.12),
+                  borderRadius: AppRadius.mdAll,
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded,
+                        size: 18, color: AppColors.warning),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'This ${_familyMonthly ? 'month' : 'week'} is before '
+                        '${baby?.name ?? 'your baby'} was born '
+                        '(${DateFormat('MMMM yyyy').format(dob)}). '
+                        'Pick a later period to generate a report.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.palette.text,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+            ],
+            const SizedBox(height: AppSpacing.md),
             SizedBox(
               height: 52,
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isGeneratingFamilyReport
+                onPressed: (_isGeneratingFamilyReport || beforeBirth)
                     ? null
                     : _generateFamilyReport,
                 style: ElevatedButton.styleFrom(
@@ -990,6 +1065,132 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Weekly | Monthly segmented control. Switching keeps the anchor date,
+  /// so the containing week/month of the same date stays selected.
+  Widget _buildFamilyModeToggle() {
+    Widget segment(String label, bool selected, VoidCallback onTap) {
+      return Expanded(
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: AppMotion.fast,
+            curve: AppMotion.ease,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.primary : Colors.transparent,
+              borderRadius: AppRadius.mdAll,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : context.palette.text,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: context.palette.surface,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: context.palette.border),
+      ),
+      child: Row(
+        children: [
+          segment('Weekly', !_familyMonthly,
+              () => setState(() => _familyMonthly = false)),
+          segment('Monthly', _familyMonthly,
+              () => setState(() => _familyMonthly = true)),
+        ],
+      ),
+    );
+  }
+
+  /// [<]  Mon 2 - Sun 8 Jun 2026  [calendar] [>]. Back steps indefinitely,
+  /// forward stops at the current period; long-press the label (or tap the
+  /// calendar icon) to jump straight to any date.
+  Widget _buildFamilyPeriodStepper(String periodLabel, bool canStepForward) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.palette.surface,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: context.palette.border),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => _stepFamilyPeriod(-1),
+            tooltip: _familyMonthly ? 'Previous month' : 'Previous week',
+            icon: Icon(
+              Icons.chevron_left_rounded,
+              color: context.palette.text,
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: _pickFamilyPeriodDate,
+              onLongPress: _pickFamilyPeriodDate,
+              borderRadius: AppRadius.mdAll,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
+                    Text(
+                      _familyMonthly ? 'MONTH' : 'WEEK',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: context.palette.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        periodLabel,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: context.palette.text,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: _pickFamilyPeriodDate,
+            tooltip: 'Jump to a date',
+            icon: Icon(
+              Icons.calendar_month_rounded,
+              size: 18,
+              color: AppColors.primary,
+            ),
+          ),
+          IconButton(
+            onPressed: canStepForward ? () => _stepFamilyPeriod(1) : null,
+            tooltip: _familyMonthly ? 'Next month' : 'Next week',
+            icon: Icon(
+              Icons.chevron_right_rounded,
+              color: canStepForward
+                  ? context.palette.text
+                  : context.palette.muted.withValues(alpha: 0.4),
+            ),
+          ),
+        ],
       ),
     );
   }

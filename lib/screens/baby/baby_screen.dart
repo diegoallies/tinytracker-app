@@ -531,7 +531,10 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
         'expires_at': expiresAt.toUtc().toIso8601String(),
       });
 
-      final inviteLink = 'tinytracker://invite/$token';
+      // Clickable https link (Edge Function bounces into the app); the raw
+      // scheme still works for direct paste.
+      final inviteLink =
+          'https://ggbjcjmksxxkbjaxxogv.supabase.co/functions/v1/invite?t=$token';
       final baby = ref.read(selectedBabyProvider);
       final babyName = baby?.name ?? 'our baby';
 
