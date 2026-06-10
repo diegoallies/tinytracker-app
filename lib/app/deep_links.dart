@@ -1,13 +1,39 @@
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/supabase_service.dart';
 import 'router.dart';
 
-/// Invite token parked until the app can act on it - set on cold-start links
-/// (consumed by the splash screen once the session is restored) and on links
-/// arriving while logged out (consumed by the login screen after sign-in).
+const _prefsKey = 'pending_invite_token';
+
+/// Invite token parked until the app can act on it. Persisted so it survives
+/// the register -> confirm email -> reopen -> sign in journey.
 String? pendingInviteToken;
+
+Future<void> parkPendingInvite(String token) async {
+  pendingInviteToken = token;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, token);
+  } catch (e) {
+    debugPrint('could not persist pending invite: $e');
+  }
+}
+
+/// Returns the parked token (memory first, then disk) and clears both.
+Future<String?> consumePendingInvite() async {
+  var token = pendingInviteToken;
+  pendingInviteToken = null;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    token ??= prefs.getString(_prefsKey);
+    await prefs.remove(_prefsKey);
+  } catch (e) {
+    debugPrint('could not read pending invite: $e');
+  }
+  return token;
+}
 
 String? _tokenFrom(Uri uri) {
   // tinytracker://invite/<token>
@@ -19,20 +45,19 @@ String? _tokenFrom(Uri uri) {
 
 /// Call once from main() after runApp.
 ///
-/// app_links re-emits the launch link on the stream when the listener
-/// attaches, so a single stream listener covers both cold and warm starts -
-/// no separate getInitialLink() call (which would double-deliver).
+/// app_links re-emits the launch link when the listener attaches, so a single
+/// stream listener covers cold and warm starts.
 void setupDeepLinks() {
-  AppLinks().uriLinkStream.listen((uri) {
+  AppLinks().uriLinkStream.listen((uri) async {
     final token = _tokenFrom(uri);
     if (token == null) return;
 
+    await parkPendingInvite(token);
     if (SupabaseService.currentUser == null) {
-      // Session not restored yet (cold start) or genuinely logged out -
-      // park it; splash/login will pick it up.
-      pendingInviteToken = token;
+      // New invitee: land on registration with their email locked in.
+      appRouter.go('/register?invite=$token');
     } else {
-      pendingInviteToken = null;
+      await consumePendingInvite();
       appRouter.go('/invites?code=$token');
     }
   }, onError: (Object e) {

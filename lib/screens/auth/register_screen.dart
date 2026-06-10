@@ -4,11 +4,16 @@ import 'package:go_router/go_router.dart';
 import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../services/auth_service.dart';
+import '../../services/supabase_service.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  /// Set when arriving from an email-bound invite link: the email gets
+  /// prefilled and locked to the invited address.
+  final String? inviteToken;
+
+  const RegisterScreen({super.key, this.inviteToken});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -20,6 +25,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   bool _loading = false;
   bool _obscurePassword = true;
+  bool _emailLocked = false;
+  String? _inviteBabyName;
+
+  @override
+  void initState() {
+    super.initState();
+    final token = widget.inviteToken;
+    if (token != null && token.isNotEmpty) {
+      _loadInvite(token);
+    }
+  }
+
+  Future<void> _loadInvite(String token) async {
+    try {
+      final info = await SupabaseService.client
+          .rpc('get_invite_info', params: {'invite_token': token});
+      if (!mounted || info == null) return;
+      final map = (info as Map).cast<String, dynamic>();
+      final email = map['invited_email'] as String?;
+      setState(() {
+        if (email != null && email.isNotEmpty) {
+          _emailController.text = email;
+          _emailLocked = true;
+        }
+        _inviteBabyName = map['baby_name'] as String?;
+      });
+    } catch (e) {
+      debugPrint('invite lookup failed: $e');
+    }
+  }
 
   Future<void> _signUp() async {
     final email = _emailController.text.trim();
@@ -132,6 +167,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ?.copyWith(color: context.palette.muted),
               ).animate().fadeIn(delay: 150.ms, duration: AppMotion.entrance),
               const SizedBox(height: AppSpacing.xxl),
+              if (_inviteBabyName != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.10),
+                    borderRadius: AppRadius.mdAll,
+                    border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.35)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.card_giftcard_rounded,
+                          color: AppColors.primary, size: 20),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          'You\'ve been invited to help track '
+                          '$_inviteBabyName! Create your account below.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               AutofillGroup(
                 child: Column(
                   children: [
@@ -151,10 +212,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
+                      readOnly: _emailLocked,
                       autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
+                        helperText: _emailLocked
+                            ? 'The invite is locked to this email'
+                            : null,
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        suffixIcon: _emailLocked
+                            ? const Icon(Icons.lock_rounded, size: 18)
+                            : null,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),

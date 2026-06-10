@@ -41,10 +41,11 @@ class _LoginScreenState extends State<LoginScreen> {
       TextInput.finishAutofillContext();
       Haptics.mediumTap();
       if (mounted) {
-        // An invite link tapped while logged out resumes after sign-in.
-        final inviteToken = pendingInviteToken;
+        // An invite link tapped while logged out resumes after sign-in
+        // (survives app restarts via SharedPreferences).
+        final inviteToken = await consumePendingInvite();
+        if (!mounted) return;
         if (inviteToken != null) {
-          pendingInviteToken = null;
           context.go('/invites?code=$inviteToken');
         } else {
           context.go('/dashboard');

@@ -90,9 +90,9 @@ class _SplashScreenState extends State<SplashScreen>
     final isLoggedIn = SupabaseService.currentUser != null;
     if (isLoggedIn) {
       // A cold-start invite deep link takes priority over the dashboard.
-      final inviteToken = pendingInviteToken;
+      final inviteToken = await consumePendingInvite();
+      if (!mounted) return;
       if (inviteToken != null) {
-        pendingInviteToken = null;
         context.go('/invites?code=$inviteToken');
         return;
       }

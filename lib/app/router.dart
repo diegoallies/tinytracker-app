@@ -70,7 +70,9 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/register',
-      builder: (context, state) => const RegisterScreen(),
+      builder: (context, state) => RegisterScreen(
+        inviteToken: state.uri.queryParameters['invite'],
+      ),
     ),
     GoRoute(
       path: '/onboarding',
