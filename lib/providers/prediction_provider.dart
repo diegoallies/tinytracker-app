@@ -31,7 +31,7 @@ final nextFeedingPredictionProvider =
     final times = data
         .map((row) => parseDbTime(row['logged_at'] as String).toLocal())
         .toList();
-    return PredictionService.predictNextFromEvents(times);
+    return PredictionService.predictNextFromEvents(times, now: DateTime.now());
   } catch (e, st) {
     debugPrint('nextFeedingPredictionProvider error: $e\n$st');
     return null; // Prediction is a bonus - never break the screen for it.
@@ -68,7 +68,7 @@ final nextNapPredictionProvider =
               end: parseDbTime(row['end_time'] as String).toLocal(),
             ))
         .toList();
-    return PredictionService.predictNextNap(sessions);
+    return PredictionService.predictNextNap(sessions, now: DateTime.now());
   } catch (e, st) {
     debugPrint('nextNapPredictionProvider error: $e\n$st');
     return null;

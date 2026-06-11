@@ -70,18 +70,41 @@ class PredictionService {
     final sample = preferred.length >= 3 ? preferred : all;
 
     final typical = _median(sample);
+    final expectedAt = _rollForward(last.add(typical), typical, now);
     return NextEventPrediction(
-      expectedAt: last.add(typical),
+      expectedAt: expectedAt,
       typicalGap: typical,
       sampleSize: sample.length,
       confidence: _confidence(sample, typical),
     );
   }
 
+  /// Advance a predicted time past slots that have already been missed.
+  ///
+  /// A prediction is `last + typicalGap`. Once that moment is well behind the
+  /// clock (the slot was missed, or the screen has been open a while), keep
+  /// adding [gap] until the prediction lands at the next slot. A half-gap of
+  /// grace is kept so a genuinely-due event still shows as "around now" rather
+  /// than instantly skipping to the next slot.
+  static DateTime _rollForward(DateTime expectedAt, Duration gap, DateTime? now) {
+    // Without a current-time reference there's nothing to roll past — keep the
+    // raw last+gap prediction (also what the pure unit tests rely on).
+    if (now == null || gap <= Duration.zero) return expectedAt;
+    final grace = Duration(minutes: gap.inMinutes ~/ 2);
+    var next = expectedAt;
+    var guard = 0;
+    while (now.difference(next) > grace && guard < 1000) {
+      next = next.add(gap);
+      guard++;
+    }
+    return next;
+  }
+
   /// Predict the next nap from completed sleep sessions using awake windows
   /// (time between waking up and the next sleep start).
   static NextEventPrediction? predictNextNap(
     List<({DateTime start, DateTime end})> sessions, {
+    DateTime? now,
     Duration minWindow = const Duration(minutes: 15),
     Duration maxWindow = const Duration(hours: 6),
   }) {
@@ -98,8 +121,9 @@ class PredictionService {
 
     final typical = _median(windows);
     final lastWake = sorted.last.end;
+    final expectedAt = _rollForward(lastWake.add(typical), typical, now);
     return NextEventPrediction(
-      expectedAt: lastWake.add(typical),
+      expectedAt: expectedAt,
       typicalGap: typical,
       sampleSize: windows.length,
       confidence: _confidence(windows, typical),

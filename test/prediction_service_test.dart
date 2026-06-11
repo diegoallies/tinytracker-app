@@ -66,6 +66,42 @@ void main() {
       final p = PredictionService.predictNextFromEvents(events);
       expect(p!.expectedAt, DateTime(2026, 6, 9, 23));
     });
+
+    test('rolls a long-passed prediction forward to the next future slot', () {
+      // Every 3h. Raw prediction would be 23:00, but it's already 01:30 the
+      // next morning — two slots have gone by. It should advance, not stick.
+      final events = [
+        DateTime(2026, 6, 9, 8),
+        DateTime(2026, 6, 9, 11),
+        DateTime(2026, 6, 9, 14),
+        DateTime(2026, 6, 9, 17),
+        DateTime(2026, 6, 9, 20),
+      ];
+      final p = PredictionService.predictNextFromEvents(
+        events,
+        now: DateTime(2026, 6, 10, 1, 30),
+      );
+      // 23:00 -> 02:00 (23:00 and 02:00 are the slots; 23:00 is >1.5h past).
+      expect(p!.expectedAt, DateTime(2026, 6, 10, 2));
+      expect(p.isOverdue(DateTime(2026, 6, 10, 1, 30)), isFalse);
+    });
+
+    test('a just-due prediction stays put (within grace, shows around now)', () {
+      final events = [
+        DateTime(2026, 6, 9, 8),
+        DateTime(2026, 6, 9, 11),
+        DateTime(2026, 6, 9, 14),
+        DateTime(2026, 6, 9, 17),
+        DateTime(2026, 6, 9, 20),
+      ];
+      // 10 min past the 23:00 slot — still "around now", don't skip it.
+      final p = PredictionService.predictNextFromEvents(
+        events,
+        now: DateTime(2026, 6, 9, 23, 10),
+      );
+      expect(p!.expectedAt, DateTime(2026, 6, 9, 23));
+      expect(p.isOverdue(DateTime(2026, 6, 9, 23, 10)), isTrue);
+    });
   });
 
   group('PredictionService.predictNextNap', () {

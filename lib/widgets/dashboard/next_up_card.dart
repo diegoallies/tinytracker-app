@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,11 +12,39 @@ import '../common/animated_card.dart';
 
 /// "Next up" - pattern-based predictions for the next feeding and nap,
 /// computed from the last week of logs (see PredictionService).
-class NextUpCard extends ConsumerWidget {
+///
+/// Recomputes itself on a timer so the prediction rolls forward to the next
+/// slot as time passes, instead of getting stuck on a time that has gone by.
+class NextUpCard extends ConsumerStatefulWidget {
   const NextUpCard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NextUpCard> createState() => _NextUpCardState();
+}
+
+class _NextUpCardState extends ConsumerState<NextUpCard> {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-run the predictions every minute so a passed slot advances and the
+    // "in Xm" countdown stays accurate while the screen is open.
+    _refreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      ref.invalidate(nextFeedingPredictionProvider);
+      ref.invalidate(nextNapPredictionProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final feeding = ref.watch(nextFeedingPredictionProvider).valueOrNull;
     final nap = ref.watch(nextNapPredictionProvider).valueOrNull;
 
