@@ -113,6 +113,8 @@ class TrendsScreen extends ConsumerWidget {
         const SizedBox(height: AppSpacing.md),
         _SleepCard(data: data),
         const SizedBox(height: AppSpacing.md),
+        _AwakeWindowCard(data: data),
+        const SizedBox(height: AppSpacing.md),
         _NappiesCard(data: data),
         const SizedBox(height: AppSpacing.md),
         _RefluxCard(data: data),
@@ -516,6 +518,179 @@ class _SleepCard extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Awake time: weekday vs weekend
+// ---------------------------------------------------------------------------
+
+/// Average hours awake per day (24h − sleep), split into weekday vs weekend,
+/// so you can see whether the baby is awake more on weekends. Uses only
+/// complete past days that have sleep logged (today is partial, skipped).
+class _AwakeWindowCard extends StatelessWidget {
+  const _AwakeWindowCard({required this.data});
+
+  final TrendsData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final n = DateTime.now();
+    final today = DateTime(n.year, n.month, n.day);
+
+    final weekdayHrs = <double>[];
+    final weekendHrs = <double>[];
+    for (final d in data.days) {
+      if (!d.day.isBefore(today)) continue; // skip today (partial day)
+      if (d.sleepMinutes <= 0) continue;     // skip days with no sleep logged
+      final awakeMin = (1440 - d.sleepMinutes).clamp(0, 1440);
+      final hrs = awakeMin / 60.0;
+      (d.day.weekday >= 6 ? weekendHrs : weekdayHrs).add(hrs);
+    }
+
+    double avg(List<double> xs) =>
+        xs.isEmpty ? 0 : xs.reduce((a, b) => a + b) / xs.length;
+    final weekdayAvg = avg(weekdayHrs);
+    final weekendAvg = avg(weekendHrs);
+    final hasData = weekdayHrs.isNotEmpty || weekendHrs.isNotEmpty;
+
+    final bars = [
+      (label: 'Weekday', value: weekdayAvg, color: AppColors.primary, n: weekdayHrs.length),
+      (label: 'Weekend', value: weekendAvg, color: AppColors.warning, n: weekendHrs.length),
+    ];
+    final peak = bars.fold<double>(0, (m, b) => b.value > m ? b.value : m);
+    final maxY = (peak * 1.3).clamp(4.0, 24.0);
+    final diff = weekendAvg - weekdayAvg;
+
+    return AnimatedCard(
+      index: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _CardTitle(
+            icon: Icons.wb_sunny_rounded,
+            color: AppColors.warning,
+            title: 'Awake Time',
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Avg hours awake per day · weekday vs weekend',
+            style: TextStyle(fontSize: 11, color: context.palette.muted),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (!hasData)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+              child: Center(
+                child: Text(
+                  'Not enough sleep data yet',
+                  style: TextStyle(color: context.palette.muted),
+                ),
+              ),
+            )
+          else ...[
+            SizedBox(
+              height: 160,
+              child: BarChart(
+                BarChartData(
+                  maxY: maxY,
+                  alignment: BarChartAlignment.spaceEvenly,
+                  gridData: _chartGrid(context, 4),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        interval: 4,
+                        getTitlesWidget: (value, meta) => Text(
+                          '${value.round()}h',
+                          style: TextStyle(
+                              fontSize: 9, color: context.palette.muted),
+                        ),
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 22,
+                        getTitlesWidget: (value, meta) {
+                          final i = value.toInt();
+                          if (i < 0 || i >= bars.length) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: AppSpacing.xxs),
+                            child: Text(
+                              bars[i].label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: context.palette.muted,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) => AppColors.text,
+                      tooltipRoundedRadius: 10,
+                      getTooltipItem: (group, gi, rod, ri) {
+                        final b = bars[group.x];
+                        return BarTooltipItem(
+                          '${rod.toY.toStringAsFixed(1)}h awake\n${b.n} day${b.n == 1 ? '' : 's'}',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  barGroups: [
+                    for (final (i, b) in bars.indexed)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: b.value,
+                            width: 40,
+                            color: b.color,
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(6)),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                duration: AppMotion.normal,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _StatRow(
+              statLabel: 'Avg awake/day',
+              statValue:
+                  'Weekday ${weekdayAvg.toStringAsFixed(1)}h · Weekend ${weekendAvg.toStringAsFixed(1)}h',
+              chips: [
+                _DeltaChip(
+                  delta: diff,
+                  label: '${_signed(diff)}h on weekends',
+                  tone: _DeltaTone.neutral,
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
