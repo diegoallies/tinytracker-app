@@ -764,7 +764,7 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
-                  "Today's Sessions",
+                  "History",
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -776,36 +776,58 @@ class _TummyTimeScreenState extends ConsumerState<TummyTimeScreen> {
 
               recentSessions.when(
                 data: (sessions) {
-                  final now = DateTime.now();
-                  final todaySessions = sessions.where((s) {
-                    final dt = s.startTime.toLocal();
-                    return now.year == dt.year &&
-                        now.month == dt.month &&
-                        now.day == dt.day;
-                  }).toList();
-
-                  if (todaySessions.isEmpty) {
+                  if (sessions.isEmpty) {
                     return const EmptyState(
                       icon: Icons.child_care_rounded,
-                      title: 'No sessions today',
+                      title: 'No sessions yet',
                       description:
                           'Start a tummy time session or log a past one.',
                     );
                   }
 
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: todaySessions.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final session = todaySessions[index];
-                      return _SessionTile(
-                        session: session,
-                        onDeleteConfirm: _confirmDelete,
-                        onDelete: () => _handleDelete(session.id),
-                      );
-                    },
+                  // Group the full history by day (Today / Yesterday / date)
+                  // so older days don't disappear — they were being filtered
+                  // to today only before.
+                  final now = DateTime.now();
+                  final today = DateTime(now.year, now.month, now.day);
+                  final groups = <String, List<dynamic>>{};
+                  for (final s in sessions) {
+                    final dt = s.startTime.toLocal();
+                    final day = DateTime(dt.year, dt.month, dt.day);
+                    final diff = today.difference(day).inDays;
+                    final label = diff == 0
+                        ? 'Today'
+                        : diff == 1
+                            ? 'Yesterday'
+                            : AppDateUtils.formatDate(dt);
+                    (groups[label] ??= []).add(s);
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final entry in groups.entries) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
+                          child: Text(
+                            entry.key,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: context.palette.muted,
+                            ),
+                          ),
+                        ),
+                        ...entry.value.map((session) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _SessionTile(
+                                session: session,
+                                onDeleteConfirm: _confirmDelete,
+                                onDelete: () => _handleDelete(session.id),
+                              ),
+                            )),
+                      ],
+                    ],
                   );
                 },
                 loading: () => const Center(
@@ -1064,7 +1086,7 @@ class _StatusDot extends StatelessWidget {
 // Session tile with visible delete + swipe-to-dismiss
 // ──────────────────────────────────────────────────────────────────────
 
-class _SessionTile extends StatelessWidget {
+class _SessionTile extends StatefulWidget {
   final dynamic session;
   final Future<bool?> Function() onDeleteConfirm;
   final VoidCallback onDelete;
@@ -1076,15 +1098,26 @@ class _SessionTile extends StatelessWidget {
   });
 
   @override
+  State<_SessionTile> createState() => _SessionTileState();
+}
+
+class _SessionTileState extends State<_SessionTile> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final session = widget.session;
     final duration = (session.durationMinutes as int?) ?? 0;
     final start = (session.startTime as DateTime).toLocal();
+    final end = (session.endTime as DateTime?)?.toLocal();
+    final notes = session.notes as String?;
     final startFormatted = AppDateUtils.formatTime(start);
+    final hasNotes = notes != null && notes.trim().isNotEmpty;
 
     return SwipeToDismiss(
       itemId: session.id as String,
-      onConfirmDismiss: onDeleteConfirm,
-      onDismissed: onDelete,
+      onConfirmDismiss: widget.onDeleteConfirm,
+      onDismissed: widget.onDelete,
       child: Container(
         decoration: BoxDecoration(
           color: context.palette.card,
@@ -1098,70 +1131,141 @@ class _SessionTile extends StatelessWidget {
           ],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.pastelPurple,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.child_care_rounded,
-                color: AppColors.primary,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Row(
                 children: [
-                  Text(
-                    '$duration min',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: context.palette.text,
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.pastelPurple,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.child_care_rounded,
+                      color: AppColors.primary,
+                      size: 22,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Started at $startFormatted',
-                    style: TextStyle(
-                      color: context.palette.muted,
-                      fontSize: 12,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$duration min',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: context.palette.text,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          hasNotes
+                              ? 'Started at $startFormatted · has note'
+                              : 'Started at $startFormatted',
+                          style: TextStyle(
+                            color: context.palette.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: context.palette.muted,
                   ),
                 ],
               ),
             ),
-            Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () async {
-                  final ok = await onDeleteConfirm();
-                  if (ok == true) onDelete();
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.delete_outline_rounded,
-                    size: 18,
-                    color: Colors.red.shade400,
+            if (_expanded) ...[
+              const SizedBox(height: 10),
+              Divider(height: 1, color: context.palette.muted.withValues(alpha: 0.15)),
+              const SizedBox(height: 10),
+              _detailRow(context, 'Date', AppDateUtils.formatFull(start)),
+              _detailRow(context, 'Start', startFormatted),
+              _detailRow(context, 'End', end != null ? AppDateUtils.formatTime(end) : '—'),
+              _detailRow(context, 'Duration', '$duration min'),
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Notes',
+                    style: TextStyle(fontSize: 11, color: context.palette.muted)),
+              ),
+              const SizedBox(height: 2),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  hasNotes ? notes.trim() : 'No notes added.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: hasNotes ? context.palette.text : context.palette.muted,
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () async {
+                      final ok = await widget.onDeleteConfirm();
+                      if (ok == true) widget.onDelete();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.delete_outline_rounded,
+                              size: 16, color: Colors.red.shade400),
+                          const SizedBox(width: 4),
+                          Text('Delete',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red.shade400,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _detailRow(BuildContext context, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, color: context.palette.muted)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: context.palette.text)),
+        ],
       ),
     );
   }

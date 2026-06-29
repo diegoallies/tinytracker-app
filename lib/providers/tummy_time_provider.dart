@@ -59,7 +59,7 @@ final recentTummyTimesProvider = FutureProvider.autoDispose<List<TummyTime>>((re
       .not('end_time', 'is', null)
       .isFilter('deleted_at', null)
       .order('start_time', ascending: false)
-      .limit(10);
+      .limit(100);
 
   return data.map<TummyTime>((json) => TummyTime.fromJson(json)).toList();
 });
