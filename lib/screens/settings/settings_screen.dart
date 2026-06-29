@@ -41,6 +41,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reminderEnabled = ref.watch(feedingReminderEnabledProvider);
     final reminderInterval = ref.watch(feedingReminderIntervalProvider);
+    final medicationReminderEnabled = ref.watch(medicationReminderEnabledProvider);
     final weeklyReportReminderEnabled =
         ref.watch(weeklyReportReminderEnabledProvider);
     final showBreastFeeding = ref.watch(showBreastFeedingProvider);
@@ -117,6 +118,20 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                  const _SettingsDivider(),
+                  _SettingsRow(
+                    icon: Icons.medication_rounded,
+                    iconBg: AppColors.pastelGreen,
+                    iconColor: AppColors.success,
+                    title: 'Medication Reminders',
+                    subtitle: "Alert when a scheduled medicine is due",
+                    trailing: Switch.adaptive(
+                      value: medicationReminderEnabled,
+                      onChanged: (_) => ref
+                          .read(medicationReminderEnabledProvider.notifier)
+                          .toggle(),
+                    ),
+                  ),
                   const _SettingsDivider(),
                   _SettingsRow(
                     icon: Icons.assignment_rounded,

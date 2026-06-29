@@ -106,8 +106,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final stats = ref.watch(dashboardStatsProvider);
     final activity = ref.watch(activityFeedProvider);
 
-    // Activate feeding reminder scheduler
+    // Activate feeding + medication reminder schedulers
     ref.watch(feedingReminderSchedulerProvider);
+    ref.watch(medicationReminderSchedulerProvider);
 
     if (babyState.loading) return const Center(child: PageSkeleton());
 

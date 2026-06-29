@@ -9,6 +9,10 @@ class NotificationService {
   static const _feedingNotificationId = 1001;
   static const _weeklyReportChannelId = 'weekly_report_reminders';
   static const _weeklyReportNotificationId = 1002;
+  static const _medicationChannelId = 'medication_reminders';
+  // Medication reminders use a reserved id block: _medicationIdBase .. +maxMeds.
+  static const _medicationIdBase = 1100;
+  static const _maxMedReminders = 30;
 
   static Future<void> initialize() async {
     tzdata.initializeTimeZones();
@@ -194,5 +198,71 @@ class NotificationService {
   static Future<void> setReminderInterval(int minutes) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('feeding_reminder_interval', minutes);
+  }
+
+  // ── Medication reminders ────────────────────────────────────────────────
+
+  static Future<bool> isMedicationReminderEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('medication_reminder_enabled') ?? false;
+  }
+
+  static Future<void> setMedicationReminderEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('medication_reminder_enabled', enabled);
+    if (!enabled) await cancelAllMedicationReminders();
+  }
+
+  static Future<void> cancelAllMedicationReminders() async {
+    for (var i = 0; i < _maxMedReminders; i++) {
+      await _plugin.cancel(_medicationIdBase + i);
+    }
+  }
+
+  /// Schedule "medicine due" reminders for the given meds. Each entry is the
+  /// med name + the time the next dose is due. Past/None entries are skipped.
+  /// Replaces any previously scheduled medication reminders.
+  static Future<void> scheduleMedicationReminders(
+    List<({String name, DateTime dueAt})> due,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('medication_reminder_enabled') ?? false;
+    await cancelAllMedicationReminders();
+    if (!enabled) return;
+
+    const androidDetails = AndroidNotificationDetails(
+      _medicationChannelId,
+      'Medication Reminders',
+      channelDescription: 'Reminders when a scheduled medicine is due',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    final now = DateTime.now();
+    var i = 0;
+    for (final med in due) {
+      if (i >= _maxMedReminders) break;
+      final delay = med.dueAt.difference(now);
+      if (delay.isNegative) continue; // already due / past — don't fire late
+      final scheduledAt = tz.TZDateTime.now(tz.local).add(delay);
+      await _plugin.zonedSchedule(
+        _medicationIdBase + i,
+        'Medicine due 💊',
+        'It\'s time for ${med.name}.',
+        scheduledAt,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      i++;
+    }
   }
 }
