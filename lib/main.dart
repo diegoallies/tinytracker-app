@@ -10,6 +10,7 @@ import 'app/router.dart';
 import 'providers/night_mode_provider.dart';
 import 'services/notification_service.dart';
 import 'services/pending_writes.dart';
+import 'services/watch_bridge.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,15 +25,23 @@ void main() async {
   await NotificationService.initialize();
   await PendingWrites.init();
 
+  // Explicit container so the Apple Watch bridge can read providers + call the
+  // same action classes the UI uses, outside the widget tree.
+  final container = ProviderContainer();
+  WatchBridge.instance.init(container);
+
   runApp(
-    const ProviderScope(
-      child: TinyTrackApp(),
+    UncontrolledProviderScope(
+      container: container,
+      child: const TinyTrackApp(),
     ),
   );
 
   setupDeepLinks();
   // Push any logs that were saved offline last session.
   PendingWrites.flush();
+  // Seed the watch with the current summary on launch.
+  WatchBridge.instance.pushSummary();
 
   // Navigating away never blurs the focused field, so the keyboard would
   // stay up on the next page. Drop focus whenever the route changes.
