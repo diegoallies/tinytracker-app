@@ -127,7 +127,12 @@ final class ConnectivityService: NSObject, ObservableObject {
     // MARK: Applying inbound context (FLAT shape)
 
     private func apply(context: [String: Any]) {
-        guard !context.isEmpty else { return }
+        guard !context.isEmpty else {
+            NSLog("WatchBridge[watch]: apply() got EMPTY context")
+            return
+        }
+        NSLog("WatchBridge[watch]: apply() keys=\(context.keys.sorted()) "
+            + "feedLog=\((context["feedLog"] as? [Any])?.count ?? -1)")
 
         // Summary decodes straight from the flat context (ignores `scheduledMeds`).
         if let data = try? JSONSerialization.data(withJSONObject: context),

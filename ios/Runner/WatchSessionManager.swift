@@ -70,12 +70,21 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
   }
 
   private func sendContext(_ dict: [String: Any]) {
-    guard WCSession.isSupported(),
-          WCSession.default.activationState == .activated else { return }
+    guard WCSession.isSupported() else {
+      NSLog("WatchBridge[native]: WCSession unsupported"); return
+    }
+    guard WCSession.default.activationState == .activated else {
+      NSLog("WatchBridge[native]: session not activated (state=\(WCSession.default.activationState.rawValue))")
+      return
+    }
+    let clean = Self.plistSanitized(dict)
     do {
-      try WCSession.default.updateApplicationContext(Self.plistSanitized(dict))
+      try WCSession.default.updateApplicationContext(clean)
+      NSLog("WatchBridge[native]: applicationContext SENT, keys=\(clean.keys.sorted()) "
+        + "feedLog=\((clean["feedLog"] as? [Any])?.count ?? -1) "
+        + "reachable=\(WCSession.default.isReachable)")
     } catch {
-      NSLog("WatchSessionManager: updateApplicationContext failed: \(error)")
+      NSLog("WatchBridge[native]: updateApplicationContext FAILED: \(error)")
     }
   }
 

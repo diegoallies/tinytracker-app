@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'supabase_service.dart';
@@ -20,7 +20,7 @@ import '../utils/date_utils.dart';
 /// classes the phone UI uses (so offline-queueing, validation etc. all apply),
 /// then push a fresh summary (next feed, today's totals, scheduled meds) back
 /// to the watch for its home screen + complication.
-class WatchBridge {
+class WatchBridge with WidgetsBindingObserver {
   WatchBridge._();
   static final WatchBridge instance = WatchBridge._();
 
@@ -31,6 +31,31 @@ class WatchBridge {
   void init(ProviderContainer container) {
     _container = container;
     _channel.setMethodCallHandler(_handleNativeCall);
+
+    // The single push in main() runs before login, so `baby` is null and it
+    // no-ops. Push whenever the selected baby becomes available or changes
+    // (fireImmediately covers the already-loaded case), and again every time
+    // the app returns to the foreground — so the watch reflects whatever was
+    // logged on the phone without needing a watch tap first.
+    container.listen(
+      selectedBabyProvider,
+      (previous, next) {
+        if (next != null && next.id != previous?.id) {
+          debugPrint('WatchBridge: baby ready (${next.name}) -> pushSummary');
+          pushSummary();
+        }
+      },
+      fireImmediately: true,
+    );
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('WatchBridge: app resumed -> pushSummary');
+      pushSummary();
+    }
   }
 
   Future<dynamic> _handleNativeCall(MethodCall call) async {
@@ -98,7 +123,10 @@ class WatchBridge {
     final container = _container;
     if (container == null) return;
     final baby = container.read(selectedBabyProvider);
-    if (baby == null) return;
+    if (baby == null) {
+      debugPrint('WatchBridge.pushSummary: no baby selected yet, skipping');
+      return;
+    }
 
     try {
       final client = SupabaseService.client;
@@ -243,6 +271,11 @@ class WatchBridge {
           }
       ];
 
+      debugPrint('WatchBridge.pushSummary: sending for ${baby.name} — '
+          'feeds=${feeds.length} diapers=${diapers.length} '
+          'feedLog=${feedLog.length} diaperLog=${diaperLog.length} '
+          'sleepLog=${sleepLog.length} days=${dailySummaries.length} '
+          'sleeping=${activeSleep != null}');
       await _channel.invokeMethod('updateWatchContext', <String, dynamic>{
         'nextFeedAt': prediction?.expectedAt.toUtc().toIso8601String(),
         'feedsToday': feeds.length,
