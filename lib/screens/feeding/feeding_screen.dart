@@ -1,3 +1,4 @@
+import '../../widgets/expandable_history_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1215,59 +1216,70 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
       itemId: feedingId,
       onConfirmDismiss: _confirmDelete,
       onDismissed: () => _deleteFeeding(feedingId),
-      child: AnimatedCard(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.pastelPurple,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: AppColors.primary, size: 22),
+      child: ExpandableHistoryTile(
+        notes: feeding.notes as String?,
+        details: [
+          ('Type', label),
+          if (detail.isNotEmpty)
+            (type == 'bottle' ? 'Amount' : 'Duration', detail),
+          ('Time', DateFormat('MMM d, h:mm a').format(loggedAt)),
+          if (hasMed)
+            (
+              'Medication',
+              (dosage?.trim().isNotEmpty ?? false)
+                  ? '$medication · ${dosage!.trim()}'
+                  : medication
+            ),
+        ],
+        header: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.pastelPurple,
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: context.palette.text,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+              child: Icon(icon, color: AppColors.primary, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: context.palette.text,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _itemTimeLabel(loggedAt),
-                      style: TextStyle(
-                        color: context.palette.muted,
-                        fontSize: 13,
-                      ),
-                    ),
-                    if (hasMed) ...[
-                      const SizedBox(height: 6),
-                      _MedBadge(medication: medication, dosage: dosage),
-                    ],
-                  ],
-                ),
-              ),
-              if (detail.isNotEmpty)
-                Text(
-                  detail,
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _itemTimeLabel(loggedAt),
+                    style: TextStyle(
+                      color: context.palette.muted,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (hasMed) ...[
+                    const SizedBox(height: 6),
+                    _MedBadge(medication: medication, dosage: dosage),
+                  ],
+                ],
+              ),
+            ),
+            if (detail.isNotEmpty)
+              Text(
+                detail,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
