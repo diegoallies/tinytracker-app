@@ -1,3 +1,4 @@
+import '../../widgets/expandable_history_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -962,63 +963,66 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
       itemId: diaperId,
       onConfirmDismiss: _confirmDelete,
       onDismissed: () => _deleteDiaper(diaperId),
-      child: AnimatedCard(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha:0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 22),
+      child: ExpandableHistoryTile(
+        notes: diaper.notes as String?,
+        details: [
+          ('Type', label),
+          if (color != null) ('Colour', color),
+          ('Time', _itemTimeLabel(loggedAt)),
+        ],
+        header: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          label,
-                          style: TextStyle(
-                            color: context.palette.text,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: context.palette.text,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      if (colorIndicator != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: colorIndicator,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: context.palette.border, width: 1),
                           ),
                         ),
-                        if (colorIndicator != null) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 14,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: colorIndicator,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: context.palette.border, width: 1),
-                            ),
-                          ),
-                        ],
                       ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _itemTimeLabel(loggedAt),
+                    style: TextStyle(
+                      color: context.palette.muted,
+                      fontSize: 13,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _itemTimeLabel(loggedAt),
-                      style: TextStyle(
-                        color: context.palette.muted,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

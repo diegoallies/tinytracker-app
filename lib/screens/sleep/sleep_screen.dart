@@ -1,3 +1,4 @@
+import '../../widgets/expandable_history_tile.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -843,73 +844,81 @@ class _SleepScreenState extends ConsumerState<SleepScreen>
           '${AppDateUtils.formatTime(startTime)} - ${AppDateUtils.formatTime(endTime)}';
     }
 
-    final itemWidget = AnimatedCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: isOngoing
-                    ? AppColors.primary.withValues(alpha:0.15)
-                    : AppColors.pastelPurple,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                isOngoing ? Icons.bedtime_rounded : Icons.bedtime_outlined,
-                color: AppColors.primary,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    timeRange,
-                    style: TextStyle(
-                      color: context.palette.text,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    AppDateUtils.timeAgo(startTime),
-                    style: TextStyle(
-                      color: context.palette.muted,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Text(
-                durationText,
+    final header = Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: isOngoing
+                ? AppColors.primary.withValues(alpha: 0.15)
+                : AppColors.pastelPurple,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            isOngoing ? Icons.bedtime_rounded : Icons.bedtime_outlined,
+            color: AppColors.primary,
+            size: 22,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                timeRange,
                 style: TextStyle(
-                  color: isOngoing ? Colors.orange.shade400 : AppColors.primary,
-                  fontWeight: FontWeight.w700,
+                  color: context.palette.text,
+                  fontWeight: FontWeight.w600,
                   fontSize: 15,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(
+                AppDateUtils.timeAgo(startTime),
+                style: TextStyle(
+                  color: context.palette.muted,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: Text(
+            durationText,
+            style: TextStyle(
+              color: isOngoing ? Colors.orange.shade400 : AppColors.primary,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ],
     );
 
-    if (isOngoing) return itemWidget;
+    // Ongoing session: keep the plain card (no expand/delete while running).
+    if (isOngoing) {
+      return AnimatedCard(
+        child: Padding(padding: const EdgeInsets.all(16), child: header),
+      );
+    }
 
     return SwipeToDismiss(
       itemId: sleepId,
       onConfirmDismiss: _confirmDelete,
       onDismissed: () => _deleteSleep(sleepId),
-      child: itemWidget,
+      child: ExpandableHistoryTile(
+        notes: sleep.notes as String?,
+        details: [
+          ('Duration', durationText),
+          ('Time', timeRange),
+          ('Date', AppDateUtils.formatFull(startTime)),
+        ],
+        header: header,
+      ),
     );
   }
 }
