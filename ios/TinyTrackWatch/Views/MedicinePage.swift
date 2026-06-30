@@ -7,10 +7,8 @@ struct MedicinePage: View {
     @State private var givenNames: Set<String> = []
 
     var body: some View {
-        // Header sits at the top of the stack; content flows beneath it. Same
-        // clean pattern as the other pages (no overlapping/floating header).
-        VStack(spacing: 8) {
-            header
+        VStack(spacing: 6) {
+            PageHeader(icon: "pills.fill", title: "MEDICINE", tint: Theme.medicine)
 
             if connectivity.scheduledMeds.isEmpty {
                 Spacer(minLength: 0)
@@ -34,17 +32,12 @@ struct MedicinePage: View {
                             medCard(name)
                         }
                     }
-                    .padding(.top, 2)
                 }
             }
         }
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .screenBackground(Theme.medicine)
-    }
-
-    private var header: some View {
-        PageHeader(icon: "pills.fill", title: "MEDICINE", tint: Theme.medicine)
     }
 
     private func medCard(_ name: String) -> some View {

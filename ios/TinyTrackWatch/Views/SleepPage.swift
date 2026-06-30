@@ -30,7 +30,6 @@ struct SleepPage: View {
     private var main: some View {
         VStack(spacing: 6) {
             PageHeader(icon: "moon.zzz.fill", title: "SLEEP", tint: Theme.sleep)
-
             Spacer(minLength: 2)
             moon
 

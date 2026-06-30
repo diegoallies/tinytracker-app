@@ -26,7 +26,6 @@ struct FeedPage: View {
     private var main: some View {
         VStack(spacing: 8) {
             PageHeader(icon: "waterbottle.fill", title: "FEED", tint: Theme.feed)
-
             Spacer(minLength: 0)
             Text("Next feed")
                 .font(.system(size: 12, design: .rounded))

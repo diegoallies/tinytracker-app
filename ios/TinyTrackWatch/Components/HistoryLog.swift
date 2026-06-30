@@ -49,7 +49,7 @@ struct HistoryLog<Rows: View>: View {
     @ViewBuilder var rows: () -> Rows
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             PageHeader(icon: icon, title: title, tint: tint)
 
             if isEmpty {
@@ -67,7 +67,6 @@ struct HistoryLog<Rows: View>: View {
             } else {
                 ScrollView {
                     VStack(spacing: 8) { rows() }
-                        .padding(.top, 2)
                 }
             }
         }

@@ -17,7 +17,6 @@ struct DiaperPage: View {
     private var main: some View {
         VStack(spacing: 10) {
             PageHeader(icon: "drop.fill", title: "DIAPER", tint: Theme.diaper)
-
             Spacer(minLength: 0)
             HStack(spacing: 10) {
                 ForEach(DiaperKind.allCases) { kind in
