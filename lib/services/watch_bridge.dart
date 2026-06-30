@@ -102,6 +102,7 @@ class WatchBridge {
 
     try {
       final client = SupabaseService.client;
+      final now = DateTime.now();
       final todayStart = AppDateUtils.todayStart.toUtc().toIso8601String();
 
       final feeds = await client
@@ -147,6 +148,99 @@ class WatchBridge {
       // can only Stop, not Start a second one.
       final activeSleep = await container.read(activeSleepProvider.future);
 
+      // ── Feats 1 & 2: last 7 days of daily summaries (home left-scroll) +
+      //    recent per-type record logs (per-page left-scroll). One windowed
+      //    query per type, then derive both views from it.
+      final weekStartIso = DateTime(now.year, now.month, now.day)
+          .subtract(const Duration(days: 6))
+          .toUtc()
+          .toIso8601String();
+
+      final feedRows = await client
+          .from('feedings')
+          .select('id, type, amount_ml, logged_at')
+          .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
+          .gte('logged_at', weekStartIso)
+          .order('logged_at', ascending: false);
+      final diaperRows = await client
+          .from('diapers')
+          .select('id, type, logged_at')
+          .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
+          .gte('logged_at', weekStartIso)
+          .order('logged_at', ascending: false);
+      final sleepRows = await client
+          .from('sleeps')
+          .select('id, start_time, end_time, duration_minutes')
+          .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
+          .not('end_time', 'is', null)
+          .gte('start_time', weekStartIso)
+          .order('start_time', ascending: false);
+
+      String dayKeyOf(String iso) {
+        final l = DateTime.parse(iso).toLocal();
+        return '${l.year.toString().padLeft(4, '0')}-'
+            '${l.month.toString().padLeft(2, '0')}-'
+            '${l.day.toString().padLeft(2, '0')}';
+      }
+
+      // 7 day buckets, today first.
+      final buckets = <String, Map<String, int>>{};
+      for (var i = 0; i < 7; i++) {
+        final d = DateTime(now.year, now.month, now.day)
+            .subtract(Duration(days: i));
+        final key = '${d.year.toString().padLeft(4, '0')}-'
+            '${d.month.toString().padLeft(2, '0')}-'
+            '${d.day.toString().padLeft(2, '0')}';
+        buckets[key] = {'feeds': 0, 'totalMl': 0, 'sleepMinutes': 0, 'diapers': 0};
+      }
+      for (final f in feedRows) {
+        final b = buckets[dayKeyOf(f['logged_at'] as String)];
+        if (b != null) {
+          b['feeds'] = b['feeds']! + 1;
+          b['totalMl'] = b['totalMl']! + ((f['amount_ml'] as int?) ?? 0);
+        }
+      }
+      for (final d in diaperRows) {
+        final b = buckets[dayKeyOf(d['logged_at'] as String)];
+        if (b != null) b['diapers'] = b['diapers']! + 1;
+      }
+      for (final s in sleepRows) {
+        final b = buckets[dayKeyOf(s['start_time'] as String)];
+        if (b != null) b['sleepMinutes'] = b['sleepMinutes']! + ((s['duration_minutes'] as int?) ?? 0);
+      }
+      final dailySummaries = [
+        for (final e in buckets.entries)
+          {
+            'date': e.key,
+            'feeds': e.value['feeds'],
+            'totalMl': e.value['totalMl'],
+            'sleepMinutes': e.value['sleepMinutes'],
+            'diapers': e.value['diapers'],
+          }
+      ];
+
+      String iso(String s) => DateTime.parse(s).toUtc().toIso8601String();
+      final feedLog = [
+        for (final f in feedRows.take(25))
+          {'id': f['id'], 'type': f['type'], 'amountMl': f['amount_ml'], 'loggedAt': iso(f['logged_at'] as String)}
+      ];
+      final diaperLog = [
+        for (final d in diaperRows.take(25))
+          {'id': d['id'], 'type': d['type'], 'loggedAt': iso(d['logged_at'] as String)}
+      ];
+      final sleepLog = [
+        for (final s in sleepRows.take(25))
+          {
+            'id': s['id'],
+            'durationMinutes': s['duration_minutes'],
+            'startedAt': iso(s['start_time'] as String),
+            'endedAt': s['end_time'] != null ? iso(s['end_time'] as String) : null,
+          }
+      ];
+
       await _channel.invokeMethod('updateWatchContext', <String, dynamic>{
         'nextFeedAt': prediction?.expectedAt.toUtc().toIso8601String(),
         'feedsToday': feeds.length,
@@ -160,6 +254,11 @@ class WatchBridge {
         // Bug 2: ongoing sleep (null when awake) so the watch carries the timer.
         'sleepStartedAt': activeSleep?.startTime.toUtc().toIso8601String(),
         'isSleeping': activeSleep != null,
+        // Feat 1: previous days. Feat 2: per-type record logs.
+        'dailySummaries': dailySummaries,
+        'feedLog': feedLog,
+        'diaperLog': diaperLog,
+        'sleepLog': sleepLog,
       });
     } catch (e, st) {
       debugPrint('WatchBridge pushSummary failed: $e\n$st');
