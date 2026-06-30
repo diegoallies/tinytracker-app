@@ -31,7 +31,14 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+**/build/
 /coverage/
+
+# iOS / Xcode build artifacts
+ios/build/
+**/DerivedData/
+**/*.xcuserstate
+**/xcuserdata/
 
 # Symbolication related
 app.*.symbols
