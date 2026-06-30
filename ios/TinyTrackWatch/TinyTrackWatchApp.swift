@@ -11,15 +11,30 @@ struct TinyTrackWatchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabView {
-                TodayPage()
-                NavigationStack { FeedPage() }
-                DiaperPage()
-                SleepPage()
-                MedicinePage()
-            }
-            .tabViewStyle(.verticalPage)
-            .environmentObject(connectivity)
+            RootTabs().environmentObject(connectivity)
         }
+    }
+}
+
+private struct RootTabs: View {
+    @State private var selection: Int = {
+        #if DEBUG
+        // Lets the Simulator land directly on a page for UI screenshots, e.g.
+        // SIMCTL_CHILD_WATCH_TAB=4 → Medicine. No effect on device builds.
+        if let raw = ProcessInfo.processInfo.environment["WATCH_TAB"],
+           let i = Int(raw) { return i }
+        #endif
+        return 0
+    }()
+
+    var body: some View {
+        TabView(selection: $selection) {
+            TodayPage().tag(0)
+            NavigationStack { FeedPage() }.tag(1)
+            DiaperPage().tag(2)
+            SleepPage().tag(3)
+            MedicinePage().tag(4)
+        }
+        .tabViewStyle(.verticalPage)
     }
 }

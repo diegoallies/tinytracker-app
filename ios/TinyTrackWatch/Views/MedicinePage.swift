@@ -7,38 +7,34 @@ struct MedicinePage: View {
     @State private var givenNames: Set<String> = []
 
     var body: some View {
-        Group {
+        // Header sits at the top of the stack; content flows beneath it. Same
+        // clean pattern as the other pages (no overlapping/floating header).
+        VStack(spacing: 8) {
+            header
+
             if connectivity.scheduledMeds.isEmpty {
+                Spacer(minLength: 0)
                 VStack(spacing: 8) {
-                    header
-                    Spacer(minLength: 0)
-                    VStack(spacing: 8) {
-                        Image(systemName: "pills")
-                            .font(.system(size: 30, weight: .semibold))
-                            .foregroundStyle(Theme.medicine.opacity(0.8))
-                        Text("No meds scheduled")
-                            .font(.system(.headline, design: .rounded))
-                            .foregroundStyle(.white)
-                        Text("Schedule medicine in the\nTinyTrack iPhone app.")
-                            .font(.system(size: 12, design: .rounded))
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-                    Spacer(minLength: 0)
+                    Image(systemName: "pills")
+                        .font(.system(size: 30, weight: .semibold))
+                        .foregroundStyle(Theme.medicine.opacity(0.8))
+                    Text("No meds scheduled")
+                        .font(.system(.headline, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text("Schedule medicine in the\nTinyTrack iPhone app.")
+                        .font(.system(size: 12, design: .rounded))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
+                Spacer(minLength: 0)
             } else {
-                // Pin the header at the very top; the meds scroll cleanly beneath
-                // it (no more clipping the first card under the header).
                 ScrollView {
                     VStack(spacing: 9) {
                         ForEach(connectivity.scheduledMeds, id: \.self) { name in
                             medCard(name)
                         }
                     }
-                    .padding(.top, 4)
-                }
-                .safeAreaInset(edge: .top, spacing: 6) {
-                    header.background(Theme.surface.opacity(0.001))
+                    .padding(.top, 2)
                 }
             }
         }

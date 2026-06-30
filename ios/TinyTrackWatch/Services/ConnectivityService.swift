@@ -36,8 +36,49 @@ final class ConnectivityService: NSObject, ObservableObject {
     private override init() {
         super.init()
         SharedStore.save(summary)   // seed the complication
+        #if targetEnvironment(simulator)
+        seedSampleHistory()         // so the log pages are testable without a phone
+        #endif
         activate()
     }
+
+    #if targetEnvironment(simulator)
+    /// Populate the history arrays with sample records so the Feed/Diaper/Sleep
+    /// log pages and the home left-scroll render in the Simulator (no phone).
+    /// Never compiled into device builds — real data comes from the phone.
+    private func seedSampleHistory() {
+        let now = Date()
+        func ago(_ h: Double) -> Date { now.addingTimeInterval(-h * 3600) }
+
+        feedLog = [
+            FeedLog(type: "bottle", amountMl: 150, loggedAt: ago(1)),
+            FeedLog(type: "breast_left", amountMl: nil, loggedAt: ago(4)),
+            FeedLog(type: "bottle", amountMl: 120, loggedAt: ago(7)),
+            FeedLog(type: "solids", amountMl: nil, loggedAt: ago(26)),
+        ]
+        diaperLog = [
+            DiaperLog(type: "wet", loggedAt: ago(2)),
+            DiaperLog(type: "dirty", loggedAt: ago(5)),
+            DiaperLog(type: "both", loggedAt: ago(28)),
+        ]
+        sleepLog = [
+            SleepLog(durationMinutes: 95, startedAt: ago(3), endedAt: ago(1.4)),
+            SleepLog(durationMinutes: 180, startedAt: ago(12), endedAt: ago(9)),
+        ]
+        daySummaries = [
+            DaySummary(date: dayKey(now),       feeds: 5, totalMl: 620, sleepMinutes: 275, diapers: 4),
+            DaySummary(date: dayKey(ago(24)),   feeds: 6, totalMl: 700, sleepMinutes: 300, diapers: 5),
+            DaySummary(date: dayKey(ago(48)),   feeds: 4, totalMl: 540, sleepMinutes: 260, diapers: 3),
+        ]
+    }
+
+    private func dayKey(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f.string(from: date)
+    }
+    #endif
 
     // MARK: Activation
 

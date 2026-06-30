@@ -223,18 +223,20 @@ class WatchBridge {
       ];
 
       String iso(String s) => DateTime.parse(s).toUtc().toIso8601String();
+      // ids are stringified: the watch decodes `id` as a Swift String, and a
+      // numeric id would fail the whole array decode.
       final feedLog = [
         for (final f in feedRows.take(25))
-          {'id': f['id'], 'type': f['type'], 'amountMl': f['amount_ml'], 'loggedAt': iso(f['logged_at'] as String)}
+          {'id': '${f['id']}', 'type': f['type'], 'amountMl': f['amount_ml'], 'loggedAt': iso(f['logged_at'] as String)}
       ];
       final diaperLog = [
         for (final d in diaperRows.take(25))
-          {'id': d['id'], 'type': d['type'], 'loggedAt': iso(d['logged_at'] as String)}
+          {'id': '${d['id']}', 'type': d['type'], 'loggedAt': iso(d['logged_at'] as String)}
       ];
       final sleepLog = [
         for (final s in sleepRows.take(25))
           {
-            'id': s['id'],
+            'id': '${s['id']}',
             'durationMinutes': s['duration_minutes'],
             'startedAt': iso(s['start_time'] as String),
             'endedAt': s['end_time'] != null ? iso(s['end_time'] as String) : null,

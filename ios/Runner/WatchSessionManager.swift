@@ -73,10 +73,31 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
     guard WCSession.isSupported(),
           WCSession.default.activationState == .activated else { return }
     do {
-      try WCSession.default.updateApplicationContext(dict)
+      try WCSession.default.updateApplicationContext(Self.plistSanitized(dict))
     } catch {
       NSLog("WatchSessionManager: updateApplicationContext failed: \(error)")
     }
+  }
+
+  /// `updateApplicationContext` only accepts property-list types. Flutter encodes
+  /// a Dart `null` as `NSNull`, which is NOT plist-compatible — a single null
+  /// anywhere (e.g. `nextFeedAt`, `babyPhotoUrl`, a breast feed's `amountMl`)
+  /// makes the call throw and drops the ENTIRE payload, so the watch shows
+  /// nothing. Recursively remove nulls; the watch's Codable models already treat
+  /// absent keys as `nil`.
+  static func plistSanitized(_ dict: [String: Any]) -> [String: Any] {
+    var out: [String: Any] = [:]
+    for (key, value) in dict {
+      if let clean = sanitize(value) { out[key] = clean }
+    }
+    return out
+  }
+
+  private static func sanitize(_ value: Any) -> Any? {
+    if value is NSNull { return nil }
+    if let dict = value as? [String: Any] { return plistSanitized(dict) }
+    if let array = value as? [Any] { return array.compactMap { sanitize($0) } }
+    return value
   }
 
   // MARK: - WCSessionDelegate

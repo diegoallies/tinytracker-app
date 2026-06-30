@@ -7,10 +7,18 @@ struct FeedPage: View {
     @EnvironmentObject private var connectivity: ConnectivityService
     private var s: WatchSummary { connectivity.summary }
 
+    @State private var sub: Int = {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["WATCH_FEED_SUB"],
+           let i = Int(raw) { return i }
+        #endif
+        return 0
+    }()
+
     var body: some View {
-        TabView {
-            main
-            logView
+        TabView(selection: $sub) {
+            main.tag(0)
+            logView.tag(1)
         }
         .tabViewStyle(.page)
     }

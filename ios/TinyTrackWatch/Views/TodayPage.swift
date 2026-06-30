@@ -28,7 +28,30 @@ struct TodayPage: View {
 
     private var todayView: some View {
         VStack(spacing: 10) {
-            PageHeader(icon: "chart.bar.fill", title: "TODAY", tint: Theme.today)
+            // Identity header: avatar (photo or monogram) + baby name. The
+            // current time is the system status-bar clock (top-right), so we
+            // leave that corner clear rather than drawing a duplicate.
+            HStack(spacing: 9) {
+                BabyAvatar(photoUrl: s.babyPhotoUrl, initials: s.babyInitials, diameter: 32)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text((s.babyName?.isEmpty == false) ? s.babyName! : "TinyTrack")
+                        .font(.system(.headline, design: .rounded).weight(.bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    if s.isSleeping {
+                        Label("Asleep", systemImage: "moon.zzz.fill")
+                            .font(.system(size: 10, design: .rounded).weight(.semibold))
+                            .foregroundStyle(Theme.sleep)
+                    } else {
+                        Text("TODAY")
+                            .font(.system(size: 10, design: .rounded).weight(.bold))
+                            .tracking(1.5)
+                            .foregroundStyle(Theme.today)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
 
             LazyVGrid(columns: cols, spacing: 7) {
                 tile("Feeds", "\(s.feedsToday)", "\(s.totalMlToday) ml",
@@ -40,11 +63,11 @@ struct TodayPage: View {
                 tile("Next", s.nextFeedShort, nil,
                      "clock.fill", Theme.today, .bottomTrailing)
             }
-            .overlay(alignment: .center) { avatarHub }
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
+        .padding(.top, 2)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .screenBackground(Theme.today)
@@ -73,12 +96,6 @@ struct TodayPage: View {
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .screenBackground(Theme.today)
-    }
-
-    private var avatarHub: some View {
-        BabyAvatar(photoUrl: s.babyPhotoUrl, initials: s.babyInitials, diameter: 58)
-            .padding(5)
-            .background(Circle().fill(Theme.surface))
     }
 
     private func tile(_ title: String, _ value: String, _ caption: String?,
