@@ -9,17 +9,48 @@
 /* Begin PBXBuildFile section */
 		1051209E14A6797F34D2CFB6 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8AF7FC130E25D929A876C69F /* Pods_RunnerTests.framework */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		1CB891F1317D4BAAAF772944 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 038AF29518C9B681449AC3D7 /* Assets.xcassets */; };
+		275BFF825409A287FA0068AC /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61FBB483DCC4A78F3A35F3E /* TodayView.swift */; };
+		2C427B0C43406892FD56C413 /* SleepEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 433E98C655361E37116862C9 /* SleepEvent.swift */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
+		3CB4EF587AD6C5ABE4A248C4 /* DiaperLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F429C631F600B63DB14C210 /* DiaperLog.swift */; };
+		401A81A3238F203929616DA5 /* SleepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 302B86513EC80DBEE3813D20 /* SleepView.swift */; };
+		459F9C611181C93C1C35DE4F /* LogFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E16C6F788E62C0073B5082C /* LogFeedView.swift */; };
+		463A41DEA8E48605D260CF23 /* FeedLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFFD6EB57DCD9D2598E43AD /* FeedLog.swift */; };
+		5B45DE035E07AAFE606D19CB /* MedicineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ABFF55B0B65EB9CE4A099F /* MedicineView.swift */; };
+		5D21D33241DEEBAF6D8BB071 /* WatchSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 194BB683DC04A27BB21DA4D0 /* WatchSummary.swift */; };
+		6C15FCE1454B8C9C2CFF4020 /* LogDiaperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D54CC0B9482FEE8B4F29749 /* LogDiaperView.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
+		827BB52CCEA5F59C53B4CFA6 /* SavedOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70198B922BAC46068DE98CF1 /* SavedOverlay.swift */; };
+		892915E11FEA465C4901B50E /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A534C8CA033F42DB13D26843 /* WatchSessionManager.swift */; };
+		973927769750B67018FF70AE /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF060AF1C96D0ABA840B2993 /* SharedStore.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		9AB4AFA55F163276C7C7E595 /* BigActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C4D8366BB2D488FEBDB3A3 /* BigActionButton.swift */; };
+		9EF3AA57AF335BE9185962D2 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470A9737D8607FC341B88086 /* HomeView.swift */; };
+		A2F48AAA2BD0F0CE58B545F2 /* WatchAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BA54741E49A3CA8A5FBF4C /* WatchAction.swift */; };
+		A789EC2E2272473B552DC269 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B80FDD03B0C7E813217E5CBB /* Theme.swift */; };
+		AC36E811A2183F602A5FAFE3 /* MedLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7967CFFD2A9BCBBA39CD46FC /* MedLog.swift */; };
+		B50CED17B36F8F0E8AC51C10 /* TinyTrackWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FA8B777A2DB62E7E0E223EBC /* TinyTrackWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CCC17365E6C0AC0E5EC5B00B /* SharedConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81C1BA2C06FADD8724544695 /* SharedConfig.swift */; };
+		D5E0E22B818A1901DB44800C /* ConnectivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE44ED1668A1C8EC0E5746A3 /* ConnectivityService.swift */; };
+		EB221C588E25E8BD8B22E075 /* StatTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF29815C2A135D909964B278 /* StatTile.swift */; };
+		EC3763810E8D54C7DCF50EDC /* TinyTrackWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 849E1F357CF999B45F932F41 /* TinyTrackWatchApp.swift */; };
+		ECDF09333727FB378B7521A1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 69B1C94EF6BB6A7FEF809AF2 /* Foundation.framework */; };
 		EDCE9A262893ACC457B3F564 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF2EE3AA186E464ACAB86370 /* Pods_Runner.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		00C13CBC1218AF97A8AAFDA8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4B0F1ACD4B717EAE86AA8F66;
+			remoteInfo = TinyTrackWatch;
+		};
 		331C8085294A63A400263BE5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
@@ -40,23 +71,48 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CD1CA275330C3A643955282D /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				B50CED17B36F8F0E8AC51C10 /* TinyTrackWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		019BA65D01ED5AAA1CA32F52 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		0203993D3BA191A4EE32D450 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
+		038AF29518C9B681449AC3D7 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = TinyTrackWatch/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		194BB683DC04A27BB21DA4D0 /* WatchSummary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSummary.swift; path = TinyTrackWatch/Models/WatchSummary.swift; sourceTree = SOURCE_ROOT; };
 		2B40E469031C5408B5DE3F21 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		2D54CC0B9482FEE8B4F29749 /* LogDiaperView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LogDiaperView.swift; path = TinyTrackWatch/Views/LogDiaperView.swift; sourceTree = SOURCE_ROOT; };
+		302B86513EC80DBEE3813D20 /* SleepView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SleepView.swift; path = TinyTrackWatch/Views/SleepView.swift; sourceTree = SOURCE_ROOT; };
+		32C4D8366BB2D488FEBDB3A3 /* BigActionButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BigActionButton.swift; path = TinyTrackWatch/Components/BigActionButton.swift; sourceTree = SOURCE_ROOT; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		433E98C655361E37116862C9 /* SleepEvent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SleepEvent.swift; path = TinyTrackWatch/Models/SleepEvent.swift; sourceTree = SOURCE_ROOT; };
+		470A9737D8607FC341B88086 /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeView.swift; path = TinyTrackWatch/Views/HomeView.swift; sourceTree = SOURCE_ROOT; };
+		5F429C631F600B63DB14C210 /* DiaperLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DiaperLog.swift; path = TinyTrackWatch/Models/DiaperLog.swift; sourceTree = SOURCE_ROOT; };
 		60A5557CAFA3AB8AC0B230BF /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		677BF9EDD04BFD45136EF1B2 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
+		69B1C94EF6BB6A7FEF809AF2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		6E47067CF5BC4BA84CA6BF07 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = TinyTrackWatch/Info.plist; sourceTree = SOURCE_ROOT; };
+		70198B922BAC46068DE98CF1 /* SavedOverlay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SavedOverlay.swift; path = TinyTrackWatch/Components/SavedOverlay.swift; sourceTree = SOURCE_ROOT; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		7967CFFD2A9BCBBA39CD46FC /* MedLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MedLog.swift; path = TinyTrackWatch/Models/MedLog.swift; sourceTree = SOURCE_ROOT; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
+		81C1BA2C06FADD8724544695 /* SharedConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedConfig.swift; path = TinyTrackWatch/Models/SharedConfig.swift; sourceTree = SOURCE_ROOT; };
+		849E1F357CF999B45F932F41 /* TinyTrackWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TinyTrackWatchApp.swift; path = TinyTrackWatch/TinyTrackWatchApp.swift; sourceTree = SOURCE_ROOT; };
 		8AF7FC130E25D929A876C69F /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -65,11 +121,30 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9E16C6F788E62C0073B5082C /* LogFeedView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LogFeedView.swift; path = TinyTrackWatch/Views/LogFeedView.swift; sourceTree = SOURCE_ROOT; };
+		A534C8CA033F42DB13D26843 /* WatchSessionManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSessionManager.swift; path = Runner/WatchSessionManager.swift; sourceTree = SOURCE_ROOT; };
+		B3ABFF55B0B65EB9CE4A099F /* MedicineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MedicineView.swift; path = TinyTrackWatch/Views/MedicineView.swift; sourceTree = SOURCE_ROOT; };
+		B80FDD03B0C7E813217E5CBB /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = TinyTrackWatch/Components/Theme.swift; sourceTree = SOURCE_ROOT; };
 		BFA1AAA37BFF31E428EA1155 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
+		BFFFD6EB57DCD9D2598E43AD /* FeedLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FeedLog.swift; path = TinyTrackWatch/Models/FeedLog.swift; sourceTree = SOURCE_ROOT; };
+		CE44ED1668A1C8EC0E5746A3 /* ConnectivityService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ConnectivityService.swift; path = TinyTrackWatch/Services/ConnectivityService.swift; sourceTree = SOURCE_ROOT; };
+		DF060AF1C96D0ABA840B2993 /* SharedStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedStore.swift; path = TinyTrackWatch/Services/SharedStore.swift; sourceTree = SOURCE_ROOT; };
+		E0BA54741E49A3CA8A5FBF4C /* WatchAction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchAction.swift; path = TinyTrackWatch/Models/WatchAction.swift; sourceTree = SOURCE_ROOT; };
 		EF2EE3AA186E464ACAB86370 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F61FBB483DCC4A78F3A35F3E /* TodayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TodayView.swift; path = TinyTrackWatch/Views/TodayView.swift; sourceTree = SOURCE_ROOT; };
+		FA8B777A2DB62E7E0E223EBC /* TinyTrackWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TinyTrackWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF29815C2A135D909964B278 /* StatTile.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StatTile.swift; path = TinyTrackWatch/Components/StatTile.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		16F80680575709D431153765 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ECDF09333727FB378B7521A1 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		631A759F1ACADA322F8FC271 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -89,6 +164,44 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0A4F05A72123F4EA98B68013 /* watchOS */ = {
+			isa = PBXGroup;
+			children = (
+				69B1C94EF6BB6A7FEF809AF2 /* Foundation.framework */,
+			);
+			name = watchOS;
+			sourceTree = "<group>";
+		};
+		0D118A5D3443EFF7D7BFE2D1 /* TinyTrackWatch */ = {
+			isa = PBXGroup;
+			children = (
+				32C4D8366BB2D488FEBDB3A3 /* BigActionButton.swift */,
+				70198B922BAC46068DE98CF1 /* SavedOverlay.swift */,
+				FF29815C2A135D909964B278 /* StatTile.swift */,
+				B80FDD03B0C7E813217E5CBB /* Theme.swift */,
+				5F429C631F600B63DB14C210 /* DiaperLog.swift */,
+				BFFFD6EB57DCD9D2598E43AD /* FeedLog.swift */,
+				7967CFFD2A9BCBBA39CD46FC /* MedLog.swift */,
+				81C1BA2C06FADD8724544695 /* SharedConfig.swift */,
+				433E98C655361E37116862C9 /* SleepEvent.swift */,
+				E0BA54741E49A3CA8A5FBF4C /* WatchAction.swift */,
+				194BB683DC04A27BB21DA4D0 /* WatchSummary.swift */,
+				CE44ED1668A1C8EC0E5746A3 /* ConnectivityService.swift */,
+				DF060AF1C96D0ABA840B2993 /* SharedStore.swift */,
+				849E1F357CF999B45F932F41 /* TinyTrackWatchApp.swift */,
+				470A9737D8607FC341B88086 /* HomeView.swift */,
+				2D54CC0B9482FEE8B4F29749 /* LogDiaperView.swift */,
+				9E16C6F788E62C0073B5082C /* LogFeedView.swift */,
+				B3ABFF55B0B65EB9CE4A099F /* MedicineView.swift */,
+				302B86513EC80DBEE3813D20 /* SleepView.swift */,
+				F61FBB483DCC4A78F3A35F3E /* TodayView.swift */,
+				038AF29518C9B681449AC3D7 /* Assets.xcassets */,
+				6E47067CF5BC4BA84CA6BF07 /* Info.plist */,
+			);
+			name = TinyTrackWatch;
+			path = TinyTrackWatch;
+			sourceTree = SOURCE_ROOT;
+		};
 		331C8082294A63A400263BE5 /* RunnerTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -117,6 +230,7 @@
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				A6E1B9505E24EB61E155A184 /* Pods */,
 				D4077D26AD892122EBB85540 /* Frameworks */,
+				0D118A5D3443EFF7D7BFE2D1 /* TinyTrackWatch */,
 			);
 			sourceTree = "<group>";
 		};
@@ -125,6 +239,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
+				FA8B777A2DB62E7E0E223EBC /* TinyTrackWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -141,6 +256,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				A534C8CA033F42DB13D26843 /* WatchSessionManager.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -164,6 +280,7 @@
 			children = (
 				EF2EE3AA186E464ACAB86370 /* Pods_Runner.framework */,
 				8AF7FC130E25D929A876C69F /* Pods_RunnerTests.framework */,
+				0A4F05A72123F4EA98B68013 /* watchOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -190,10 +307,28 @@
 			productReference = 331C8081294A63A400263BE5 /* RunnerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		4B0F1ACD4B717EAE86AA8F66 /* TinyTrackWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3EF9DFBD5527356F5387D995 /* Build configuration list for PBXNativeTarget "TinyTrackWatch" */;
+			buildPhases = (
+				821F7E2286C4F790D388114C /* Sources */,
+				16F80680575709D431153765 /* Frameworks */,
+				2154808942F3ED4196540D80 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TinyTrackWatch;
+			productName = TinyTrackWatch;
+			productReference = FA8B777A2DB62E7E0E223EBC /* TinyTrackWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
+				CD1CA275330C3A643955282D /* Embed Watch Content */,
 				FE44E8E2DF1E907847605EDE /* [CP] Check Pods Manifest.lock */,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
@@ -206,6 +341,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				4EED05F680AFA87B670C5A0E /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -247,11 +383,20 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
+				4B0F1ACD4B717EAE86AA8F66 /* TinyTrackWatch */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		2154808942F3ED4196540D80 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1CB891F1317D4BAAAF772944 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		331C807F294A63A400263BE5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -376,6 +521,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		821F7E2286C4F790D388114C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9AB4AFA55F163276C7C7E595 /* BigActionButton.swift in Sources */,
+				827BB52CCEA5F59C53B4CFA6 /* SavedOverlay.swift in Sources */,
+				EB221C588E25E8BD8B22E075 /* StatTile.swift in Sources */,
+				A789EC2E2272473B552DC269 /* Theme.swift in Sources */,
+				3CB4EF587AD6C5ABE4A248C4 /* DiaperLog.swift in Sources */,
+				463A41DEA8E48605D260CF23 /* FeedLog.swift in Sources */,
+				AC36E811A2183F602A5FAFE3 /* MedLog.swift in Sources */,
+				CCC17365E6C0AC0E5EC5B00B /* SharedConfig.swift in Sources */,
+				2C427B0C43406892FD56C413 /* SleepEvent.swift in Sources */,
+				A2F48AAA2BD0F0CE58B545F2 /* WatchAction.swift in Sources */,
+				5D21D33241DEEBAF6D8BB071 /* WatchSummary.swift in Sources */,
+				D5E0E22B818A1901DB44800C /* ConnectivityService.swift in Sources */,
+				973927769750B67018FF70AE /* SharedStore.swift in Sources */,
+				EC3763810E8D54C7DCF50EDC /* TinyTrackWatchApp.swift in Sources */,
+				9EF3AA57AF335BE9185962D2 /* HomeView.swift in Sources */,
+				6C15FCE1454B8C9C2CFF4020 /* LogDiaperView.swift in Sources */,
+				459F9C611181C93C1C35DE4F /* LogFeedView.swift in Sources */,
+				5B45DE035E07AAFE606D19CB /* MedicineView.swift in Sources */,
+				401A81A3238F203929616DA5 /* SleepView.swift in Sources */,
+				275BFF825409A287FA0068AC /* TodayView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EA1CF9000F007C117D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -383,6 +555,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
+				892915E11FEA465C4901B50E /* WatchSessionManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -393,6 +566,12 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+		4EED05F680AFA87B670C5A0E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TinyTrackWatch;
+			target = 4B0F1ACD4B717EAE86AA8F66 /* TinyTrackWatch */;
+			targetProxy = 00C13CBC1218AF97A8AAFDA8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -416,6 +595,80 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		0FB147DFE43E35834CFDE702 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GLWG756ZM9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TinyTrackWatch/Info.plist;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tinytrack.tinytrackApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.5;
+			};
+			name = Profile;
+		};
+		11DB8B99E6FFE80861852642 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GLWG756ZM9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TinyTrackWatch/Info.plist;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tinytrack.tinytrackApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.5;
+			};
+			name = Debug;
+		};
+		22B9AE1148D7501B31AC0623 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GLWG756ZM9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TinyTrackWatch/Info.plist;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tinytrack.tinytrackApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.5;
+			};
+			name = Release;
+		};
 		249021D3217E4FDB00AE95B9 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -705,6 +958,16 @@
 				331C8088294A63A400263BE5 /* Debug */,
 				331C8089294A63A400263BE5 /* Release */,
 				331C808A294A63A400263BE5 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3EF9DFBD5527356F5387D995 /* Build configuration list for PBXNativeTarget "TinyTrackWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22B9AE1148D7501B31AC0623 /* Release */,
+				11DB8B99E6FFE80861852642 /* Debug */,
+				0FB147DFE43E35834CFDE702 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
