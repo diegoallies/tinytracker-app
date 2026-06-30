@@ -14,7 +14,7 @@ struct SavedOverlay: View {
                 .font(.headline)
         }
         .padding(22)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .glassCard(22, tint: .green)
         .transition(.scale(scale: 0.85).combined(with: .opacity))
     }
 }

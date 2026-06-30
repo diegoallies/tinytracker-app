@@ -26,6 +26,12 @@ final class ConnectivityService: NSObject, ObservableObject {
     @Published private(set) var scheduledMeds: [String] = ["Panado", "Vitamin D"]
     @Published private(set) var isReachable: Bool = false
     @Published private(set) var lastSendOK: Bool = true
+    // Feat 1: previous days for the home left-scroll (newest first, includes today).
+    @Published private(set) var daySummaries: [DaySummary] = []
+    // Feat 2: recent per-type record logs for each page's left-scroll.
+    @Published private(set) var feedLog: [FeedLog] = []
+    @Published private(set) var diaperLog: [DiaperLog] = []
+    @Published private(set) var sleepLog: [SleepLog] = []
 
     private override init() {
         super.init()
@@ -95,6 +101,29 @@ final class ConnectivityService: NSObject, ObservableObject {
         if let meds = context["scheduledMeds"] as? [String] {
             DispatchQueue.main.async { self.scheduledMeds = meds }
         }
+
+        // History arrays (Feats 1 & 2). Each is a JSON array under its own key.
+        if let days: [DaySummary] = decodeArray(context["dailySummaries"]) {
+            DispatchQueue.main.async { self.daySummaries = days }
+        }
+        if let feeds: [FeedLog] = decodeArray(context["feedLog"]) {
+            DispatchQueue.main.async { self.feedLog = feeds }
+        }
+        if let diapers: [DiaperLog] = decodeArray(context["diaperLog"]) {
+            DispatchQueue.main.async { self.diaperLog = diapers }
+        }
+        if let sleeps: [SleepLog] = decodeArray(context["sleepLog"]) {
+            DispatchQueue.main.async { self.sleepLog = sleeps }
+        }
+    }
+
+    /// Decode a `[T]` from a raw JSON-array value pulled out of the context.
+    private func decodeArray<T: Decodable>(_ raw: Any?) -> [T]? {
+        guard let raw,
+              let data = try? JSONSerialization.data(withJSONObject: raw),
+              let decoded = try? SharedConfig.jsonDecoder.decode([T].self, from: data)
+        else { return nil }
+        return decoded
     }
 }
 

@@ -15,17 +15,42 @@ struct WatchSummary: Codable, Hashable {
     var totalMlToday: Int
     var sleepMinutesToday: Int
     var diapersToday: Int
+    /// Optional baby profile, sent by the phone so the watch can show an avatar.
+    var babyName: String?
+    var babyPhotoUrl: String?
+    /// When the baby's CURRENT sleep started (nil when awake). Pushed by the
+    /// phone as the single source of truth so the watch carries the live timer
+    /// and never starts a second session. Optional keeps decoding safe when the
+    /// key is absent; `isSleeping` is derived from it.
+    var sleepStartedAt: Date?
 
     init(nextFeedAt: Date? = nil,
          feedsToday: Int = 0,
          totalMlToday: Int = 0,
          sleepMinutesToday: Int = 0,
-         diapersToday: Int = 0) {
+         diapersToday: Int = 0,
+         babyName: String? = nil,
+         babyPhotoUrl: String? = nil,
+         sleepStartedAt: Date? = nil) {
         self.nextFeedAt = nextFeedAt
         self.feedsToday = feedsToday
         self.totalMlToday = totalMlToday
         self.sleepMinutesToday = sleepMinutesToday
         self.diapersToday = diapersToday
+        self.babyName = babyName
+        self.babyPhotoUrl = babyPhotoUrl
+        self.sleepStartedAt = sleepStartedAt
+    }
+
+    /// True while a sleep session is running on the phone.
+    var isSleeping: Bool { sleepStartedAt != nil }
+
+    /// 1–2 letter monogram for the avatar fallback, e.g. "Mia" → "M".
+    var babyInitials: String {
+        guard let name = babyName?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return "" }
+        let parts = name.split(separator: " ")
+        let letters = parts.prefix(2).compactMap { $0.first }
+        return String(letters).uppercased()
     }
 
     /// Whole minutes until the next feed (nil if unknown / in the past).
@@ -55,6 +80,7 @@ struct WatchSummary: Codable, Hashable {
         feedsToday: 5,
         totalMlToday: 620,
         sleepMinutesToday: 180,
-        diapersToday: 4
+        diapersToday: 4,
+        babyName: "Mia"
     )
 }
