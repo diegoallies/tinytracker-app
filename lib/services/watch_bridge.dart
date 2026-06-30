@@ -142,6 +142,11 @@ class WatchBridge {
           if (!m.asNeeded) m.name,
       ];
 
+      // Live sleep state so the watch mirrors the phone (source of truth):
+      // if a session is running, the watch shows the carried-over timer and
+      // can only Stop, not Start a second one.
+      final activeSleep = await container.read(activeSleepProvider.future);
+
       await _channel.invokeMethod('updateWatchContext', <String, dynamic>{
         'nextFeedAt': prediction?.expectedAt.toUtc().toIso8601String(),
         'feedsToday': feeds.length,
@@ -149,6 +154,12 @@ class WatchBridge {
         'sleepMinutesToday': sleepMinutes,
         'diapersToday': diapers.length,
         'scheduledMeds': scheduledMeds,
+        // Bug 1: baby identity for the watch avatar.
+        'babyName': baby.name,
+        'babyPhotoUrl': baby.photoUrl,
+        // Bug 2: ongoing sleep (null when awake) so the watch carries the timer.
+        'sleepStartedAt': activeSleep?.startTime.toUtc().toIso8601String(),
+        'isSleeping': activeSleep != null,
       });
     } catch (e, st) {
       debugPrint('WatchBridge pushSummary failed: $e\n$st');
