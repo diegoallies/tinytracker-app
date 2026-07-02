@@ -27,6 +27,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   bool _isUploadingAvatar = false;
   bool _isLoggingOut = false;
+  bool _isDeletingAccount = false;
   bool _initialized = false;
 
   // Per-field inline editing state
@@ -244,6 +245,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete Account',
+      message:
+          'This permanently deletes your account, your babies\' profiles and '
+          'every feed, sleep, nappy, photo and note you\'ve logged. This '
+          'cannot be undone.',
+      confirmLabel: 'Delete Forever',
+      destructive: true,
+      icon: Icons.delete_forever_rounded,
+    );
+
+    if (!confirmed || !mounted) return;
+
+    final doubleChecked = await showConfirmDialog(
+      context,
+      title: 'Are you absolutely sure?',
+      message: 'All your data will be gone for good. There is no way to '
+          'recover it afterwards.',
+      confirmLabel: 'Yes, Delete Everything',
+      destructive: true,
+      icon: Icons.warning_amber_rounded,
+    );
+
+    if (!doubleChecked) return;
+
+    setState(() => _isDeletingAccount = true);
+
+    try {
+      await AuthService().deleteAccount();
+      if (mounted) {
+        context.go('/login');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isDeletingAccount = false);
+        context.showErrorSnackBar(
+          'Couldn\'t delete your account. Check your connection and try again.',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
@@ -392,7 +437,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                         _AccountActionsCard(
                           isLoggingOut: _isLoggingOut,
+                          isDeletingAccount: _isDeletingAccount,
                           onLogout: _logout,
+                          onDeleteAccount: _deleteAccount,
                         ),
 
                         const SizedBox(height: 32),
@@ -1025,15 +1072,20 @@ class _FieldDivider extends StatelessWidget {
 
 class _AccountActionsCard extends StatelessWidget {
   final bool isLoggingOut;
+  final bool isDeletingAccount;
   final VoidCallback onLogout;
+  final VoidCallback onDeleteAccount;
 
   const _AccountActionsCard({
     required this.isLoggingOut,
+    required this.isDeletingAccount,
     required this.onLogout,
+    required this.onDeleteAccount,
   });
 
   @override
   Widget build(BuildContext context) {
+    final busy = isLoggingOut || isDeletingAccount;
     return Container(
       decoration: BoxDecoration(
         color: context.palette.card,
@@ -1049,66 +1101,118 @@ class _AccountActionsCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(24),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: isLoggingOut ? null : onLogout,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.logout_rounded,
-                    size: 20,
-                    color: Colors.red.shade400,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Sign Out',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.red.shade400,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'You\'ll need to log in again',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: context.palette.muted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isLoggingOut)
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
+        child: Column(
+          children: [
+            _AccountActionRow(
+              icon: Icons.logout_rounded,
+              title: 'Sign Out',
+              subtitle: 'You\'ll need to log in again',
+              isBusy: isLoggingOut,
+              onTap: busy ? null : onLogout,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            Divider(
+              height: 1,
+              indent: 20,
+              endIndent: 20,
+              color: context.palette.muted.withValues(alpha: 0.15),
+            ),
+            _AccountActionRow(
+              icon: Icons.delete_forever_rounded,
+              title: 'Delete Account',
+              subtitle: 'Permanently erase your account and all data',
+              isBusy: isDeletingAccount,
+              onTap: busy ? null : onDeleteAccount,
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(24),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountActionRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool isBusy;
+  final VoidCallback? onTap;
+  final BorderRadius borderRadius;
+
+  const _AccountActionRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.isBusy,
+    required this.onTap,
+    required this.borderRadius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: borderRadius,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: Colors.red.shade400,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: Colors.red.shade400,
                     ),
-                  )
-                else
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: context.palette.muted.withValues(alpha: 0.6),
                   ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.palette.muted,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            if (isBusy)
+              SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.red.shade400,
+                ),
+              )
+            else
+              Icon(
+                Icons.chevron_right_rounded,
+                color: context.palette.muted.withValues(alpha: 0.6),
+              ),
+          ],
         ),
       ),
     );
