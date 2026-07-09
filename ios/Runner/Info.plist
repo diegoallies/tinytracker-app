@@ -39,6 +39,12 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>TinyTrack needs camera access to take photos of your baby's precious moments.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TinyTrack needs photo library access to save and select photos of your baby.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>TinyTrack needs permission to save photos to your library.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
