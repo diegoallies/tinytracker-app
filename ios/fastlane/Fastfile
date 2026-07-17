@@ -1,0 +1,82 @@
+# TinyTrack — iOS release automation
+#
+# Auth uses an App Store Connect API key (no 2FA prompts, works unattended).
+# Put your key file at ios/fastlane/AuthKey.p8 and set ASC_KEY_ID / ASC_ISSUER_ID
+# in ios/fastlane/.env.default (both files are gitignored).
+#
+# Usage (from the ios/ directory):
+#   fastlane beta      # build + upload to TestFlight (UAT)
+#   fastlane release   # build + submit to the App Store for review
+
+default_platform(:ios)
+
+# Absolute paths so lanes work no matter where fastlane is invoked from.
+PROJECT_ROOT = File.expand_path("../..", __dir__)          # .../Tiny Tracker
+IPA_DIR      = File.join(PROJECT_ROOT, "build/ios/ipa")
+IPA_PATH     = File.join(IPA_DIR, "TinyTrack.ipa")
+
+# Load the App Store Connect API key once per run.
+def asc_key
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_filepath: File.expand_path("AuthKey.p8", __dir__),
+    duration: 1200,
+    in_house: false,
+  )
+end
+
+platform :ios do
+  # Compile the Flutter side (Dart + assets + pods). No signing here — gym signs.
+  private_lane :flutter_compile do
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter", "pub", "get")
+      sh("flutter", "build", "ios", "--release", "--no-codesign")
+    end
+  end
+
+  # Archive + export a signed App Store IPA via gym (more robust than flutter's
+  # own export, which can fail on the embedded Watch app).
+  private_lane :build_ipa do
+    flutter_compile
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: IPA_DIR,
+      output_name: "TinyTrack.ipa",
+      xcargs: "-allowProvisioningUpdates",
+      clean: false,
+    )
+  end
+
+  desc "Build and upload to TestFlight (UAT)"
+  lane :beta do
+    key = asc_key
+    build_ipa
+    upload_to_testflight(
+      api_key: key,
+      ipa: IPA_PATH,
+      skip_waiting_for_build_processing: true,
+    )
+    UI.success("✅ Uploaded to TestFlight. It'll appear under TestFlight in App Store Connect after processing.")
+  end
+
+  desc "Build and submit to the App Store for review"
+  lane :release do
+    key = asc_key
+    build_ipa
+    upload_to_app_store(
+      api_key: key,
+      ipa: IPA_PATH,
+      skip_screenshots: true,   # screenshots/metadata are managed manually in ASC
+      skip_metadata: true,
+      submit_for_review: true,
+      automatic_release: true,  # auto-release once Apple approves
+      force: true,              # skip the HTML preview/confirmation prompt
+      precheck_include_in_app_purchases: false,
+    )
+    UI.success("✅ Submitted to the App Store for review.")
+  end
+end
