@@ -90,6 +90,28 @@ but then exports break again.)
 Verify: `which rsync` should print `/usr/bin/rsync`, and `rsync --version` should say
 `openrsync` (not `3.4.x`).
 
+### `Cannot submit for review - A review submission is already in progress`
+
+Misleading message. It usually means the opposite of "in progress": there's an **old
+rejected submission still open** in App Store Connect. Fixing the rejection in code does
+*not* close it — the submission record sits in `UNRESOLVED_ISSUES` forever and blocks
+every new submission.
+
+Symptom: `fastlane release` uploads the build fine (it shows up in ASC, state `VALID`)
+but no "we've started reviewing your app" email ever arrives.
+
+**Fix:** App Store Connect → Resolution Center → **Cancel Submission** on the stale one,
+then rerun `fastlane release`. Check state first:
+
+```bash
+# state=UNRESOLVED_ISSUES means you're blocked; COMPLETE/nothing means you're clear
+# GET /v1/apps/6786685436/reviewSubmissions   (App Store Connect API)
+```
+
+Also check **which build numbers are already uploaded** before rebuilding — a failed
+submit still consumes the build number, so `pubspec.yaml` can be behind what's on Apple.
+Reusing one gets the upload refused as a duplicate.
+
 ### `Method not found: 'CupertinoPageTransitionsBuilder'`
 
 Newer Flutter moved this class from the material library to the cupertino library.
