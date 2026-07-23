@@ -432,4 +432,73 @@ abstract final class CarePackData {
     'Known allergies / conditions',
     'Reflux medication & dose (if any)',
   ];
+
+  /// Shown with the sources so users know this is general information.
+  static const String medicalDisclaimer =
+      'This Care Guide is general information digitised from the public health '
+      'sources listed below. It is not a substitute for professional medical '
+      'advice, diagnosis, or treatment. Always follow your doctor, clinic, or '
+      'emergency service, and call them whenever you are unsure.';
+
+  /// Authoritative sources cited for the medical guidance in this screen
+  /// (red flags, tummy red flags, and the reflux / stool / cramps scales).
+  static const List<CareSource> sources = [
+    CareSource(
+      publisher: 'NHS',
+      title: 'Is my baby or toddler seriously ill? '
+          '(fever, breathing, dehydration, red flags)',
+      url:
+          'https://www.nhs.uk/conditions/baby/health/is-my-baby-or-toddler-seriously-ill/',
+    ),
+    CareSource(
+      publisher: 'NHS',
+      title: 'Reflux in babies',
+      url: 'https://www.nhs.uk/conditions/reflux-in-babies/',
+    ),
+    CareSource(
+      publisher: 'NICE',
+      title: 'Gastro-oesophageal reflux disease in children and young people '
+          '(NG1)',
+      url: 'https://www.nice.org.uk/guidance/ng1',
+    ),
+    CareSource(
+      publisher: 'NHS',
+      title: 'Sepsis - urgent warning signs and the rash that does not fade',
+      url: 'https://www.nhs.uk/conditions/sepsis/',
+    ),
+    CareSource(
+      publisher: 'NHS',
+      title: 'Diarrhoea and vomiting',
+      url: 'https://www.nhs.uk/conditions/diarrhoea-and-vomiting/',
+    ),
+    CareSource(
+      publisher: 'NHS',
+      title: 'Colic',
+      url: 'https://www.nhs.uk/conditions/colic/',
+    ),
+    CareSource(
+      publisher: 'American Academy of Pediatrics (HealthyChildren.org)',
+      title: 'Fever - when to call the pediatrician',
+      url:
+          'https://www.healthychildren.org/English/health-issues/conditions/fever/Pages/When-to-Call-the-Pediatrician.aspx',
+    ),
+    CareSource(
+      publisher: 'NHS Start for Life',
+      title: "Your baby's health and development, including nappies and stools",
+      url: 'https://www.nhs.uk/start-for-life/baby/',
+    ),
+  ];
+}
+
+/// A single cited reference for the medical content in the Care Guide.
+class CareSource {
+  final String title;
+  final String publisher;
+  final String url;
+
+  const CareSource({
+    required this.title,
+    required this.publisher,
+    required this.url,
+  });
 }

@@ -42,6 +42,7 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
               intro: 'Don\'t wait for the weekly report. When in doubt, call '
                   '- better to call for nothing than to wait.',
               flags: CarePackData.redFlags,
+              sourceNote: 'Sources: NHS, AAP - see references below.',
             ),
             const SizedBox(height: AppSpacing.md),
             const _RedFlagsCard(
@@ -50,6 +51,8 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
               title: 'Tummy red flags',
               intro: 'Digestion problems worth a same-day call.',
               flags: CarePackData.tummyRedFlags,
+              sourceNote: 'Sources: NHS (reflux, diarrhoea & vomiting) '
+                  '- see references below.',
             ),
             const SizedBox(height: AppSpacing.xl),
             Text('Quick scales', style: context.textTheme.titleLarge),
@@ -64,18 +67,24 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
               icon: Icons.water_drop_rounded,
               title: 'Reflux severity (1-5)',
               points: CarePackData.refluxSeverity,
+              sourceNote: 'Based on NHS "Reflux in babies" and NICE NG1 '
+                  '- see references below.',
             ),
             const SizedBox(height: AppSpacing.sm),
             const _ScaleCard(
               icon: Icons.baby_changing_station_rounded,
               title: 'Stool types (1-7)',
               points: CarePackData.stoolTypes,
+              sourceNote: 'Based on NHS baby health guidance on nappies and '
+                  'stools - see references below.',
             ),
             const SizedBox(height: AppSpacing.sm),
             const _ScaleCard(
               icon: Icons.air_rounded,
               title: 'Cramps & gas (0-3)',
               points: CarePackData.crampsGasScale,
+              sourceNote: 'Based on NHS "Colic" guidance - see references '
+                  'below.',
             ),
             const SizedBox(height: AppSpacing.xl),
             Text('Emergency contacts', style: context.textTheme.titleLarge),
@@ -87,10 +96,58 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
             ),
             const SizedBox(height: AppSpacing.sm),
             _buildContactsSection(),
+            const SizedBox(height: AppSpacing.xl),
+            Text('Sources & references', style: context.textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              CarePackData.medicalDisclaimer,
+              style: context.textTheme.bodySmall,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _buildSourcesSection(),
           ],
         ),
       ),
     );
+  }
+
+  // Sources & references -----------------------------------------------------
+
+  Widget _buildSourcesSection() {
+    return Column(
+      children: [
+        for (final source in CarePackData.sources) ...[
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: const Icon(Icons.menu_book_rounded),
+              title: Text(source.title, style: context.textTheme.bodyMedium),
+              subtitle: Text(source.publisher,
+                  style: context.textTheme.bodySmall),
+              trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+              onTap: () => _openSource(source.url),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _openSource(String url) async {
+    Haptics.lightTap();
+    final uri = Uri.parse(url);
+    try {
+      final ok =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && mounted) {
+        context.showErrorSnackBar('Couldn’t open the source link.');
+      }
+    } catch (_) {
+      if (mounted) {
+        context.showErrorSnackBar('Couldn’t open the source link.');
+      }
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -305,12 +362,15 @@ class _RedFlagsCard extends StatelessWidget {
   final String intro;
   final List<String> flags;
 
+  final String sourceNote;
+
   const _RedFlagsCard({
     required this.index,
     required this.icon,
     required this.title,
     required this.intro,
     required this.flags,
+    required this.sourceNote,
   });
 
   @override
@@ -356,6 +416,14 @@ class _RedFlagsCard extends StatelessWidget {
                 ],
               ),
             ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            sourceNote,
+            style: context.textTheme.bodySmall?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: context.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+            ),
+          ),
         ],
       ),
     );
@@ -370,11 +438,13 @@ class _ScaleCard extends StatefulWidget {
   final IconData icon;
   final String title;
   final List<CareScalePoint> points;
+  final String sourceNote;
 
   const _ScaleCard({
     required this.icon,
     required this.title,
     required this.points,
+    required this.sourceNote,
   });
 
   @override
@@ -436,6 +506,18 @@ class _ScaleCardState extends State<_ScaleCard> {
                                 const EdgeInsets.only(bottom: AppSpacing.xs),
                             child: _ScaleRow(point: point),
                           ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            widget.sourceNote,
+                            style: context.textTheme.bodySmall?.copyWith(
+                              fontStyle: FontStyle.italic,
+                              color: context.textTheme.bodySmall?.color
+                                  ?.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
