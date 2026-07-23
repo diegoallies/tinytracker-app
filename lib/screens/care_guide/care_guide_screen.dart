@@ -42,7 +42,9 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
               intro: 'Don\'t wait for the weekly report. When in doubt, call '
                   '- better to call for nothing than to wait.',
               flags: CarePackData.redFlags,
-              sourceNote: 'Sources: NHS, AAP - see references below.',
+              sourceNote: 'From NHS: "Is your baby or toddler seriously ill?", '
+                  '"High temperature (fever) in children" and "Rashes in babies '
+                  'and children" - see references below.',
             ),
             const SizedBox(height: AppSpacing.md),
             const _RedFlagsCard(
@@ -51,8 +53,8 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
               title: 'Tummy red flags',
               intro: 'Digestion problems worth a same-day call.',
               flags: CarePackData.tummyRedFlags,
-              sourceNote: 'Sources: NHS (reflux, diarrhoea & vomiting) '
-                  '- see references below.',
+              sourceNote: 'From NHS: "Diarrhoea and vomiting" and "Reflux in '
+                  'babies" - see references below.',
             ),
             const SizedBox(height: AppSpacing.xl),
             Text('Quick scales', style: context.textTheme.titleLarge),
@@ -67,24 +69,22 @@ class _CareGuideScreenState extends ConsumerState<CareGuideScreen> {
               icon: Icons.water_drop_rounded,
               title: 'Reflux severity (1-5)',
               points: CarePackData.refluxSeverity,
-              sourceNote: 'Based on NHS "Reflux in babies" and NICE NG1 '
-                  '- see references below.',
+              sourceNote: 'Based on NHS "Reflux in babies" - see references below.',
             ),
             const SizedBox(height: AppSpacing.sm),
             const _ScaleCard(
               icon: Icons.baby_changing_station_rounded,
               title: 'Stool types (1-7)',
               points: CarePackData.stoolTypes,
-              sourceNote: 'Based on NHS baby health guidance on nappies and '
-                  'stools - see references below.',
+              sourceNote: 'Based on NHS "Diarrhoea and vomiting" (watery stools, '
+                  'blood) - see references below.',
             ),
             const SizedBox(height: AppSpacing.sm),
             const _ScaleCard(
               icon: Icons.air_rounded,
               title: 'Cramps & gas (0-3)',
               points: CarePackData.crampsGasScale,
-              sourceNote: 'Based on NHS "Colic" guidance - see references '
-                  'below.',
+              sourceNote: 'Based on NHS "Colic" guidance - see references below.',
             ),
             const SizedBox(height: AppSpacing.xl),
             Text('Emergency contacts', style: context.textTheme.titleLarge),

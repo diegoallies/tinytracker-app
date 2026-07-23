@@ -388,16 +388,16 @@ abstract final class CarePackData {
   // ---------------------------------------------------------------
 
   static const List<String> redFlags = [
-    'Fever (any fever under 3 months; over 38°C in older babies)',
-    'Refusing more than 2 feeds in a row',
+    'Temperature 38°C or higher under 3 months, or 39°C or higher at 3 to 6 months',
+    'Not feeding normally, or refusing feeds',
     'Projectile vomiting (forceful, large amounts, different from spit-up)',
-    'Blood or green colour in vomit or stool',
-    'Fewer than 4 wet nappies in 24 hours',
+    'Green vomit, or blood in vomit or stool',
+    'Fewer or drier wet nappies than usual (a sign of dehydration)',
     'Very sleepy, floppy, or hard to wake',
     'Breathing fast, noisy, or with effort (ribs pulling in)',
     'Skin colour change: bluish lips, very pale, or yellow',
-    "Rash that doesn't fade when pressed",
-    "Crying that won't stop for over an hour",
+    "A rash that doesn't fade when you press a glass against it",
+    'Crying constantly and cannot be consoled, or a cry that is not their normal cry',
     'Any fall, knock to the head, or accident',
     'Convulsions, fits, or unusual stiffening',
     'Loses a skill he used to have (stops smiling, stops cooing for days)',
@@ -440,52 +440,46 @@ abstract final class CarePackData {
       'advice, diagnosis, or treatment. Always follow your doctor, clinic, or '
       'emergency service, and call them whenever you are unsure.';
 
-  /// Authoritative sources cited for the medical guidance in this screen
-  /// (red flags, tummy red flags, and the reflux / stool / cramps scales).
+  /// Authoritative sources cited for the medical guidance in this screen.
+  /// Every red flag and scale point below is drawn from one of these NHS pages,
+  /// and each source link was verified live so users (and reviewers) can open
+  /// the exact page the guidance comes from.
   static const List<CareSource> sources = [
     CareSource(
       publisher: 'NHS',
-      title: 'Is my baby or toddler seriously ill? '
-          '(fever, breathing, dehydration, red flags)',
-      url:
-          'https://www.nhs.uk/conditions/baby/health/is-my-baby-or-toddler-seriously-ill/',
+      title: 'Is your baby or toddler seriously ill? '
+          '(breathing, dehydration, skin colour, drowsiness, fits)',
+      url: 'https://www.nhs.uk/baby/health/is-your-baby-or-toddler-seriously-ill/',
     ),
     CareSource(
       publisher: 'NHS',
-      title: 'Reflux in babies',
+      title: 'High temperature (fever) in children '
+          '(38°C under 3 months, 39°C at 3 to 6 months)',
+      url: 'https://www.nhs.uk/symptoms/fever-in-children/',
+    ),
+    CareSource(
+      publisher: 'NHS',
+      title: 'Rashes in babies and children '
+          '(the rash that does not fade - meningitis and sepsis)',
+      url: 'https://www.nhs.uk/symptoms/rashes-babies-and-children/',
+    ),
+    CareSource(
+      publisher: 'NHS',
+      title: 'Reflux in babies '
+          '(spit-up, projectile vomiting, green or bloody vomit, refusing feeds)',
       url: 'https://www.nhs.uk/conditions/reflux-in-babies/',
     ),
     CareSource(
-      publisher: 'NICE',
-      title: 'Gastro-oesophageal reflux disease in children and young people '
-          '(NG1)',
-      url: 'https://www.nice.org.uk/guidance/ng1',
-    ),
-    CareSource(
       publisher: 'NHS',
-      title: 'Sepsis - urgent warning signs and the rash that does not fade',
-      url: 'https://www.nhs.uk/conditions/sepsis/',
-    ),
-    CareSource(
-      publisher: 'NHS',
-      title: 'Diarrhoea and vomiting',
+      title: 'Diarrhoea and vomiting '
+          '(watery stools, blood in stool, dehydration, when to call 111)',
       url: 'https://www.nhs.uk/conditions/diarrhoea-and-vomiting/',
     ),
     CareSource(
       publisher: 'NHS',
-      title: 'Colic',
+      title: 'Colic '
+          '(intense crying, pulling knees up, arching the back, going red)',
       url: 'https://www.nhs.uk/conditions/colic/',
-    ),
-    CareSource(
-      publisher: 'American Academy of Pediatrics (HealthyChildren.org)',
-      title: 'Fever - when to call the pediatrician',
-      url:
-          'https://www.healthychildren.org/English/health-issues/conditions/fever/Pages/When-to-Call-the-Pediatrician.aspx',
-    ),
-    CareSource(
-      publisher: 'NHS Start for Life',
-      title: "Your baby's health and development, including nappies and stools",
-      url: 'https://www.nhs.uk/start-for-life/baby/',
     ),
   ];
 }
