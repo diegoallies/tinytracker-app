@@ -80,6 +80,28 @@ platform :ios do
     UI.success("✅ Submitted to the App Store for review.")
   end
 
+  desc "Show the current review submission state and which build is attached"
+  lane :status do
+    key = asc_key
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: key)
+    app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))
+
+    version = app.get_edit_app_store_version(includes: "build")
+    if version
+      UI.message("Version #{version.version_string}: #{version.app_store_state}")
+      UI.message("Attached build: #{version.build ? version.build.version : '(none)'}")
+    else
+      UI.message("No editable version found.")
+    end
+
+    submission = app.get_in_progress_review_submission(platform: Spaceship::ConnectAPI::Platform::IOS)
+    if submission
+      UI.message("Review submission #{submission.id}: #{submission.state}, submitted #{submission.submitted_date}")
+    else
+      UI.message("No in-progress review submission.")
+    end
+  end
+
   desc "Cancel a stuck/rejected review submission and resubmit the already-uploaded build"
   lane :resubmit do
     key = asc_key
