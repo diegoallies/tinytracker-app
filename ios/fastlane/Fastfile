@@ -79,4 +79,36 @@ platform :ios do
     )
     UI.success("✅ Submitted to the App Store for review.")
   end
+
+  desc "Cancel a stuck/rejected review submission and resubmit the already-uploaded build"
+  lane :resubmit do
+    key = asc_key
+    token = Spaceship::ConnectAPI::Token.from(hash: key)
+    Spaceship::ConnectAPI.token = token
+
+    app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))
+    UI.user_error!("App not found") if app.nil?
+
+    submission = app.get_in_progress_review_submission(platform: Spaceship::ConnectAPI::Platform::IOS)
+    if submission
+      UI.important("Cancelling in-progress review submission #{submission.id} (state: #{submission.state})")
+      submission.cancel_submission
+      UI.success("✅ Cancelled the stuck submission.")
+    else
+      UI.message("No in-progress review submission found - nothing to cancel.")
+    end
+
+    # Resubmit the latest processed build without rebuilding or re-uploading.
+    upload_to_app_store(
+      api_key: key,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: true,
+      submit_for_review: true,
+      automatic_release: true,
+      force: true,
+      precheck_include_in_app_purchases: false,
+    )
+    UI.success("✅ Resubmitted to the App Store for review.")
+  end
 end
