@@ -863,6 +863,11 @@ class FamilyReportService {
             ],
         ],
       ));
+      widgets.add(pw.SizedBox(height: 4));
+      widgets.add(pw.Text(
+        temperatureSourceNote,
+        style: pw.TextStyle(fontSize: 7.5, color: _muted),
+      ));
       widgets.add(pw.SizedBox(height: 10));
     }
 

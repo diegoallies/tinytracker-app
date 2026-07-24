@@ -5,9 +5,11 @@ import '../../models/milestone.dart';
 import '../../providers/milestone_provider.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
+import '../../utils/medical_sources.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/loading_skeleton.dart';
+import '../../widgets/common/source_note.dart';
 
 class MilestonesScreen extends ConsumerStatefulWidget {
   const MilestonesScreen({super.key});
@@ -153,6 +155,11 @@ class _MilestonesScreenState extends ConsumerState<MilestonesScreen>
                 const SizedBox(height: 20),
                 ...sortedAges.map((age) =>
                     _buildAgeGroup(age, grouped[age]!)),
+                const SizedBox(height: 8),
+                const SourceNote(
+                  source: MedicalSources.milestones,
+                  prefix: 'Expected ages:',
+                ),
               ],
             );
           },

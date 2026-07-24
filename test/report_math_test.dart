@@ -615,12 +615,13 @@ void main() {
   });
 
   group('temperatureStatus', () {
-    test('clinical bands', () {
+    test('NHS fever bands', () {
       expect(temperatureStatus(35.9), 'Low');
       expect(temperatureStatus(36.8), 'Normal');
-      expect(temperatureStatus(37.5), 'Normal');
+      expect(temperatureStatus(37.9), 'Normal');
       expect(temperatureStatus(38.0), 'Fever');
-      expect(temperatureStatus(38.6), 'High fever');
+      expect(temperatureStatus(38.9), 'Fever');
+      expect(temperatureStatus(39.0), 'High fever');
     });
   });
 

@@ -492,6 +492,11 @@ class DoctorReportService {
         style: pw.TextStyle(fontSize: 9, color: _ink),
       ));
     }
+    widgets.add(pw.SizedBox(height: 6));
+    widgets.add(pw.Text(
+      temperatureSourceNote,
+      style: pw.TextStyle(fontSize: 7.5, color: _muted),
+    ));
     return widgets;
   }
 

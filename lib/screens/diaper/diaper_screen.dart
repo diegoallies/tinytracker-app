@@ -8,11 +8,13 @@ import '../../providers/baby_provider.dart';
 import '../../providers/diaper_provider.dart';
 import '../../utils/care_pack_data.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/medical_sources.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/source_note.dart';
 import '../../widgets/common/swipe_to_dismiss.dart';
 
 class DiaperScreen extends ConsumerStatefulWidget {
@@ -793,6 +795,11 @@ class _DiaperScreenState extends ConsumerState<DiaperScreen> {
                 ],
               ),
             ],
+            const SizedBox(height: 8),
+            const SourceNote(
+              source: MedicalSources.stools,
+              prefix: 'Stool scale:',
+            ),
           ],
         ),
       ),

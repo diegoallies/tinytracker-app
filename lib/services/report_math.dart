@@ -616,13 +616,22 @@ int medicationDoseCount(List<Map<String, dynamic>> healthLogs) => healthLogs
     .where((h) => (h['medication'] ?? '').toString().trim().isNotEmpty)
     .length;
 
-/// Clinical banding for a temperature in Celsius.
+/// Banding for a temperature in Celsius, per the NHS "Fever in children"
+/// page (https://www.nhs.uk/symptoms/fever-in-children/): 38°C or more is a
+/// high temperature; 39°C+ means contact a doctor for young babies.
+/// Keep in sync with _getTempStatus() in health_screen.dart.
 String temperatureStatus(double celsius) {
   if (celsius < 36) return 'Low';
-  if (celsius <= 37.5) return 'Normal';
-  if (celsius <= 38.5) return 'Fever';
+  if (celsius < 38) return 'Normal';
+  if (celsius < 39) return 'Fever';
   return 'High fever';
 }
+
+/// Citation line rendered under any report table that uses
+/// [temperatureStatus] (Apple guideline 1.4.1).
+const String temperatureSourceNote =
+    'Temperature status per NHS "Fever in children" guidance '
+    '(nhs.uk/symptoms/fever-in-children). Not medical advice.';
 
 // ---------------------------------------------------------------------------
 // Mood (journals)

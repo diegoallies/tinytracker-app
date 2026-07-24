@@ -2,6 +2,9 @@
 /// grouped by clinic visit age. Pure data: no Flutter imports so it stays
 /// unit-testable, mirroring care_pack_data.dart.
 ///
+/// Source: South African National Department of Health EPI schedule
+/// (https://www.health.gov.za/) - cited in-app via MedicalSources.saEpi.
+///
 /// Vaccine keys are stored in immunisations.vaccine_key - never change a key
 /// once shipped.
 library;

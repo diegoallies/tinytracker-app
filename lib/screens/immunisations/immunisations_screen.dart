@@ -13,10 +13,12 @@ import '../../providers/immunisation_provider.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 import '../../utils/immunisation_data.dart';
+import '../../utils/medical_sources.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/loading_skeleton.dart';
+import '../../widgets/common/source_note.dart';
 
 DateTime _dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -307,6 +309,8 @@ class _ProgressCard extends StatelessWidget {
               )
             else
               _nextDueFor(nextVisit),
+            const SizedBox(height: AppSpacing.xs),
+            const SourceNote(source: MedicalSources.saEpi),
           ],
         ),
       ),

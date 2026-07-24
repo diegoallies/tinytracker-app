@@ -12,9 +12,11 @@ import '../../services/medication_guard.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
+import '../../utils/medical_sources.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/app_dialogs.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/source_note.dart';
 import '../../widgets/medications/add_medication_dialog.dart';
 import '../../widgets/medications/dose_row.dart';
 import '../../widgets/medications/give_dose_sheet.dart';
@@ -81,6 +83,9 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     super.dispose();
   }
 
+  // Bands follow the cited NHS "Fever in children" page: 38°C or more is a
+  // high temperature; 39°C+ means contact a doctor for young babies.
+  // Keep in sync with temperatureStatus() in report_math.dart.
   ({Color color, String label, IconData icon}) _getTempStatus(double temp) {
     if (temp < 36.0) {
       return (
@@ -88,13 +93,13 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
         label: 'Low',
         icon: Icons.ac_unit,
       );
-    } else if (temp <= 37.5) {
+    } else if (temp < 38.0) {
       return (
         color: const Color(0xFF4CAF50),
         label: 'Normal',
         icon: Icons.check_circle_outline,
       );
-    } else if (temp <= 38.5) {
+    } else if (temp < 39.0) {
       return (
         color: Colors.orange,
         label: 'Fever',
@@ -482,6 +487,11 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
               ],
             ),
           ),
+        const SizedBox(height: 6),
+        const SourceNote(
+          source: MedicalSources.fever,
+          prefix: 'Fever bands:',
+        ),
       ],
     );
   }

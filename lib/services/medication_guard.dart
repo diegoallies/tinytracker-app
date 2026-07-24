@@ -19,7 +19,19 @@ class DoseCheck {
 /// Never blocks logging because a check itself failed - network errors
 /// resolve to [DoseCheck.pass].
 class MedicationGuard {
+  // Default cap follows NHS guidance for children's paracetamol and
+  // ibuprofen (max 4 doses in 24 hours):
+  // https://www.nhs.uk/medicines/paracetamol-for-children/
+  // https://www.nhs.uk/medicines/ibuprofen-for-children/
   static const int _asNeededMaxPer24h = 4;
+
+  /// Appended to every dose warning so the safety limits are cited and the
+  /// label/doctor stays the authority (Apple guideline 1.4.1).
+  static const String doseSourceNote =
+      'Always follow the dose instructions on the medicine label or from '
+      'your doctor or pharmacist. Default limits follow NHS guidance for '
+      "children's paracetamol and ibuprofen "
+      '(nhs.uk/medicines/paracetamol-for-children).';
 
   static final _timeFmt = DateFormat('h:mm a');
 
@@ -94,6 +106,7 @@ class MedicationGuard {
       }
 
       if (warnings.isEmpty) return DoseCheck.pass;
+      warnings.add(doseSourceNote);
       return DoseCheck(ok: false, warning: warnings.join('\n\n'));
     } catch (e) {
       debugPrint('MedicationGuard.check failed (allowing dose): $e');

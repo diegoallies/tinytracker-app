@@ -193,40 +193,4 @@ class AiService {
     );
   }
 
-  static Future<String?> getPoopAnalysis({
-    required String babyId,
-    required String babyName,
-    required String gender,
-    required String color,
-    required int ageDays,
-    String feedingType = 'breastfed',
-  }) async {
-    return _getCachedOrGenerate(
-      babyId: babyId,
-      cacheKey: 'poop-$color',
-      maxTokens: 300,
-      promptBuilder: () =>
-          'A $gender baby named $babyName\'s diaper was $color. The baby is $ageDays days old and is $feedingType. Is this color normal? Should the parent be concerned? Give a short, reassuring medical explanation in 2-3 sentences. Always refer to the baby by name instead of saying "the baby". The baby\'s gender is provided in the request - use correct pronouns (he/him for boys, she/her for girls). Do not use dashes longer than a hyphen.',
-    );
-  }
-
-  static Future<String?> getGrowthAnalysis({
-    required String babyId,
-    required String babyName,
-    required String gender,
-    required int ageDays,
-    double? weightKg,
-    double? heightCm,
-    double? headCm,
-    Map<String, double>? percentiles,
-    Map<String, dynamic>? previousMeasurement,
-  }) async {
-    return _getCachedOrGenerate(
-      babyId: babyId,
-      cacheKey: 'growth-$weightKg-$heightCm-$headCm',
-      maxTokens: 300,
-      promptBuilder: () =>
-          'A $ageDays-day-old $gender named $babyName weighs ${weightKg ?? "unknown"}kg, is ${heightCm ?? "unknown"}cm long, head circumference ${headCm ?? "unknown"}cm. WHO percentiles: weight ${percentiles?['weight'] ?? "unknown"}th, height ${percentiles?['height'] ?? "unknown"}th, head ${percentiles?['head'] ?? "unknown"}th. Previous measurement was ${previousMeasurement != null ? jsonEncode(previousMeasurement) : "not available"}. Analyze this growth data. Is the baby growing well? Any concerns? Keep response short and friendly, 2-3 sentences. Always refer to the baby by name instead of saying "the baby". Do not use dashes longer than a hyphen.',
-    );
-  }
 }

@@ -6,6 +6,7 @@ import '../../services/ai_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
+import '../../utils/medical_sources.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
@@ -361,13 +362,26 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                 ],
               )
             else if (_aiSummary != null)
-              Text(
-                _aiSummary!,
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.6,
-                  color: context.palette.text.withValues(alpha: 0.85),
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _aiSummary!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: context.palette.text.withValues(alpha: 0.85),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    MedicalSources.aiDisclaimer,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: context.palette.muted,
+                    ),
+                  ),
+                ],
               )
             else
               Text(

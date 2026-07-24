@@ -9,6 +9,9 @@
 ///
 /// NOTE: general guidance only, not medical advice. Babies self-regulate; the
 /// clinic/paediatrician has the final say based on weight and growth curve.
+/// Volumes/intervals follow the typical formula-feeding ranges published by
+/// the NHS (https://www.nhs.uk/conditions/baby/breastfeeding-and-bottle-feeding/)
+/// and are used only to time reminders - amounts are never shown as advice.
 library;
 
 class FeedingTarget {

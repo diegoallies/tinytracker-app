@@ -3,6 +3,7 @@ import '../../config/theme.dart';
 import '../../services/ai_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
+import '../../utils/medical_sources.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/loading_skeleton.dart';
 
@@ -261,6 +262,14 @@ class _SmartInsightsState extends State<SmartInsights> {
                 ],
               ),
             ],
+            const SizedBox(height: 10),
+            Text(
+              MedicalSources.aiDisclaimer,
+              style: TextStyle(
+                fontSize: 10.5,
+                color: context.palette.muted,
+              ),
+            ),
           ],
         ),
       ),
