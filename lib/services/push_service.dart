@@ -27,6 +27,7 @@ Future<void> _backgroundHandler(RemoteMessage message) async {}
 /// token — the app keeps working, push simply doesn't arrive.
 class PushService {
   static final _messaging = FirebaseMessaging.instance;
+  static bool _syncing = false;
 
   /// Call once from `main()` after `Firebase.initializeApp`.
   static Future<void> init() async {
@@ -51,12 +52,19 @@ class PushService {
     _messaging.onTokenRefresh.listen(_storeToken);
 
     // The FCM token exists before login, but `device_tokens` rows need a
-    // user_id — so re-store on sign-in, and drop the row on sign-out so a
-    // shared device stops receiving the previous user's pushes.
+    // user_id — so re-store whenever a session appears, and drop the row on
+    // sign-out so a shared device stops receiving the previous user's pushes.
+    //
+    // `initialSession` matters as much as `signedIn`: a returning user who is
+    // already logged in only ever gets `initialSession`, so handling just
+    // `signedIn` meant the token was never stored on any launch after the
+    // first.
     SupabaseService.client.auth.onAuthStateChange.listen((state) {
       switch (state.event) {
         case AuthChangeEvent.signedIn:
-          _syncToken();
+        case AuthChangeEvent.initialSession:
+        case AuthChangeEvent.tokenRefreshed:
+          if (state.session != null) _syncToken();
         case AuthChangeEvent.signedOut:
           _deleteToken();
         default:
@@ -88,16 +96,34 @@ class PushService {
     }
   }
 
+  /// APNs registration completes asynchronously after launch, so
+  /// `getAPNSToken()` legitimately returns null for a second or two even when
+  /// push is configured correctly. Poll briefly instead of giving up for the
+  /// rest of the app session.
+  static Future<String?> _awaitApnsToken() async {
+    for (var attempt = 0; attempt < 10; attempt++) {
+      final token = await _messaging.getAPNSToken();
+      if (token != null) return token;
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+    return null;
+  }
+
   /// Fetch the current FCM token and persist it against the logged-in user.
   static Future<void> _syncToken() async {
+    // init() and the auth listener can both land here; without this the APNs
+    // polling loop would stack.
+    if (_syncing) return;
+    _syncing = true;
     try {
       // On iOS the FCM token can't be minted until APNs hands us a device
       // token, which needs the Push Notifications capability plus an APNs key
-      // in Firebase. Until then this is null and we bail rather than throw.
+      // in Firebase.
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        final apns = await _messaging.getAPNSToken();
+        final apns = await _awaitApnsToken();
         if (apns == null) {
-          debugPrint('push: no APNs token yet — capability/key not configured');
+          debugPrint('push: no APNs token after 10s — check the Push '
+              'Notifications capability and the APNs key in Firebase');
           return;
         }
       }
@@ -105,6 +131,8 @@ class PushService {
       if (token != null) await _storeToken(token);
     } catch (e) {
       debugPrint('push token fetch failed: $e');
+    } finally {
+      _syncing = false;
     }
   }
 

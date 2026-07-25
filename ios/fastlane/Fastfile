@@ -8,6 +8,8 @@
 #   fastlane beta      # build + upload to TestFlight (UAT)
 #   fastlane release   # build + submit to the App Store for review
 
+require "shellwords"
+
 default_platform(:ios)
 
 # Absolute paths so lanes work no matter where fastlane is invoked from.
@@ -35,6 +37,21 @@ platform :ios do
     end
   end
 
+  # xcargs for gym. `-allowProvisioningUpdates` alone only works on a machine
+  # where Xcode is signed in with an Apple ID — true locally, false on CI. Pass
+  # the App Store Connect API key explicitly so automatic signing also works on
+  # a fresh build machine (Codemagic) with no Xcode account.
+  def signing_xcargs
+    args = ["-allowProvisioningUpdates"]
+    key_path = File.expand_path("AuthKey.p8", __dir__)
+    if ENV["ASC_KEY_ID"] && ENV["ASC_ISSUER_ID"] && File.exist?(key_path)
+      args << "-authenticationKeyID #{ENV['ASC_KEY_ID']}"
+      args << "-authenticationKeyIssuerID #{ENV['ASC_ISSUER_ID']}"
+      args << "-authenticationKeyPath #{key_path.shellescape}"
+    end
+    args.join(" ")
+  end
+
   # Archive + export a signed App Store IPA via gym (more robust than flutter's
   # own export, which can fail on the embedded Watch app).
   private_lane :build_ipa do
@@ -46,7 +63,7 @@ platform :ios do
       export_method: "app-store",
       output_directory: IPA_DIR,
       output_name: "TinyTrack.ipa",
-      xcargs: "-allowProvisioningUpdates",
+      xcargs: signing_xcargs,
       clean: false,
     )
   end

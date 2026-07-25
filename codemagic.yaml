@@ -1,0 +1,116 @@
+# Codemagic CI for TinyTrack.
+#
+# Deliberately reuses the existing fastlane lanes rather than Codemagic's
+# `flutter build ipa` recipe. The Fastfile archives via gym specifically because
+# Flutter's own export step can fail on the embedded TinyTrackWatch app — that
+# problem doesn't go away just because the build moved to CI.
+#
+# ── One-time setup in the Codemagic UI ───────────────────────────────────────
+# Add these as SECURE environment variables in a group called `appstore`
+# (Application settings → Environment variables → mark "Secure"):
+#
+#   ASC_KEY_ID          the 10-char App Store Connect API key id
+#   ASC_ISSUER_ID       the issuer uuid from App Store Connect → Integrations
+#   ASC_KEY_P8_BASE64   base64 of ios/fastlane/AuthKey.p8, produced with:
+#                         base64 -i ios/fastlane/AuthKey.p8 | pbcopy
+#
+# The .p8 itself is gitignored on purpose — it is never committed, only injected
+# here at build time and written to disk inside the ephemeral CI machine.
+#
+# Firebase config (google-services.json, GoogleService-Info.plist,
+# firebase_options.dart) and .env ARE committed, so no extra wiring needed.
+
+definitions:
+  base: &base
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.44.6
+      xcode: latest
+      cocoapods: default
+
+workflows:
+  ios-testflight:
+    <<: *base
+    name: iOS → TestFlight
+    environment:
+      flutter: 3.44.6
+      xcode: latest
+      cocoapods: default
+      groups:
+        - appstore
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+    scripts:
+      - name: Restore the App Store Connect API key
+        script: |
+          # fastlane reads this path via key_filepath in the Fastfile.
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > ios/fastlane/AuthKey.p8
+          # Fail loudly now rather than deep inside gym.
+          test -s ios/fastlane/AuthKey.p8 || { echo "AuthKey.p8 is empty — check ASC_KEY_P8_BASE64"; exit 1; }
+      - name: flutter pub get
+        script: flutter pub get
+      - name: flutter analyze
+        script: flutter analyze lib/
+      - name: flutter test
+        script: flutter test
+      - name: Upload to TestFlight via fastlane
+        script: |
+          cd ios
+          # ASC_KEY_ID / ASC_ISSUER_ID come from the `appstore` variable group.
+          bundle exec fastlane beta 2>/dev/null || fastlane beta
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - build/ios/**/*.dSYM.zip
+    publishing:
+      email:
+        recipients:
+          - diegoallies27@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  android-aab:
+    name: Android → AAB artifact
+    # Linux, not macOS: Android needs no Xcode, and macOS M2 minutes are the
+    # scarce resource on the free plan.
+    instance_type: linux_x2
+    max_build_duration: 45
+    environment:
+      flutter: 3.44.6
+      java: 17
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+    scripts:
+      - name: flutter pub get
+        script: flutter pub get
+      - name: flutter analyze
+        script: flutter analyze lib/
+      - name: flutter test
+        script: flutter test
+      - name: Build release AAB
+        # Unsigned-for-Play: there is no upload keystore or Play service account
+        # configured yet, so this produces an artifact to download rather than
+        # publishing. Wire `android_signing` + a Play key when you're ready.
+        script: flutter build appbundle --release
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab
+      - build/app/outputs/flutter-apk/*.apk
+    publishing:
+      email:
+        recipients:
+          - diegoallies27@gmail.com
+        notify:
+          success: true
+          failure: true
