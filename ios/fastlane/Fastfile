@@ -17,6 +17,16 @@ PROJECT_ROOT = File.expand_path("../..", __dir__)          # .../Tiny Tracker
 IPA_DIR      = File.join(PROJECT_ROOT, "build/ios/ipa")
 IPA_PATH     = File.join(IPA_DIR, "TinyTrack.ipa")
 
+# pubspec.yaml is the single source of truth for the version, so read it rather
+# than letting deliver guess which build to submit.
+def flutter_version
+  raw = File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))[/^version:\s*(\S+)/, 1]
+  UI.user_error!("Could not read `version:` from pubspec.yaml") if raw.nil?
+  name, build = raw.split("+")
+  UI.user_error!("pubspec version '#{raw}' has no +buildNumber") if build.nil?
+  { name: name, build: build }
+end
+
 # Load the App Store Connect API key once per run.
 def asc_key
   app_store_connect_api_key(
@@ -131,14 +141,16 @@ platform :ios do
   desc "Build and submit to the App Store for review"
   lane :release do
     key = asc_key
+    v = flutter_version
     build_ipa
 
     # Split into upload → set notes → submit. The version has to exist in App
-    # Store Connect before whatsNew can be written to it, and it only exists
-    # once a binary has been uploaded against it.
+    # Store Connect before whatsNew can be written to it, and it only exists once
+    # a binary has been uploaded against it.
     upload_to_app_store(
       api_key: key,
       ipa: IPA_PATH,
+      app_version: v[:name],
       skip_screenshots: true,   # screenshots/metadata are managed manually in ASC
       skip_metadata: true,
       submit_for_review: false, # deliberately not yet - notes come first
@@ -148,9 +160,17 @@ platform :ios do
 
     push_release_notes(key: key)
 
-    # Now submit, reusing the build just uploaded.
+    # Submit, pinned to the exact build just uploaded.
+    #
+    # app_version + build_number are NOT optional here. Apple takes 5-15 minutes
+    # to process a binary, and without pinning, deliver submits whichever build
+    # happens to be attached to the version - which can be the PREVIOUS one,
+    # silently shipping the wrong binary. Pinned, a still-processing build fails
+    # loudly instead, and you re-run once it's ready.
     upload_to_app_store(
       api_key: key,
+      app_version: v[:name],
+      build_number: v[:build],
       skip_binary_upload: true,
       skip_screenshots: true,
       skip_metadata: true,
@@ -159,7 +179,7 @@ platform :ios do
       force: true,
       precheck_include_in_app_purchases: false,
     )
-    UI.success("✅ Submitted to the App Store for review.")
+    UI.success("✅ Submitted #{v[:name]} (#{v[:build]}) to the App Store for review.")
   end
 
   desc "Set the What's New text from release_notes.txt without building or submitting"
