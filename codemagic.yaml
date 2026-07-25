@@ -76,6 +76,55 @@ workflows:
           success: true
           failure: true
 
+  ios-appstore:
+    <<: *base
+    name: iOS → App Store (production)
+    environment:
+      flutter: 3.44.6
+      xcode: latest
+      cocoapods: default
+      groups:
+        - appstore
+    # Deliberately NOT triggered by pushes to main. The `release` lane submits
+    # for review AND auto-publishes on approval, so an accidental merge would
+    # ship to real users. Releasing is an explicit act: tag the commit.
+    #
+    #   git tag v1.1.4 && git push origin v1.1.4
+    #
+    # That also leaves a permanent record in git of exactly what shipped.
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+    scripts:
+      - name: Restore the App Store Connect API key
+        script: |
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > ios/fastlane/AuthKey.p8
+          test -s ios/fastlane/AuthKey.p8 || { echo "AuthKey.p8 is empty — check ASC_KEY_P8_BASE64"; exit 1; }
+      - name: flutter pub get
+        script: flutter pub get
+      - name: flutter analyze
+        script: flutter analyze lib/
+      - name: flutter test
+        script: flutter test
+      - name: Submit to the App Store via fastlane
+        script: |
+          cd ios
+          bundle exec fastlane release 2>/dev/null || fastlane release
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - build/ios/**/*.dSYM.zip
+    publishing:
+      email:
+        recipients:
+          - diegoallies27@gmail.com
+        notify:
+          success: true
+          failure: true
+
   android-aab:
     name: Android → AAB artifact
     # Linux, not macOS: Android needs no Xcode, and macOS M2 minutes are the
