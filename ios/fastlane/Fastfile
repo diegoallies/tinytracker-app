@@ -187,6 +187,20 @@ platform :ios do
     push_release_notes(key: asc_key)
   end
 
+  desc "List the most recent uploaded builds and their processing state"
+  lane :builds do
+    key = asc_key
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: key)
+    app = Spaceship::ConnectAPI::App.find(
+      CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier),
+    )
+    UI.user_error!("App not found") if app.nil?
+    app.get_builds(includes: "preReleaseVersion", limit: 8).each do |b|
+      ver = b.pre_release_version&.version
+      UI.message("build #{b.version}  (#{ver})  state=#{b.processing_state}  uploaded=#{b.uploaded_date}")
+    end
+  end
+
   desc "Show the current review submission state and which build is attached"
   lane :status do
     key = asc_key
