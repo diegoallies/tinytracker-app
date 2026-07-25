@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/notification_service.dart';
-import '../services/feeding_guidelines.dart';
-import 'feeding_provider.dart';
 import 'baby_provider.dart';
 import 'baby_medication_provider.dart';
 
@@ -49,35 +47,18 @@ class FeedingReminderIntervalNotifier extends StateNotifier<int> {
   }
 }
 
-final feedingReminderSchedulerProvider = Provider<void>((ref) {
-  final enabled = ref.watch(feedingReminderEnabledProvider);
-  final configuredInterval = ref.watch(feedingReminderIntervalProvider);
-  final baby = ref.watch(selectedBabyProvider);
-
-  if (!enabled || baby == null) return;
-
-  final feedingsAsync = ref.watch(recentFeedingsProvider);
-  feedingsAsync.whenData((feedings) {
-    if (feedings.isEmpty) return;
-    final last = feedings.first;
-
-    // Smart timing: scale the reminder by how much the baby actually drank,
-    // against the age-based target. A full feed -> full interval; a small feed
-    // -> due sooner. Breast / no recorded volume -> the configured interval.
-    var intervalMinutes = configuredInterval;
-    final amt = last.amountMl;
-    if (amt != null && amt > 0) {
-      final target = FeedingGuidelines.targetForAgeDays(baby.ageDays);
-      intervalMinutes =
-          (FeedingGuidelines.nextIntervalHours(amt, target) * 60).round();
-    }
-
-    NotificationService.scheduleFeedingReminder(
-      lastFeedTime: last.loggedAt,
-      intervalMinutes: intervalMinutes,
-    );
-  });
-});
+// The feeding-reminder scheduler that used to live here is gone. It rescheduled
+// a LOCAL notification whenever this device noticed a new feed, which meant the
+// alert only ever reflected what this phone had synced — a parent whose app had
+// been closed all afternoon got reminders based on stale data.
+//
+// `supabase/functions/check-overdue` now does this server-side on a 15-minute
+// cron, reading the latest feed and each user's thresholds from the database, so
+// every caregiver is alerted consistently whether their app is open or not.
+//
+// The same volume-scaled interval logic (FeedingGuidelines) is ported into that
+// function — if you change the brackets in feeding_guidelines.dart, change them
+// there too.
 
 // ── Sleep reminders ─────────────────────────────────────────────────────
 

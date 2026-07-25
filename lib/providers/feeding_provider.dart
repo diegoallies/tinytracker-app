@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/feeding.dart';
 import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
-import '../services/notification_service.dart';
 import '../services/pending_writes.dart';
 import '../utils/date_utils.dart';
 import 'baby_provider.dart';
@@ -172,17 +171,10 @@ class FeedingActions {
       await PendingWrites.enqueue('feedings', fullPayload);
     }
 
-    // Reschedule feeding reminder from the actual logged time. The feed is
-    // already saved - a reminder failure must never surface as a save error.
-    try {
-      final interval = await NotificationService.getReminderInterval();
-      await NotificationService.scheduleFeedingReminder(
-        lastFeedTime: ts,
-        intervalMinutes: interval,
-      );
-    } catch (e) {
-      debugPrint('feeding reminder scheduling failed: $e');
-    }
+    // No local reminder scheduling here any more. The `check-overdue` cron
+    // function reads the latest feed straight from the database and pushes every
+    // caregiver, so a feed logged on the nanny's phone now correctly re-arms the
+    // parent's alert too — which on-device scheduling could never do.
 
     // Count only — never the amount, duration or notes.
     AnalyticsService.logFeed(source: source);

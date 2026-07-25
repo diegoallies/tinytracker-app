@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app/router.dart';
 import 'analytics_service.dart';
+import 'notification_prefs_sync.dart';
 import 'notification_service.dart';
 import 'supabase_service.dart';
 
@@ -64,7 +65,13 @@ class PushService {
         case AuthChangeEvent.signedIn:
         case AuthChangeEvent.initialSession:
         case AuthChangeEvent.tokenRefreshed:
-          if (state.session != null) _syncToken();
+          if (state.session != null) {
+            _syncToken();
+            // Feed/sleep reminders are sent server-side now, so the user's
+            // thresholds have to exist in the database before the cron can act
+            // on them.
+            NotificationPrefsSync.reconcile();
+          }
         case AuthChangeEvent.signedOut:
           _deleteToken();
         default:
@@ -186,6 +193,12 @@ class PushService {
     switch (type) {
       case 'weekly_report_submitted':
         appRouter.go('/weekly-report');
+      case 'feed_due':
+      case 'feed_overdue':
+        appRouter.go('/feeding');
+      case 'sleep_due':
+      case 'sleep_overdue':
+        appRouter.go('/sleep');
       default:
         appRouter.go('/dashboard');
     }

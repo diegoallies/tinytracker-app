@@ -50,6 +50,10 @@ void main() async {
   );
 
   await NotificationService.initialize();
+  // Upgrading users still have OS-scheduled feed/sleep notifications from the
+  // old on-device approach. Cancel them once so they don't fire alongside the
+  // new server pushes.
+  await NotificationService.migrateOffLocalFeedSleepReminders();
   await PendingWrites.init();
   // FCM remote push (guarded; no-op until the APNs key + push capability are
   // configured on the Apple side).

@@ -106,8 +106,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final stats = ref.watch(dashboardStatsProvider);
     final activity = ref.watch(activityFeedProvider);
 
-    // Activate feeding + medication reminder schedulers
-    ref.watch(feedingReminderSchedulerProvider);
+    // Medication reminders are still scheduled on-device (they're driven by a
+    // fixed schedule, not by activity, so a phone can time them correctly).
+    // Feeding and sleep reminders moved to the check-overdue cron — see
+    // notification_provider.dart.
     ref.watch(medicationReminderSchedulerProvider);
 
     if (babyState.loading) return const Center(child: PageSkeleton());

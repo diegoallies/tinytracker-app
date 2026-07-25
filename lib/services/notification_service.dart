@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'notification_prefs_sync.dart';
+
 class NotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();
   static const _feedingChannelId = 'feeding_reminders';
@@ -139,7 +141,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       _feedingNotificationId,
-      'Time to feed! 🍼',
+      'Time to feed',
       'It\'s been $timeStr since the last feed.',
       scheduledAt,
       details,
@@ -171,7 +173,7 @@ class NotificationService {
         NotificationDetails(android: overdueAndroid, iOS: overdueIos);
     await _plugin.zonedSchedule(
       _feedingOverdueNotificationId,
-      'Feeding overdue 🟠',
+      'Feeding overdue',
       'Still no feed logged - baby is past the usual feeding time.',
       overdueAt,
       overdueDetails,
@@ -231,7 +233,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       _sleepNotificationId,
-      'Time for a nap 😴',
+      'Time for a nap',
       'It\'s been $windowStr since the last wake - baby may be ready to sleep.',
       tz.TZDateTime.now(tz.local).add(dueDelay),
       dueDetails,
@@ -254,7 +256,7 @@ class NotificationService {
         NotificationDetails(android: overdueAndroid, iOS: dueIos);
     await _plugin.zonedSchedule(
       _sleepOverdueNotificationId,
-      'Nap overdue 🟠',
+      'Nap overdue',
       'Baby has been awake past the usual window - overtired can make settling harder.',
       tz.TZDateTime.now(tz.local).add(overdueDelay),
       overdueDetails,
@@ -283,11 +285,13 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('sleep_reminder_enabled', enabled);
     if (!enabled) await cancelSleepReminders();
+    await NotificationPrefsSync.push();
   }
 
   static Future<void> setSleepWindow(int minutes) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('sleep_reminder_window', minutes);
+    await NotificationPrefsSync.push();
   }
 
   /// Schedules a repeating reminder every Friday at 14:00 local time to
@@ -332,7 +336,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       _weeklyReportNotificationId,
-      'Weekly report time 📋',
+      'Weekly report time',
       'Most of it is already filled in from the week\'s logs - finish and share it with the parents.',
       scheduledAt,
       details,
@@ -355,6 +359,19 @@ class NotificationService {
     return prefs.getBool('weekly_report_reminder_enabled') ?? false;
   }
 
+  /// One-time cleanup for users upgrading from on-device feed/sleep reminders.
+  ///
+  /// Their phone still has OS-scheduled feeding and sleep notifications from the
+  /// old build. Those would fire alongside the new server pushes, so every
+  /// overdue feed would buzz twice. Cancel them once and remember we did.
+  static Future<void> migrateOffLocalFeedSleepReminders() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('local_feed_sleep_cancelled') ?? false) return;
+    await cancelFeedingReminder();
+    await cancelSleepReminders();
+    await prefs.setBool('local_feed_sleep_cancelled', true);
+  }
+
   static Future<void> setWeeklyReportReminderEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('weekly_report_reminder_enabled', enabled);
@@ -363,6 +380,7 @@ class NotificationService {
     } else {
       await cancelWeeklyReportReminder();
     }
+    await NotificationPrefsSync.push();
   }
 
   static Future<bool> isReminderEnabled() async {
@@ -381,11 +399,15 @@ class NotificationService {
     if (!enabled) {
       await cancelFeedingReminder();
     }
+    // Feed reminders are sent by the check-overdue cron now, so the server has
+    // to hear about this change or nothing happens.
+    await NotificationPrefsSync.push();
   }
 
   static Future<void> setReminderInterval(int minutes) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('feeding_reminder_interval', minutes);
+    await NotificationPrefsSync.push();
   }
 
   // ── Medication reminders ────────────────────────────────────────────────
@@ -399,6 +421,7 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('medication_reminder_enabled', enabled);
     if (!enabled) await cancelAllMedicationReminders();
+    await NotificationPrefsSync.push();
   }
 
   static Future<void> cancelAllMedicationReminders() async {
@@ -442,7 +465,7 @@ class NotificationService {
       final scheduledAt = tz.TZDateTime.now(tz.local).add(delay);
       await _plugin.zonedSchedule(
         _medicationIdBase + i,
-        'Medicine due 💊',
+        'Medicine due',
         'It\'s time for ${med.name}.',
         scheduledAt,
         details,

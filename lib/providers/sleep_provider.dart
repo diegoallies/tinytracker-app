@@ -98,17 +98,9 @@ class SleepActions {
       'duration_minutes': duration,
     }).eq('id', sleepId);
 
-    // Baby just woke - schedule the next "nap due / overdue" reminders off the
-    // wake window. A save must never fail because of a reminder.
-    try {
-      final window = await NotificationService.getSleepWindow();
-      await NotificationService.scheduleSleepReminder(
-        lastWakeTime: now,
-        wakeWindowMinutes: window,
-      );
-    } catch (e) {
-      debugPrint('sleep reminder scheduling failed: $e');
-    }
+    // No local reminder scheduling here any more — the `check-overdue` cron
+    // derives the wake window from this row and pushes every caregiver, so all
+    // devices agree rather than each guessing from what it last synced.
   }
 
   static Future<void> deleteSleep(String sleepId) async {
