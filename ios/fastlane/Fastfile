@@ -80,21 +80,91 @@ platform :ios do
     UI.success("✅ Uploaded to TestFlight. It'll appear under TestFlight in App Store Connect after processing.")
   end
 
+  # Push the "What's New" text for the version currently being prepared.
+  #
+  # App Store Connect refuses to accept a new version for review with an empty
+  # whatsNew, and `skip_metadata: true` means deliver never sends one — which is
+  # why release used to die at "You must provide a value for the attribute
+  # 'whatsNew'". We deliberately do NOT flip skip_metadata to false: that makes
+  # deliver push the WHOLE listing from disk, and with only release_notes.txt
+  # present it can blank out the description, keywords and promo text on the live
+  # page. Setting the single field via Spaceship touches nothing else.
+  #
+  # Text lives in fastlane/metadata/en-US/release_notes.txt so it is reviewable in
+  # git rather than typed into a web form each release.
+  private_lane :push_release_notes do |options|
+    notes_path = File.expand_path("metadata/en-US/release_notes.txt", __dir__)
+    unless File.exist?(notes_path)
+      UI.important("No release_notes.txt found - skipping whatsNew. Submission will fail if this is a new version.")
+      next
+    end
+    notes = File.read(notes_path).strip
+    if notes.empty?
+      UI.important("release_notes.txt is empty - skipping whatsNew.")
+      next
+    end
+    # App Store Connect caps this field at 4000 characters.
+    UI.user_error!("release_notes.txt is #{notes.length} chars; the limit is 4000") if notes.length > 4000
+
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: options[:key])
+    app = Spaceship::ConnectAPI::App.find(
+      CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier),
+    )
+    UI.user_error!("App not found in App Store Connect") if app.nil?
+
+    version = app.get_edit_app_store_version
+    UI.user_error!("No editable version found - upload a build first") if version.nil?
+
+    localizations = version.get_app_store_version_localizations
+    UI.user_error!("Version #{version.version_string} has no localizations") if localizations.empty?
+
+    # Prefer en-US; fall back to whatever locales exist so this doesn't break if
+    # the app is ever localised differently.
+    targets = localizations.select { |l| l.locale == "en-US" }
+    targets = localizations if targets.empty?
+    targets.each do |loc|
+      loc.update(attributes: { whatsNew: notes })
+      UI.success("Set release notes for #{version.version_string} (#{loc.locale})")
+    end
+  end
+
   desc "Build and submit to the App Store for review"
   lane :release do
     key = asc_key
     build_ipa
+
+    # Split into upload → set notes → submit. The version has to exist in App
+    # Store Connect before whatsNew can be written to it, and it only exists
+    # once a binary has been uploaded against it.
     upload_to_app_store(
       api_key: key,
       ipa: IPA_PATH,
       skip_screenshots: true,   # screenshots/metadata are managed manually in ASC
       skip_metadata: true,
+      submit_for_review: false, # deliberately not yet - notes come first
+      force: true,
+      precheck_include_in_app_purchases: false,
+    )
+
+    push_release_notes(key: key)
+
+    # Now submit, reusing the build just uploaded.
+    upload_to_app_store(
+      api_key: key,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: true,
       submit_for_review: true,
       automatic_release: true,  # auto-release once Apple approves
-      force: true,              # skip the HTML preview/confirmation prompt
+      force: true,
       precheck_include_in_app_purchases: false,
     )
     UI.success("✅ Submitted to the App Store for review.")
+  end
+
+  desc "Set the What's New text from release_notes.txt without building or submitting"
+  lane :notes do
+    push_release_notes(key: asc_key)
   end
 
   desc "Show the current review submission state and which build is attached"

@@ -31,6 +31,14 @@ Build and upload to TestFlight (UAT)
 
 Build and submit to the App Store for review
 
+### ios notes
+
+```sh
+[bundle exec] fastlane ios notes
+```
+
+Set the What's New text from release_notes.txt without building or submitting
+
 ### ios status
 
 ```sh
