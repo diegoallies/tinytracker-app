@@ -39,6 +39,14 @@ Build and submit to the App Store for review
 
 Set the What's New text from release_notes.txt without building or submitting
 
+### ios submit
+
+```sh
+[bundle exec] fastlane ios submit
+```
+
+Submit the already-uploaded build matching pubspec's version+build (no rebuild)
+
 ### ios builds
 
 ```sh

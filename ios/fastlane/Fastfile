@@ -48,13 +48,18 @@ platform :ios do
   end
 
   # xcargs for gym. `-allowProvisioningUpdates` alone only works on a machine
-  # where Xcode is signed in with an Apple ID — true locally, false on CI. Pass
-  # the App Store Connect API key explicitly so automatic signing also works on
-  # a fresh build machine (Codemagic) with no Xcode account.
+  # where Xcode is signed in with an Apple ID — true locally, false on CI.
+  #
+  # On CI ONLY, also pass the App Store Connect API key so cloud signing works
+  # on a fresh machine with no Xcode account. This must never activate locally:
+  # once -authenticationKey* is passed, xcodebuild authenticates with THAT KEY
+  # instead of the signed-in account, and unless the key has the Admin role,
+  # export dies with "Cloud signing permission error / no provisioning profile
+  # mapping" — on a machine whose keychain certificate would have worked fine.
   def signing_xcargs
     args = ["-allowProvisioningUpdates"]
     key_path = File.expand_path("AuthKey.p8", __dir__)
-    if ENV["ASC_KEY_ID"] && ENV["ASC_ISSUER_ID"] && File.exist?(key_path)
+    if ENV["CI"] && ENV["ASC_KEY_ID"] && ENV["ASC_ISSUER_ID"] && File.exist?(key_path)
       args << "-authenticationKeyID #{ENV['ASC_KEY_ID']}"
       args << "-authenticationKeyIssuerID #{ENV['ASC_ISSUER_ID']}"
       args << "-authenticationKeyPath #{key_path.shellescape}"
@@ -62,20 +67,33 @@ platform :ios do
     args.join(" ")
   end
 
+  # Written by Codemagic's `xcode-project use-profiles` after its native
+  # signing step fetches the certificate + profiles for both bundle ids.
+  # Contains the bundle-id → profile mapping gym needs for export.
+  CM_EXPORT_OPTIONS = "/Users/builder/export_options.plist".freeze
+
   # Archive + export a signed App Store IPA via gym (more robust than flutter's
   # own export, which can fail on the embedded Watch app).
   private_lane :build_ipa do
     flutter_compile
-    build_app(
+    args = {
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
       configuration: "Release",
       export_method: "app-store",
       output_directory: IPA_DIR,
       output_name: "TinyTrack.ipa",
-      xcargs: signing_xcargs,
       clean: false,
-    )
+    }
+    if File.exist?(CM_EXPORT_OPTIONS)
+      # Codemagic native signing: profiles are already fetched, installed and
+      # applied to the project. Cloud signing must stay OUT of the picture —
+      # it's what kept dying on fresh CI machines.
+      args[:export_options] = CM_EXPORT_OPTIONS
+    else
+      args[:xcargs] = signing_xcargs
+    end
+    build_app(**args)
   end
 
   desc "Build and upload to TestFlight (UAT)"
@@ -185,6 +203,29 @@ platform :ios do
   desc "Set the What's New text from release_notes.txt without building or submitting"
   lane :notes do
     push_release_notes(key: asc_key)
+  end
+
+  desc "Submit the already-uploaded build matching pubspec's version+build (no rebuild)"
+  lane :submit do
+    key = asc_key
+    v = flutter_version
+    # Same pinned submit as the tail of `release`. Exists separately for the
+    # case where release uploaded the binary but Apple was still processing it
+    # when the submit step ran — pinned, that fails loudly, and this finishes
+    # the job once processing completes without rebuilding anything.
+    upload_to_app_store(
+      api_key: key,
+      app_version: v[:name],
+      build_number: v[:build],
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: true,
+      submit_for_review: true,
+      automatic_release: true,
+      force: true,
+      precheck_include_in_app_purchases: false,
+    )
+    UI.success("✅ Submitted #{v[:name]} (#{v[:build]}) to the App Store for review.")
   end
 
   desc "List the most recent uploaded builds and their processing state"

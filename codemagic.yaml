@@ -33,12 +33,26 @@ workflows:
   ios-testflight:
     <<: *base
     name: iOS → TestFlight
+    # Native code signing: Codemagic uses the Apple Developer Portal
+    # integration (named `tinytrack` in team settings) to fetch the
+    # distribution certificate + App Store profiles for BOTH bundle ids
+    # before any script runs. `xcode-project use-profiles` then applies them
+    # and writes /Users/builder/export_options.plist, which gym picks up.
+    # This replaces cloud signing (-authenticationKey* xcargs), which
+    # repeatedly failed on fresh CI machines.
+    integrations:
+      app_store_connect: tinytrack
     environment:
       flutter: 3.44.6
       xcode: latest
       cocoapods: default
       groups:
         - appstore
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier:
+          - com.tinytrack.tinytrackApp
+          - com.tinytrack.tinytrackApp.watchkitapp
     triggering:
       events:
         - push
@@ -49,10 +63,12 @@ workflows:
     scripts:
       - name: Restore the App Store Connect API key
         script: |
-          # fastlane reads this path via key_filepath in the Fastfile.
+          # fastlane still needs this for the UPLOAD (pilot/deliver + Spaceship
+          # release notes) — signing no longer uses it.
           echo "$ASC_KEY_P8_BASE64" | base64 --decode > ios/fastlane/AuthKey.p8
-          # Fail loudly now rather than deep inside gym.
           test -s ios/fastlane/AuthKey.p8 || { echo "AuthKey.p8 is empty — check ASC_KEY_P8_BASE64"; exit 1; }
+      - name: Apply fetched signing profiles
+        script: xcode-project use-profiles
       - name: flutter pub get
         script: flutter pub get
       - name: flutter analyze
@@ -62,11 +78,14 @@ workflows:
       - name: Upload to TestFlight via fastlane
         script: |
           cd ios
-          # ASC_KEY_ID / ASC_ISSUER_ID come from the `appstore` variable group.
-          bundle exec fastlane beta 2>/dev/null || fastlane beta
+          # Full output to an artifact so a failure is a one-click download,
+          # not an archaeology dig through the web console.
+          set -o pipefail
+          fastlane beta 2>&1 | tee /tmp/fastlane.log
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+      - /tmp/fastlane.log
       - build/ios/**/*.dSYM.zip
     publishing:
       email:
@@ -79,12 +98,19 @@ workflows:
   ios-appstore:
     <<: *base
     name: iOS → App Store (production)
+    integrations:
+      app_store_connect: tinytrack
     environment:
       flutter: 3.44.6
       xcode: latest
       cocoapods: default
       groups:
         - appstore
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier:
+          - com.tinytrack.tinytrackApp
+          - com.tinytrack.tinytrackApp.watchkitapp
     # Deliberately NOT triggered by pushes to main. The `release` lane submits
     # for review AND auto-publishes on approval, so an accidental merge would
     # ship to real users. Releasing is an explicit act: tag the commit.
@@ -103,6 +129,8 @@ workflows:
         script: |
           echo "$ASC_KEY_P8_BASE64" | base64 --decode > ios/fastlane/AuthKey.p8
           test -s ios/fastlane/AuthKey.p8 || { echo "AuthKey.p8 is empty — check ASC_KEY_P8_BASE64"; exit 1; }
+      - name: Apply fetched signing profiles
+        script: xcode-project use-profiles
       - name: flutter pub get
         script: flutter pub get
       - name: flutter analyze
@@ -112,10 +140,12 @@ workflows:
       - name: Submit to the App Store via fastlane
         script: |
           cd ios
-          bundle exec fastlane release 2>/dev/null || fastlane release
+          set -o pipefail
+          fastlane release 2>&1 | tee /tmp/fastlane.log
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+      - /tmp/fastlane.log
       - build/ios/**/*.dSYM.zip
     publishing:
       email:
