@@ -31,6 +31,22 @@ Build and upload to TestFlight (UAT)
 
 Build and submit to the App Store for review
 
+### ios status
+
+```sh
+[bundle exec] fastlane ios status
+```
+
+Show the current review submission state and which build is attached
+
+### ios resubmit
+
+```sh
+[bundle exec] fastlane ios resubmit
+```
+
+Cancel a stuck/rejected review submission and resubmit the already-uploaded build
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
