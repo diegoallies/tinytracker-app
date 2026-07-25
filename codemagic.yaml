@@ -76,6 +76,19 @@ workflows:
           test -s ios/fastlane/AuthKey.p8 || { echo "AuthKey.p8 is empty — check ASC_KEY_P8_BASE64"; exit 1; }
       - name: Apply fetched signing profiles
         script: xcode-project use-profiles
+      - name: Pick a build number Apple will accept
+        script: |
+          # Apple rejects duplicate build numbers, and releases can come from a
+          # laptop as well as CI — so derive the number from what's actually
+          # uploaded rather than trusting pubspec. Read by flutter_compile in
+          # the Fastfile via --build-number.
+          LATEST=$(app-store-connect get-latest-app-store-build-number 6786685436 2>/dev/null \
+                   || app-store-connect get-latest-testflight-build-number 6786685436 2>/dev/null \
+                   || echo 0)
+          LATEST=${LATEST:-0}
+          NEXT=$((LATEST + 1))
+          echo "Latest uploaded: $LATEST -> using $NEXT"
+          echo "CI_BUILD_NUMBER=$NEXT" >> "$CM_ENV"
       - name: flutter pub get
         script: flutter pub get
       - name: flutter analyze
@@ -145,6 +158,19 @@ workflows:
           test -s ios/fastlane/AuthKey.p8 || { echo "AuthKey.p8 is empty — check ASC_KEY_P8_BASE64"; exit 1; }
       - name: Apply fetched signing profiles
         script: xcode-project use-profiles
+      - name: Pick a build number Apple will accept
+        script: |
+          # Apple rejects duplicate build numbers, and releases can come from a
+          # laptop as well as CI — so derive the number from what's actually
+          # uploaded rather than trusting pubspec. Read by flutter_compile in
+          # the Fastfile via --build-number.
+          LATEST=$(app-store-connect get-latest-app-store-build-number 6786685436 2>/dev/null \
+                   || app-store-connect get-latest-testflight-build-number 6786685436 2>/dev/null \
+                   || echo 0)
+          LATEST=${LATEST:-0}
+          NEXT=$((LATEST + 1))
+          echo "Latest uploaded: $LATEST -> using $NEXT"
+          echo "CI_BUILD_NUMBER=$NEXT" >> "$CM_ENV"
       - name: flutter pub get
         script: flutter pub get
       - name: flutter analyze

@@ -40,10 +40,20 @@ end
 
 platform :ios do
   # Compile the Flutter side (Dart + assets + pods). No signing here — gym signs.
+  #
+  # CI_BUILD_NUMBER, when set, overrides pubspec's +buildNumber. Apple rejects a
+  # duplicate build number outright, so a number derived from what's already
+  # uploaded is the only safe source when releases can come from both a laptop
+  # and CI. Locally it's unset and pubspec wins.
   private_lane :flutter_compile do
     Dir.chdir(PROJECT_ROOT) do
       sh("flutter", "pub", "get")
-      sh("flutter", "build", "ios", "--release", "--no-codesign")
+      args = ["flutter", "build", "ios", "--release", "--no-codesign"]
+      if (n = ENV["CI_BUILD_NUMBER"]) && !n.strip.empty?
+        UI.message("Overriding build number from CI: #{n}")
+        args << "--build-number=#{n.strip}"
+      end
+      sh(*args)
     end
   end
 
