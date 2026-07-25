@@ -10,6 +10,7 @@ import 'app/router.dart';
 import 'providers/night_mode_provider.dart';
 import 'services/notification_service.dart';
 import 'services/pending_writes.dart';
+import 'services/push_service.dart';
 import 'services/watch_bridge.dart';
 
 void main() async {
@@ -24,6 +25,9 @@ void main() async {
 
   await NotificationService.initialize();
   await PendingWrites.init();
+  // Native APNs remote push (guarded; no-op until the push capability + APNs
+  // key are configured).
+  await PushService.init();
 
   // Explicit container so the Apple Watch bridge can read providers + call the
   // same action classes the UI uses, outside the widget tree.
