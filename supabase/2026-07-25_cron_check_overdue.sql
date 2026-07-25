@@ -3,25 +3,41 @@
 -- Run this AFTER:
 --   1. supabase/2026-07-25_push_reminders.sql   (tables)
 --   2. supabase functions deploy check-overdue --no-verify-jwt
---   3. supabase secrets set CRON_SECRET=<a long random string>
 --
--- Generate the secret with:  openssl rand -hex 32
+-- Safe to re-run: every statement below is idempotent.
 --
 -- The function is deployed with --no-verify-jwt because pg_cron has no user JWT
--- to present. It's protected instead by the CRON_SECRET header checked inside
--- the function, so the endpoint isn't an open push-spam vector. Storing that
--- secret in Vault keeps it out of this file and out of git.
+-- to present, which would otherwise leave the URL callable by anyone. It is
+-- protected instead by the CRON_SECRET header checked inside the function.
+--
+-- The secret is inlined below rather than left as a placeholder, so this file
+-- runs as-is. That is a deliberate call on the basis that this repo is private.
+-- If it ever goes public, rotate it: `openssl rand -hex 32`, then update BOTH
+-- `supabase secrets set CRON_SECRET=...` and the value here.
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
--- Store the same value you passed to `supabase secrets set CRON_SECRET`.
--- Replace <PASTE_THE_SAME_CRON_SECRET_HERE> before running.
-select vault.create_secret(
-  '<PASTE_THE_SAME_CRON_SECRET_HERE>',
-  'cron_secret',
-  'Shared secret for authenticating pg_cron calls to edge functions'
-);
+-- Same value as the CRON_SECRET edge-function secret. vault.create_secret
+-- errors if the name already exists, so update in place when it does — that
+-- keeps this file re-runnable.
+do $do$
+declare
+  v_secret text := 'ce7129cf88c922b5f80b3794c8b29f0367f6a8d0fbd5716254aa1629bf11617e';
+  v_id     uuid;
+begin
+  select id into v_id from vault.secrets where name = 'cron_secret';
+  if v_id is null then
+    perform vault.create_secret(
+      v_secret,
+      'cron_secret',
+      'Shared secret for authenticating pg_cron calls to edge functions'
+    );
+  else
+    perform vault.update_secret(v_id, v_secret);
+  end if;
+end
+$do$;
 
 -- Idempotent: drop any previous schedule with this name before creating it.
 select cron.unschedule('check-overdue-every-15-min')
@@ -59,9 +75,12 @@ select cron.schedule(
 -- Scheduled jobs:
 --   select jobid, jobname, schedule, active from cron.job;
 --
--- Recent runs (look for status = 'succeeded'):
---   select jobname, status, return_message, start_time
---   from cron.job_run_details order by start_time desc limit 10;
+-- Recent runs (look for status = 'succeeded'). Note job_run_details keys on
+-- jobid, not jobname, so it needs the join:
+--   select j.jobname, d.status, d.return_message, d.start_time
+--   from cron.job_run_details d
+--   join cron.job j on j.jobid = d.jobid
+--   order by d.start_time desc limit 10;
 --
 -- What the function actually returned (pg_net logs responses separately):
 --   select id, status_code, content from net._http_response

@@ -89,21 +89,32 @@ Deno.serve(async (req) => {
     );
 
     // Only users who actually want these alerts.
-    const { data: prefs } = await admin
+    const { data: prefs, error: prefsError } = await admin
       .from('notification_prefs')
       .select(
         'user_id, feeding_enabled, feeding_interval_minutes, sleep_enabled, sleep_window_minutes',
       )
       .or('feeding_enabled.eq.true,sleep_enabled.eq.true');
+    // Surface query failures rather than swallowing them. Without this a missing
+    // table or a broken policy reads as "nobody opted in" — a silently dead cron
+    // job that looks healthy.
+    if (prefsError) {
+      console.error('notification_prefs query failed', prefsError);
+      return json({ error: `notification_prefs: ${prefsError.message}` }, 500);
+    }
     if (!prefs?.length) return json({ checked: 0, sent: 0, reason: 'no opted-in users' });
 
     const prefByUser = new Map(prefs.map((p) => [p.user_id, p]));
 
     // Which babies those users can see.
-    const { data: shares } = await admin
+    const { data: shares, error: sharesError } = await admin
       .from('baby_shares')
       .select('baby_id, user_id')
       .in('user_id', [...prefByUser.keys()]);
+    if (sharesError) {
+      console.error('baby_shares query failed', sharesError);
+      return json({ error: `baby_shares: ${sharesError.message}` }, 500);
+    }
     if (!shares?.length) return json({ checked: 0, sent: 0, reason: 'no shared babies' });
 
     const usersByBaby = new Map<string, string[]>();
