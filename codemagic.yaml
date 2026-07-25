@@ -50,9 +50,9 @@ workflows:
         - appstore
       ios_signing:
         distribution_type: app_store
-        bundle_identifier:
-          - com.tinytrack.tinytrackApp
-          - com.tinytrack.tinytrackApp.watchkitapp
+        # Schema takes a single string. Codemagic matches profiles for this id
+        # AND com.tinytrack.tinytrackApp.* — so the watch app is covered.
+        bundle_identifier: com.tinytrack.tinytrackApp
     triggering:
       events:
         - push
@@ -108,9 +108,9 @@ workflows:
         - appstore
       ios_signing:
         distribution_type: app_store
-        bundle_identifier:
-          - com.tinytrack.tinytrackApp
-          - com.tinytrack.tinytrackApp.watchkitapp
+        # Schema takes a single string. Codemagic matches profiles for this id
+        # AND com.tinytrack.tinytrackApp.* — so the watch app is covered.
+        bundle_identifier: com.tinytrack.tinytrackApp
     # Deliberately NOT triggered by pushes to main. The `release` lane submits
     # for review AND auto-publishes on approval, so an accidental merge would
     # ship to real users. Releasing is an explicit act: tag the commit.
