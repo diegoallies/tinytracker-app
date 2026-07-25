@@ -141,6 +141,7 @@
 		98EB4398AE1E01AB7001A07E /* DaySummary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DaySummary.swift; sourceTree = "<group>"; };
 		A534C8CA033F42DB13D26843 /* WatchSessionManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchSessionManager.swift; path = Runner/WatchSessionManager.swift; sourceTree = SOURCE_ROOT; };
 		AA57165E16B6504F8611D1F7 /* StatTile.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatTile.swift; sourceTree = "<group>"; };
+		AB941CDE3015205300AD90DC /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		B122089354B6CDEC2970F020 /* SleepEvent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SleepEvent.swift; sourceTree = "<group>"; };
 		BFA1AAA37BFF31E428EA1155 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		CE83EBC7E3859B0713F142C9 /* MedLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MedLog.swift; sourceTree = "<group>"; };
@@ -202,7 +203,6 @@
 				D16DEE80C3D7AFDBBC9D6095 /* TinyTrackWatchApp.swift */,
 				356E8124A4612652B13A19EA /* Views */,
 			);
-			name = TinyTrackWatch;
 			path = TinyTrackWatch;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -224,7 +224,6 @@
 				4E64B59E14A34910B1C5A03A /* SleepPage.swift */,
 				1C6159D6283D3EBD9212B094 /* TodayPage.swift */,
 			);
-			name = Views;
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -234,7 +233,6 @@
 				604CB93D990AAB938AF93FFF /* ConnectivityService.swift */,
 				4994C42F7AB78822C77D131D /* SharedStore.swift */,
 			);
-			name = Services;
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -277,6 +275,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				AB941CDE3015205300AD90DC /* Runner.entitlements */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -301,7 +300,6 @@
 				0203993D3BA191A4EE32D450 /* Pods-RunnerTests.release.xcconfig */,
 				60A5557CAFA3AB8AC0B230BF /* Pods-RunnerTests.profile.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -328,7 +326,6 @@
 				AA57165E16B6504F8611D1F7 /* StatTile.swift */,
 				1FEAF27835FB5BA3AC00AACF /* Theme.swift */,
 			);
-			name = Components;
 			path = Components;
 			sourceTree = "<group>";
 		};
@@ -345,7 +342,6 @@
 				DC699B9EBB61846A4BEAAD7E /* WatchAction.swift */,
 				E79F85B07DD4746FC8E8CA90 /* WatchSummary.swift */,
 			);
-			name = Models;
 			path = Models;
 			sourceTree = "<group>";
 		};
@@ -811,6 +807,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = GLWG756ZM9;
 				ENABLE_BITCODE = NO;
@@ -994,6 +991,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = GLWG756ZM9;
 				ENABLE_BITCODE = NO;
@@ -1017,6 +1015,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = GLWG756ZM9;
 				ENABLE_BITCODE = NO;
