@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/sleep_session.dart';
 import '../services/supabase_service.dart';
+import '../services/notification_service.dart';
 import '../utils/date_utils.dart';
 import 'baby_provider.dart';
 
@@ -68,6 +70,13 @@ class SleepActions {
       'start_time': DateTime.now().toUtc().toIso8601String(),
     }).select().single();
 
+    // Baby is now asleep - clear any pending "nap due / overdue" reminders.
+    try {
+      await NotificationService.cancelSleepReminders();
+    } catch (e) {
+      debugPrint('sleep reminder cancel failed: $e');
+    }
+
     return SleepSession.fromJson(data);
   }
 
@@ -79,6 +88,18 @@ class SleepActions {
       'end_time': now.toUtc().toIso8601String(),
       'duration_minutes': duration,
     }).eq('id', sleepId);
+
+    // Baby just woke - schedule the next "nap due / overdue" reminders off the
+    // wake window. A save must never fail because of a reminder.
+    try {
+      final window = await NotificationService.getSleepWindow();
+      await NotificationService.scheduleSleepReminder(
+        lastWakeTime: now,
+        wakeWindowMinutes: window,
+      );
+    } catch (e) {
+      debugPrint('sleep reminder scheduling failed: $e');
+    }
   }
 
   static Future<void> deleteSleep(String sleepId) async {
@@ -106,6 +127,12 @@ class SleepActions {
       'user_id': userId,
       'start_time': start.toUtc().toIso8601String(),
     }).select().single();
+
+    try {
+      await NotificationService.cancelSleepReminders();
+    } catch (e) {
+      debugPrint('sleep reminder cancel failed: $e');
+    }
 
     return SleepSession.fromJson(data);
   }

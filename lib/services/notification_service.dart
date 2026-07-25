@@ -7,6 +7,14 @@ class NotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();
   static const _feedingChannelId = 'feeding_reminders';
   static const _feedingNotificationId = 1001;
+  static const _feedingOverdueChannelId = 'feeding_overdue';
+  static const _feedingOverdueNotificationId = 1003;
+  static const _sleepChannelId = 'sleep_reminders';
+  static const _sleepNotificationId = 1004;
+  static const _sleepOverdueChannelId = 'sleep_overdue';
+  static const _sleepOverdueNotificationId = 1005;
+  // How long after a "due" reminder we escalate to "overdue".
+  static const _overdueGraceMinutes = 45;
   static const _weeklyReportChannelId = 'weekly_report_reminders';
   static const _weeklyReportNotificationId = 1002;
   static const _medicationChannelId = 'medication_reminders';
@@ -49,8 +57,9 @@ class NotificationService {
     final enabled = prefs.getBool('feeding_reminder_enabled') ?? false;
     if (!enabled) return;
 
-    // Replace any previously scheduled reminder.
+    // Replace any previously scheduled reminders (due + overdue).
     await _plugin.cancel(_feedingNotificationId);
+    await _plugin.cancel(_feedingOverdueNotificationId);
 
     final triggerTime = lastFeedTime.add(Duration(minutes: intervalMinutes));
     final delay = triggerTime.difference(DateTime.now());
@@ -96,10 +105,145 @@ class NotificationService {
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
+
+    // Escalation: if no feed is logged, a second "overdue" reminder fires
+    // _overdueGraceMinutes after the due one. Logging a feed reschedules both.
+    final overdueDelay = delay + const Duration(minutes: _overdueGraceMinutes);
+    final overdueAt = tz.TZDateTime.now(tz.local).add(overdueDelay);
+    const overdueAndroid = AndroidNotificationDetails(
+      _feedingOverdueChannelId,
+      'Feeding Overdue',
+      channelDescription: 'Escalated alert when a feed is overdue',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const overdueIos = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const overdueDetails =
+        NotificationDetails(android: overdueAndroid, iOS: overdueIos);
+    await _plugin.zonedSchedule(
+      _feedingOverdueNotificationId,
+      'Feeding overdue 🟠',
+      'Still no feed logged - baby is past the usual feeding time.',
+      overdueAt,
+      overdueDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
   }
 
   static Future<void> cancelFeedingReminder() async {
     await _plugin.cancel(_feedingNotificationId);
+    await _plugin.cancel(_feedingOverdueNotificationId);
+  }
+
+  // ── Sleep reminders ──────────────────────────────────────────────────────
+  // Timed off the baby's last wake (the end of the previous sleep). After the
+  // wake window a "nap due" reminder fires; _overdueGraceMinutes later, if the
+  // baby is still awake, an "overdue" reminder escalates. Starting a sleep
+  // cancels both.
+
+  static Future<void> scheduleSleepReminder({
+    required DateTime lastWakeTime,
+    int wakeWindowMinutes = 120,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('sleep_reminder_enabled') ?? false;
+
+    // Replace any previously scheduled sleep reminders (due + overdue).
+    await _plugin.cancel(_sleepNotificationId);
+    await _plugin.cancel(_sleepOverdueNotificationId);
+    if (!enabled) return;
+
+    final dueDelay =
+        lastWakeTime.add(Duration(minutes: wakeWindowMinutes)).difference(DateTime.now());
+    if (dueDelay.isNegative) return;
+
+    const dueAndroid = AndroidNotificationDetails(
+      _sleepChannelId,
+      'Sleep Reminders',
+      channelDescription: 'Reminders when it\'s time for a nap',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const dueIos = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const dueDetails = NotificationDetails(android: dueAndroid, iOS: dueIos);
+
+    final hours = wakeWindowMinutes ~/ 60;
+    final mins = wakeWindowMinutes % 60;
+    final windowStr = hours > 0
+        ? (mins > 0 ? '$hours hr ${mins}min' : '$hours hours')
+        : '$mins minutes';
+
+    await _plugin.zonedSchedule(
+      _sleepNotificationId,
+      'Time for a nap 😴',
+      'It\'s been $windowStr since the last wake - baby may be ready to sleep.',
+      tz.TZDateTime.now(tz.local).add(dueDelay),
+      dueDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+
+    // Overdue escalation.
+    final overdueDelay = dueDelay + const Duration(minutes: _overdueGraceMinutes);
+    const overdueAndroid = AndroidNotificationDetails(
+      _sleepOverdueChannelId,
+      'Sleep Overdue',
+      channelDescription: 'Escalated alert when a nap is overdue',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const overdueDetails =
+        NotificationDetails(android: overdueAndroid, iOS: dueIos);
+    await _plugin.zonedSchedule(
+      _sleepOverdueNotificationId,
+      'Nap overdue 🟠',
+      'Baby has been awake past the usual window - overtired can make settling harder.',
+      tz.TZDateTime.now(tz.local).add(overdueDelay),
+      overdueDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  static Future<void> cancelSleepReminders() async {
+    await _plugin.cancel(_sleepNotificationId);
+    await _plugin.cancel(_sleepOverdueNotificationId);
+  }
+
+  static Future<bool> isSleepReminderEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('sleep_reminder_enabled') ?? false;
+  }
+
+  static Future<int> getSleepWindow() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('sleep_reminder_window') ?? 120;
+  }
+
+  static Future<void> setSleepReminderEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('sleep_reminder_enabled', enabled);
+    if (!enabled) await cancelSleepReminders();
+  }
+
+  static Future<void> setSleepWindow(int minutes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('sleep_reminder_window', minutes);
   }
 
   /// Schedules a repeating reminder every Friday at 14:00 local time to
