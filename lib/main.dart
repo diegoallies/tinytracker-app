@@ -1,3 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -7,15 +10,39 @@ import 'config/env.dart';
 import 'config/theme.dart';
 import 'app/deep_links.dart';
 import 'app/router.dart';
+import 'firebase_options.dart';
 import 'providers/night_mode_provider.dart';
+import 'services/analytics_service.dart';
 import 'services/notification_service.dart';
 import 'services/pending_writes.dart';
+import 'services/push_service.dart';
 import 'services/watch_bridge.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: '.env');
+
+  // Firebase first: Crashlytics needs to be installed as the error handler
+  // before anything else can throw, and PushService/AnalyticsService both
+  // depend on an initialised app.
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Route uncaught Flutter + platform errors into Crashlytics. Debug builds
+  // keep printing to the console instead, so local stack traces stay readable
+  // and we don't pollute the dashboard with development noise.
+  if (kDebugMode) {
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
+  } else {
+    FlutterError.onError =
+        FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
 
   await Supabase.initialize(
     url: Env.supabaseUrl,
@@ -24,6 +51,10 @@ void main() async {
 
   await NotificationService.initialize();
   await PendingWrites.init();
+  // FCM remote push (guarded; no-op until the APNs key + push capability are
+  // configured on the Apple side).
+  await PushService.init();
+  await AnalyticsService.init();
 
   // Explicit container so the Apple Watch bridge can read providers + call the
   // same action classes the UI uses, outside the widget tree.

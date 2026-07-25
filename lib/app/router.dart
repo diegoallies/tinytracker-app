@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../widgets/layout/app_scaffold.dart';
 import '../screens/auth/login_screen.dart';
@@ -44,6 +45,8 @@ final shellRouteObserver = RouteObserver<PageRoute<dynamic>>();
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
+  // Logs a `screen_view` to Firebase Analytics on every route change.
+  observers: [AnalyticsService.observer],
   redirect: (context, state) {
     final isAuthenticated = SupabaseService.currentUser != null;
     // uri.path, NOT uri.toString(): '/register?invite=x' must still count

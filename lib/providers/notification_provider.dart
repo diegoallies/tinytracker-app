@@ -79,6 +79,49 @@ final feedingReminderSchedulerProvider = Provider<void>((ref) {
   });
 });
 
+// ── Sleep reminders ─────────────────────────────────────────────────────
+
+final sleepReminderEnabledProvider =
+    StateNotifierProvider<SleepReminderEnabledNotifier, bool>((ref) {
+  return SleepReminderEnabledNotifier();
+});
+
+class SleepReminderEnabledNotifier extends StateNotifier<bool> {
+  SleepReminderEnabledNotifier() : super(false) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await NotificationService.isSleepReminderEnabled();
+  }
+
+  Future<void> toggle() async {
+    state = !state;
+    await NotificationService.setSleepReminderEnabled(state);
+    if (state) await NotificationService.requestPermissions();
+  }
+}
+
+final sleepReminderWindowProvider =
+    StateNotifierProvider<SleepReminderWindowNotifier, int>((ref) {
+  return SleepReminderWindowNotifier();
+});
+
+class SleepReminderWindowNotifier extends StateNotifier<int> {
+  SleepReminderWindowNotifier() : super(120) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await NotificationService.getSleepWindow();
+  }
+
+  Future<void> setWindow(int minutes) async {
+    state = minutes;
+    await NotificationService.setSleepWindow(minutes);
+  }
+}
+
 // ── Medication reminders ────────────────────────────────────────────────
 
 final medicationReminderEnabledProvider =

@@ -41,6 +41,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reminderEnabled = ref.watch(feedingReminderEnabledProvider);
     final reminderInterval = ref.watch(feedingReminderIntervalProvider);
+    final sleepReminderEnabled = ref.watch(sleepReminderEnabledProvider);
+    final sleepReminderWindow = ref.watch(sleepReminderWindowProvider);
     final medicationReminderEnabled = ref.watch(medicationReminderEnabledProvider);
     final weeklyReportReminderEnabled =
         ref.watch(weeklyReportReminderEnabledProvider);
@@ -112,6 +114,49 @@ class SettingsScreen extends ConsumerWidget {
                                     .read(feedingReminderIntervalProvider
                                         .notifier)
                                     .setInterval(m),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const _SettingsDivider(),
+                  _SettingsRow(
+                    icon: Icons.bedtime_rounded,
+                    iconBg: AppColors.pastelPurple,
+                    iconColor: const Color(0xFF7E57C2),
+                    title: 'Sleep Reminders',
+                    subtitle: "Alert when it's time for a nap",
+                    trailing: Switch.adaptive(
+                      value: sleepReminderEnabled,
+                      onChanged: (_) => ref
+                          .read(sleepReminderEnabledProvider.notifier)
+                          .toggle(),
+                    ),
+                  ),
+                  if (sleepReminderEnabled) ...[
+                    const _SettingsDivider(),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 16, 16),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Wake window',
+                            style: TextStyle(
+                                fontSize: 13, color: context.palette.muted),
+                          ),
+                          const Spacer(),
+                          for (final m in const [90, 120, 150, 180])
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: _IntervalChip(
+                                label: m == 90
+                                    ? '1.5h'
+                                    : (m == 150 ? '2.5h' : '${m ~/ 60}h'),
+                                selected: sleepReminderWindow == m,
+                                onTap: () => ref
+                                    .read(sleepReminderWindowProvider.notifier)
+                                    .setWindow(m),
                               ),
                             ),
                         ],

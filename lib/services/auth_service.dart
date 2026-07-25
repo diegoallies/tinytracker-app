@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'analytics_service.dart';
 import 'supabase_service.dart';
 
 class AuthService {
@@ -8,10 +9,15 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    return await _client.auth.signInWithPassword(
+    final response = await _client.auth.signInWithPassword(
       email: email,
       password: password,
     );
+    // Analytics is instrumented here rather than in the screens so the watch
+    // bridge, deep links and the auth screens all report identically.
+    await AnalyticsService.setUser(response.user?.id);
+    await AnalyticsService.logLogin();
+    return response;
   }
 
   Future<AuthResponse> signUp({
@@ -19,15 +25,20 @@ class AuthService {
     required String password,
     String? displayName,
   }) async {
-    return await _client.auth.signUp(
+    final response = await _client.auth.signUp(
       email: email,
       password: password,
       data: displayName != null ? {'display_name': displayName} : null,
     );
+    await AnalyticsService.setUser(response.user?.id);
+    await AnalyticsService.logSignUp();
+    return response;
   }
 
   Future<void> signOut() async {
     await _client.auth.signOut();
+    // Stop attributing subsequent events to the user who just left.
+    await AnalyticsService.setUser(null);
   }
 
   /// Permanently deletes the signed-in user's account and all their data via

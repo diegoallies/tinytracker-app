@@ -17,6 +17,8 @@ import '../../utils/extensions.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/common/animated_card.dart';
 import '../../widgets/common/loading_skeleton.dart';
+import '../../services/analytics_service.dart';
+import '../../services/push_service.dart';
 
 /// Digitises the paper "Weekly Report by Age" the nanny hands to parents
 /// every Friday: auto-filled metrics, the stage milestone checklist, the
@@ -191,6 +193,13 @@ class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
       ref.invalidate(pastWeeklyReportsProvider);
       if (!mounted) return;
       if (submit) {
+        // Push the parents a "report submitted" alert (guarded; no-op if push
+        // isn't configured yet).
+        PushService.notifyReportSubmitted(
+          babyId: baby.id,
+          babyName: baby.name,
+        );
+        AnalyticsService.logWeeklyReportSubmitted();
         context.showSuccessSnackBar('Report submitted to the parents');
       } else {
         context.showSuccessSnackBar('Draft saved');
