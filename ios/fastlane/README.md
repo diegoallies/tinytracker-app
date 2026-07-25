@@ -39,14 +39,6 @@ Build and submit to the App Store for review
 
 Set the What's New text from release_notes.txt without building or submitting
 
-### ios reset_version
-
-```sh
-[bundle exec] fastlane ios reset_version
-```
-
-Delete the editable (not yet submitted) App Store version for a clean slate
-
 ### ios builds
 
 ```sh
