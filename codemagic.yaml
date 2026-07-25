@@ -49,10 +49,17 @@ workflows:
       groups:
         - appstore
       ios_signing:
-        distribution_type: app_store
-        # Schema takes a single string. Codemagic matches profiles for this id
-        # AND com.tinytrack.tinytrackApp.* — so the watch app is covered.
-        bundle_identifier: com.tinytrack.tinytrackApp
+        # Explicit references, NOT distribution_type + bundle_identifier.
+        # The automatic form matches against profiles stored in Codemagic, not
+        # against Apple's portal — so creating profiles at Apple did nothing for
+        # it and it kept failing with "No matching profiles found". These names
+        # are the Reference names given when fetching the profiles into
+        # Settings → Code signing identities.
+        provisioning_profiles:
+          - tinytrack-appstore
+          - tinytrack-watch-appstore
+        certificates:
+          - tinytrack-dist
     triggering:
       events:
         - push
@@ -107,10 +114,17 @@ workflows:
       groups:
         - appstore
       ios_signing:
-        distribution_type: app_store
-        # Schema takes a single string. Codemagic matches profiles for this id
-        # AND com.tinytrack.tinytrackApp.* — so the watch app is covered.
-        bundle_identifier: com.tinytrack.tinytrackApp
+        # Explicit references, NOT distribution_type + bundle_identifier.
+        # The automatic form matches against profiles stored in Codemagic, not
+        # against Apple's portal — so creating profiles at Apple did nothing for
+        # it and it kept failing with "No matching profiles found". These names
+        # are the Reference names given when fetching the profiles into
+        # Settings → Code signing identities.
+        provisioning_profiles:
+          - tinytrack-appstore
+          - tinytrack-watch-appstore
+        certificates:
+          - tinytrack-dist
     # Deliberately NOT triggered by pushes to main. The `release` lane submits
     # for review AND auto-publishes on approval, so an accidental merge would
     # ship to real users. Releasing is an explicit act: tag the commit.
