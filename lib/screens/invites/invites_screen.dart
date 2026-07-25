@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
+import '../../services/analytics_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
@@ -183,6 +184,8 @@ class _InvitesScreenState extends ConsumerState<InvitesScreen> {
 
     try {
       await _acceptByToken(invite['token'] as String);
+
+      AnalyticsService.logInviteAccepted();
 
       // Refresh the baby provider to pick up the new share
       ref.invalidate(babyProvider);

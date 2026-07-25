@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'analytics_service.dart';
 import 'supabase_service.dart';
 import '../providers/baby_provider.dart';
 import '../providers/feeding_provider.dart';
@@ -80,6 +81,7 @@ class WatchBridge with WidgetsBindingObserver {
             type: (args['type'] as String?) ?? 'bottle',
             amountMl: (args['amountMl'] as num?)?.toInt(),
             loggedAt: loggedAt,
+            source: AnalyticsService.sourceWatch,
           );
           break;
         case 'logDiaper':
@@ -87,10 +89,14 @@ class WatchBridge with WidgetsBindingObserver {
             babyId: baby.id,
             type: (args['type'] as String?) ?? 'wet',
             loggedAt: loggedAt,
+            source: AnalyticsService.sourceWatch,
           );
           break;
         case 'sleepStart':
-          await SleepActions.startSleep(baby.id);
+          await SleepActions.startSleep(
+            baby.id,
+            source: AnalyticsService.sourceWatch,
+          );
           break;
         case 'sleepStop':
           final active = await container.read(activeSleepProvider.future);
@@ -103,6 +109,7 @@ class WatchBridge with WidgetsBindingObserver {
             babyId: baby.id,
             medication: args['name'] as String?,
             loggedAt: loggedAt,
+            source: AnalyticsService.sourceWatch,
           );
           break;
         default:

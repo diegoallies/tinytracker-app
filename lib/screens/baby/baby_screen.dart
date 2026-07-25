@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../config/theme.dart';
 import '../../providers/baby_provider.dart';
 import '../../models/baby_share.dart';
+import '../../services/analytics_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/extensions.dart';
@@ -604,6 +605,9 @@ class _BabyScreenState extends ConsumerState<BabyScreen> {
       final babyName = baby?.name ?? 'our baby';
 
       // The invite EXISTS from here on - clipboard, then best-effort share.
+      // Logged here rather than after the share sheet, which is optional and
+      // can be dismissed without the invite being any less created.
+      AnalyticsService.logInviteSent();
       await Clipboard.setData(ClipboardData(text: inviteLink));
       if (mounted) {
         context.showSuccessSnackBar('Invite created - link copied to clipboard');

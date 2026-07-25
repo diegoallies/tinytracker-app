@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/feeding.dart';
+import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../services/pending_writes.dart';
@@ -123,6 +124,8 @@ class FeedingActions {
     bool hadSpitup = false,
     String? notes,
     DateTime? loggedAt,
+    // Watch taps arrive here via WatchBridge; the phone UI leaves the default.
+    String source = AnalyticsService.sourcePhone,
   }) async {
     final userId = SupabaseService.userId;
     if (userId == null) return;
@@ -180,6 +183,9 @@ class FeedingActions {
     } catch (e) {
       debugPrint('feeding reminder scheduling failed: $e');
     }
+
+    // Count only — never the amount, duration or notes.
+    AnalyticsService.logFeed(source: source);
   }
 
   static Future<void> deleteFeeding(String feedingId) async {

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "166640666899",
+    "project_id": "tinytrack-by-diego",
+    "storage_bucket": "tinytrack-by-diego.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:166640666899:android:c6ce5d66fb4dff9d31f2e6",
+        "android_client_info": {
+          "package_name": "com.tinytrack.tinytrack_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjsAV9fA7p47Zyz9o5K6ERfUfZB8XfnBo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

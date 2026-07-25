@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/sleep_session.dart';
+import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../utils/date_utils.dart';
@@ -60,7 +61,11 @@ final todaySleepMinutesProvider = FutureProvider<int>((ref) async {
 });
 
 class SleepActions {
-  static Future<SleepSession?> startSleep(String babyId) async {
+  static Future<SleepSession?> startSleep(
+    String babyId, {
+    // Watch taps arrive here via WatchBridge; the phone UI leaves the default.
+    String source = AnalyticsService.sourcePhone,
+  }) async {
     final userId = SupabaseService.userId;
     if (userId == null) return null;
 
@@ -76,6 +81,10 @@ class SleepActions {
     } catch (e) {
       debugPrint('sleep reminder cancel failed: $e');
     }
+
+    // Logged on start, not stop: it's the deliberate user action, and counting
+    // it here can't double up with stopSleep.
+    AnalyticsService.logSleep(source: source);
 
     return SleepSession.fromJson(data);
   }

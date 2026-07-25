@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/baby.dart';
 import '../models/baby_share.dart';
+import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
 
@@ -139,6 +140,10 @@ class BabyNotifier extends StateNotifier<BabyState> {
     });
 
     await loadBabies();
+
+    // Key onboarding-funnel step: an account with no baby can't do anything.
+    AnalyticsService.logBabyCreated();
+
     return baby;
   }
 

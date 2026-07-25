@@ -1,14 +1,13 @@
 // Supabase Edge Function: notify a baby's parents (share role = 'owner') that a
-// weekly report was submitted. Sends a native APNs push (no Firebase).
+// weekly report was submitted. Sends via FCM HTTP v1, which reaches both iOS
+// (Firebase forwards to APNs using the key uploaded in the console) and Android.
 //
 // Deploy:  supabase functions deploy notify-report-submitted
 // Secrets (supabase secrets set ...):
-//   APNS_KEY        contents of the AuthKey_XXXX.p8 (the whole file, PEM)
-//   APNS_KEY_ID     the 10-char key id
-//   APNS_TEAM_ID    your Apple team id
-//   APNS_BUNDLE_ID  the app bundle id (e.g. com.diego.tinytrack) - APNs topic
-//   APNS_HOST       api.push.apple.com   (prod)  |  api.sandbox.push.apple.com (dev)
-// SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
+//   FCM_SERVICE_ACCOUNT   the whole service-account JSON downloaded from
+//                         Firebase Console > Project settings > Service accounts
+// SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY are injected by
+// the platform — don't set those.
 //
 // Call from the app after a submit:
 //   supabase.functions.invoke('notify-report-submitted',
@@ -22,13 +21,23 @@ const cors = {
     'authorization, x-client-info, apikey, content-type',
 };
 
-function b64url(bytes: Uint8Array): string {
-  let s = btoa(String.fromCharCode(...bytes));
-  return s.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const FCM_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+
+interface ServiceAccount {
+  project_id: string;
+  private_key: string;
+  client_email: string;
 }
 
-// Import the .p8 (PKCS#8 EC P-256) private key for ES256 signing.
-async function importP8(pem: string): Promise<CryptoKey> {
+function b64url(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+// Import the service account's PEM (PKCS#8 RSA) key for RS256 signing.
+async function importKey(pem: string): Promise<CryptoKey> {
   const body = pem
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
     .replace(/-----END PRIVATE KEY-----/, '')
@@ -37,61 +46,78 @@ async function importP8(pem: string): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     'pkcs8',
     der.buffer,
-    { name: 'ECDSA', namedCurve: 'P-256' },
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
     ['sign'],
   );
 }
 
-async function apnsJwt(): Promise<string> {
-  const keyId = Deno.env.get('APNS_KEY_ID')!;
-  const teamId = Deno.env.get('APNS_TEAM_ID')!;
-  const key = await importP8(Deno.env.get('APNS_KEY')!);
+// Exchange a self-signed service-account JWT for an OAuth2 access token.
+// Unlike the old APNs path (where the JWT *was* the credential), FCM v1 needs
+// this extra round trip to Google's token endpoint.
+async function accessToken(sa: ServiceAccount): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
   const header = b64url(
-    new TextEncoder().encode(JSON.stringify({ alg: 'ES256', kid: keyId })),
+    new TextEncoder().encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })),
   );
   const claims = b64url(
     new TextEncoder().encode(
-      JSON.stringify({ iss: teamId, iat: Math.floor(Date.now() / 1000) }),
+      JSON.stringify({
+        iss: sa.client_email,
+        scope: FCM_SCOPE,
+        aud: 'https://oauth2.googleapis.com/token',
+        iat: now,
+        exp: now + 3600,
+      }),
     ),
   );
   const signingInput = `${header}.${claims}`;
   const sig = new Uint8Array(
     await crypto.subtle.sign(
-      { name: 'ECDSA', hash: 'SHA-256' },
-      key,
+      'RSASSA-PKCS1-v1_5',
+      await importKey(sa.private_key),
       new TextEncoder().encode(signingInput),
     ),
   );
-  return `${signingInput}.${b64url(sig)}`;
+  const assertion = `${signingInput}.${b64url(sig)}`;
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`token exchange failed: ${res.status} ${await res.text()}`);
+  }
+  return (await res.json()).access_token as string;
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+
   try {
     const { baby_id, baby_name, actor_name } = await req.json();
-    if (!baby_id) {
-      return new Response(JSON.stringify({ error: 'baby_id required' }), {
-        status: 400,
-        headers: { ...cors, 'Content-Type': 'application/json' },
-      });
-    }
+    if (!baby_id) return json({ error: 'baby_id required' }, 400);
 
-    const authHeader = req.headers.get('Authorization') ?? '';
     const url = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     // Verify the caller is a member of this baby (uses their JWT).
     const asUser = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
+      global: {
+        headers: { Authorization: req.headers.get('Authorization') ?? '' },
+      },
     });
     const { data: caller } = await asUser.auth.getUser();
-    if (!caller?.user) {
-      return new Response(JSON.stringify({ error: 'unauthorized' }), {
-        status: 401,
-        headers: { ...cors, 'Content-Type': 'application/json' },
-      });
-    }
+    if (!caller?.user) return json({ error: 'unauthorized' }, 401);
 
     // Service-role client to look up recipients + tokens (bypasses RLS).
     const admin = createClient(url, serviceKey);
@@ -102,12 +128,7 @@ Deno.serve(async (req) => {
       .eq('baby_id', baby_id)
       .eq('user_id', caller.user.id)
       .maybeSingle();
-    if (!callerShare) {
-      return new Response(JSON.stringify({ error: 'not a member of baby' }), {
-        status: 403,
-        headers: { ...cors, 'Content-Type': 'application/json' },
-      });
-    }
+    if (!callerShare) return json({ error: 'not a member of baby' }, 403);
 
     // Parents = owners of the baby, excluding whoever submitted.
     const { data: owners } = await admin
@@ -119,69 +140,86 @@ Deno.serve(async (req) => {
       .map((o) => o.user_id)
       .filter((id) => id !== caller.user.id);
     if (recipientIds.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, reason: 'no recipients' }), {
-        headers: { ...cors, 'Content-Type': 'application/json' },
-      });
+      return json({ sent: 0, reason: 'no recipients' });
     }
 
+    // Both platforms live in the same table now — FCM reaches iOS via APNs
+    // itself, so we no longer filter by platform.
     const { data: tokens } = await admin
       .from('device_tokens')
       .select('token')
-      .in('user_id', recipientIds)
-      .eq('platform', 'ios');
+      .in('user_id', recipientIds);
     if (!tokens || tokens.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, reason: 'no tokens' }), {
-        headers: { ...cors, 'Content-Type': 'application/json' },
-      });
+      return json({ sent: 0, reason: 'no tokens' });
     }
 
-    const jwt = await apnsJwt();
-    const host = Deno.env.get('APNS_HOST') ?? 'api.push.apple.com';
-    const topic = Deno.env.get('APNS_BUNDLE_ID')!;
+    const sa: ServiceAccount = JSON.parse(
+      Deno.env.get('FCM_SERVICE_ACCOUNT')!,
+    );
+    const bearer = await accessToken(sa);
+    const endpoint =
+      `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
+
     const who = actor_name?.trim() ? actor_name.trim() : 'Your nanny';
     const forBaby = baby_name?.trim() ? ` for ${baby_name.trim()}` : '';
-    const payload = JSON.stringify({
-      aps: {
-        alert: {
-          title: 'Weekly report submitted 📋',
-          body: `${who} submitted this week's report${forBaby}.`,
-        },
-        sound: 'default',
-        badge: 1,
-      },
-      type: 'weekly_report_submitted',
-      baby_id,
-    });
+    const title = 'Weekly report submitted 📋';
+    const body = `${who} submitted this week's report${forBaby}.`;
 
     let sent = 0;
     const stale: string[] = [];
     for (const { token } of tokens) {
-      const res = await fetch(`https://${host}/3/device/${token}`, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          authorization: `bearer ${jwt}`,
-          'apns-topic': topic,
-          'apns-push-type': 'alert',
-          'apns-priority': '10',
+          authorization: `Bearer ${bearer}`,
+          'Content-Type': 'application/json',
         },
-        body: payload,
+        body: JSON.stringify({
+          message: {
+            token,
+            notification: { title, body },
+            // Read by PushService._handleTap to deep-link the right screen.
+            // FCM requires every data value to be a string.
+            data: { type: 'weekly_report_submitted', baby_id: String(baby_id) },
+            android: {
+              priority: 'high',
+              notification: { channel_id: 'remote_updates', sound: 'default' },
+            },
+            apns: {
+              headers: { 'apns-priority': '10' },
+              payload: { aps: { sound: 'default', badge: 1 } },
+            },
+          },
+        }),
       });
-      if (res.ok) sent++;
-      else if (res.status === 410) stale.push(token); // token no longer valid
+
+      if (res.ok) {
+        sent++;
+        continue;
+      }
+      // FCM reports a dead token as 404 UNREGISTERED (app uninstalled or token
+      // rotated) or 400 INVALID_ARGUMENT for a malformed one. Both mean stop
+      // trying that token. Anything else is a transient/config error worth
+      // logging rather than deleting over.
+      const err = await res.text();
+      if (
+        res.status === 404 ||
+        err.includes('UNREGISTERED') ||
+        err.includes('INVALID_ARGUMENT')
+      ) {
+        stale.push(token);
+      } else {
+        console.error(`fcm send failed ${res.status}: ${err}`);
+      }
     }
 
-    // Clean up dead tokens.
     if (stale.length) {
       await admin.from('device_tokens').delete().in('token', stale);
     }
 
-    return new Response(JSON.stringify({ sent, cleaned: stale.length }), {
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    });
+    return json({ sent, cleaned: stale.length });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500,
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    });
+    console.error(e);
+    return json({ error: String(e) }, 500);
   }
 });

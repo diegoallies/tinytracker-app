@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/diaper.dart';
+import '../services/analytics_service.dart';
 import '../services/pending_writes.dart';
 import '../services/supabase_service.dart';
 import '../utils/date_utils.dart';
@@ -83,6 +84,8 @@ class DiaperActions {
     int? stoolType,
     String? notes,
     DateTime? loggedAt,
+    // Watch taps arrive here via WatchBridge; the phone UI leaves the default.
+    String source = AnalyticsService.sourcePhone,
   }) async {
     final userId = SupabaseService.userId;
     if (userId == null) return;
@@ -108,6 +111,7 @@ class DiaperActions {
       if (isDirty && stoolType != null) {
         try {
           await SupabaseService.client.from('diapers').insert(fullPayload);
+          AnalyticsService.logDiaper(source: source);
           return;
         } on PostgrestException catch (e) {
           // Only retry when the column genuinely doesn't exist yet - see
@@ -122,6 +126,9 @@ class DiaperActions {
       if (!PendingWrites.isConnectivityError(e)) rethrow;
       await PendingWrites.enqueue('diapers', fullPayload);
     }
+
+    // Count only — never the type, colour or notes.
+    AnalyticsService.logDiaper(source: source);
   }
 
   static Future<void> deleteDiaper(String diaperId) async {

@@ -1,10 +1,18 @@
 import Flutter
 import UIKit
 
+// Push is handled by firebase_messaging, which registers itself through the
+// Flutter plugin registrar and hands FCM tokens to Dart — the old
+// `tinytrack/push` MethodChannel and manual APNs token forwarding are gone.
+//
+// There is deliberately NO UNUserNotificationCenter delegate assignment here.
+// FlutterAppDelegate conforms to FlutterAppLifeCycleProvider, which is exactly
+// what lets firebase_messaging and flutter_local_notifications coexist:
+// firebase_messaging detects that and defers to the plugin chain instead of
+// seizing the delegate. Assigning it by hand would break the scheduled
+// feeding/sleep/medication reminders.
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
-  private var pushChannel: FlutterMethodChannel?
-
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -14,40 +22,5 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-
-    // Bridge for native APNs. Flutter asks us to register; we hand the device
-    // token back over the same channel.
-    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "tinytrack.push") {
-      let channel = FlutterMethodChannel(
-        name: "tinytrack/push",
-        binaryMessenger: registrar.messenger()
-      )
-      channel.setMethodCallHandler { call, result in
-        if call.method == "registerForRemoteNotifications" {
-          DispatchQueue.main.async {
-            UIApplication.shared.registerForRemoteNotifications()
-          }
-          result(nil)
-        } else {
-          result(FlutterMethodNotImplemented)
-        }
-      }
-      pushChannel = channel
-    }
-  }
-
-  override func application(
-    _ application: UIApplication,
-    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
-  ) {
-    let token = deviceToken.map { String(format: "%02x", $0) }.joined()
-    pushChannel?.invokeMethod("onToken", arguments: token)
-  }
-
-  override func application(
-    _ application: UIApplication,
-    didFailToRegisterForRemoteNotificationsWithError error: Error
-  ) {
-    NSLog("APNs registration failed: \(error.localizedDescription)")
   }
 }

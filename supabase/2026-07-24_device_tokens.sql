@@ -1,5 +1,7 @@
--- Push device tokens for native APNs (no Firebase).
--- Each user can have multiple devices; we store the raw APNs token per device.
+-- Push device tokens for FCM (Firebase Cloud Messaging).
+-- Each user can have multiple devices; we store the FCM registration token per
+-- device. FCM reaches iOS through APNs itself, so both platforms share this
+-- table and `platform` is informational only.
 create table if not exists public.device_tokens (
   user_id    uuid        not null references auth.users(id) on delete cascade,
   token      text        not null,

@@ -18,6 +18,10 @@ class NotificationService {
   static const _weeklyReportChannelId = 'weekly_report_reminders';
   static const _weeklyReportNotificationId = 1002;
   static const _medicationChannelId = 'medication_reminders';
+  // Foreground FCM pushes (see showRemoteNotification). Distinct channel so
+  // users can mute family updates without losing their own reminders.
+  static const _remoteChannelId = 'remote_updates';
+  static const _remoteNotificationId = 1200;
   // Medication reminders use a reserved id block: _medicationIdBase .. +maxMeds.
   static const _medicationIdBase = 1100;
   static const _maxMedReminders = 30;
@@ -36,6 +40,46 @@ class NotificationService {
       iOS: iosSettings,
     );
     await _plugin.initialize(settings);
+
+    // Background/killed FCM pushes are drawn by the OS, not by Dart, using the
+    // channel named in AndroidManifest.xml. On Android 8+ a notification
+    // pointing at a channel that doesn't exist yet is dropped silently, so it
+    // has to be created up front rather than lazily on first show().
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _remoteChannelId,
+            'Updates from your family',
+            description:
+                'Alerts when someone sharing your baby logs or submits something.',
+            importance: Importance.high,
+          ),
+        );
+  }
+
+  /// Renders an FCM push that arrived while the app was in the foreground.
+  ///
+  /// Android draws nothing for foreground messages, so `PushService` routes
+  /// them here. iOS presents them itself via
+  /// `setForegroundNotificationPresentationOptions` and never calls this.
+  static Future<void> showRemoteNotification({
+    required String title,
+    required String body,
+  }) async {
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _remoteChannelId,
+        'Updates from your family',
+        channelDescription:
+            'Alerts when someone sharing your baby logs or submits something.',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(),
+    );
+    await _plugin.show(_remoteNotificationId, title, body, details);
   }
 
   static Future<void> requestPermissions() async {
