@@ -4,6 +4,7 @@ import '../services/prediction_service.dart';
 import '../services/feeding_guidelines.dart';
 import '../services/supabase_service.dart';
 import 'baby_provider.dart';
+import 'baby_medication_provider.dart';
 import 'sleep_provider.dart';
 import '../utils/date_utils.dart';
 
@@ -59,6 +60,70 @@ final nextFeedingPredictionProvider =
     return pattern;
   } catch (e, st) {
     debugPrint('nextFeedingPredictionProvider error: $e\n$st');
+    return null; // Prediction is a bonus - never break the screen for it.
+  }
+});
+
+/// Next scheduled medication dose that's due (soonest first), or null when no
+/// scheduled meds exist / everything's already been given for today.
+/// As-needed meds (Calpol style) are intentionally excluded - they have no
+/// schedule to predict against.
+final nextMedicationDueProvider =
+    FutureProvider<NextMedicationDue?>((ref) async {
+  final baby = ref.watch(selectedBabyProvider);
+  if (baby == null) return null;
+
+  try {
+    final meds = await ref.watch(babyMedicationsProvider.future);
+    // Only meds with a schedule can be predicted.
+    final scheduled = meds
+        .where((m) =>
+            !m.asNeeded &&
+            (m.frequencyPerDay != null || m.minIntervalHours != null))
+        .toList();
+    if (scheduled.isEmpty) return null;
+
+    final now = DateTime.now();
+    // Three days covers even a once-daily med's previous dose.
+    final since = now.subtract(const Duration(days: 3));
+    final rows = await SupabaseService.client
+        .from('health_logs')
+        .select('medication, logged_at')
+        .eq('baby_id', baby.id)
+        .not('medication', 'is', null)
+        .isFilter('deleted_at', null)
+        .gte('logged_at', since.toUtc().toIso8601String())
+        .order('logged_at', ascending: false);
+
+    // Group administered doses by lowercased med name in one pass.
+    final byName = <String, List<DateTime>>{};
+    for (final row in rows) {
+      final nm = (row['medication'] as String?)?.trim().toLowerCase();
+      if (nm == null || nm.isEmpty) continue;
+      byName
+          .putIfAbsent(nm, () => [])
+          .add(parseDbTime(row['logged_at'] as String).toLocal());
+    }
+
+    // Predict each scheduled med, keep the one due soonest (most overdue wins).
+    NextMedicationDue? best;
+    for (final m in scheduled) {
+      final doses = byName[m.name.trim().toLowerCase()] ?? const <DateTime>[];
+      final pred = PredictionService.predictNextDose(
+        name: m.name,
+        dosage: m.defaultDosage,
+        frequencyPerDay: m.frequencyPerDay,
+        minIntervalHours: m.minIntervalHours,
+        asNeeded: m.asNeeded,
+        recentDoses: doses,
+        now: now,
+      );
+      if (pred == null) continue;
+      if (best == null || pred.dueAt.isBefore(best.dueAt)) best = pred;
+    }
+    return best;
+  } catch (e, st) {
+    debugPrint('nextMedicationDueProvider error: $e\n$st');
     return null; // Prediction is a bonus - never break the screen for it.
   }
 });

@@ -137,4 +137,85 @@ void main() {
       expect(p.timeUntil(DateTime(2026, 6, 9, 11)), const Duration(hours: 1));
     });
   });
+
+  group('PredictionService.predictNextDose', () {
+    test('as-needed meds return null (no schedule)', () {
+      final p = PredictionService.predictNextDose(
+        name: 'Calpol',
+        asNeeded: true,
+        recentDoses: const [],
+        now: DateTime(2026, 6, 9, 12),
+      );
+      expect(p, isNull);
+    });
+
+    test('no schedule info returns null', () {
+      final p = PredictionService.predictNextDose(
+        name: 'Vitamins',
+        recentDoses: const [],
+        now: DateTime(2026, 6, 9, 12),
+      );
+      expect(p, isNull);
+    });
+
+    test('never-dosed scheduled med is due now', () {
+      final now = DateTime(2026, 6, 9, 12);
+      final p = PredictionService.predictNextDose(
+        name: 'Amoxicillin',
+        minIntervalHours: 8,
+        frequencyPerDay: 3,
+        recentDoses: const [],
+        now: now,
+      );
+      expect(p, isNotNull);
+      expect(p!.dueAt, now);
+      expect(p.dosesGivenToday, 0);
+      expect(p.isOverdue(now.add(const Duration(minutes: 1))), isTrue);
+    });
+
+    test('next dose is last dose + min interval', () {
+      final now = DateTime(2026, 6, 9, 14);
+      final p = PredictionService.predictNextDose(
+        name: 'Amoxicillin',
+        minIntervalHours: 8,
+        frequencyPerDay: 3,
+        recentDoses: [DateTime(2026, 6, 9, 8)],
+        now: now,
+      );
+      expect(p, isNotNull);
+      expect(p!.dueAt, DateTime(2026, 6, 9, 16));
+      expect(p.dosesGivenToday, 1);
+      expect(p.confidence, 0.9);
+    });
+
+    test('daily cap reached returns null', () {
+      final now = DateTime(2026, 6, 9, 20);
+      final p = PredictionService.predictNextDose(
+        name: 'Amoxicillin',
+        minIntervalHours: 8,
+        frequencyPerDay: 3,
+        recentDoses: [
+          DateTime(2026, 6, 9, 8),
+          DateTime(2026, 6, 9, 14),
+          DateTime(2026, 6, 9, 20),
+        ],
+        now: now,
+      );
+      expect(p, isNull);
+    });
+
+    test('frequency-only med spreads across a 12h waking day', () {
+      final now = DateTime(2026, 6, 9, 10);
+      final p = PredictionService.predictNextDose(
+        name: 'Iron drops',
+        frequencyPerDay: 2,
+        recentDoses: [DateTime(2026, 6, 9, 8)],
+        now: now,
+      );
+      expect(p, isNotNull);
+      // 12h / 2 = 6h interval.
+      expect(p!.dueAt, DateTime(2026, 6, 9, 14));
+      expect(p.confidence, 0.6);
+    });
+  });
 }

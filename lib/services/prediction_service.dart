@@ -29,8 +29,103 @@ class NextEventPrediction {
   Duration timeUntil(DateTime now) => expectedAt.difference(now);
 }
 
+/// Prediction for the next dose of a scheduled medication.
+class NextMedicationDue {
+  /// Catalog name of the medication (original casing).
+  final String medName;
+
+  /// Default dosage string to show alongside, when known (e.g. '2.5ml').
+  final String? dosage;
+
+  /// When the next dose is due.
+  final DateTime dueAt;
+
+  /// How many doses have already been given today.
+  final int dosesGivenToday;
+
+  /// Configured doses-per-day cap, when set.
+  final int? frequencyPerDay;
+
+  /// 0..1 - higher when a concrete min-interval drives the timing.
+  final double confidence;
+
+  const NextMedicationDue({
+    required this.medName,
+    this.dosage,
+    required this.dueAt,
+    required this.dosesGivenToday,
+    this.frequencyPerDay,
+    required this.confidence,
+  });
+
+  bool isOverdue(DateTime now) => now.isAfter(dueAt);
+
+  Duration timeUntil(DateTime now) => dueAt.difference(now);
+}
+
 class PredictionService {
   PredictionService._();
+
+  /// When only a daily frequency is known (no explicit interval), doses are
+  /// spread across a ~12h waking day.
+  static const double _wakingHoursPerDay = 12;
+
+  /// Predict when the next dose of a scheduled medication is due.
+  ///
+  /// [recentDoses] are the administered-dose times from roughly the last few
+  /// days (any order). Timing prefers an explicit [minIntervalHours]; failing
+  /// that it spreads [frequencyPerDay] across the waking day. Returns null when
+  /// the med is as-needed, has no schedule, or the daily cap is already met.
+  static NextMedicationDue? predictNextDose({
+    required String name,
+    String? dosage,
+    int? frequencyPerDay,
+    double? minIntervalHours,
+    bool asNeeded = false,
+    required List<DateTime> recentDoses,
+    DateTime? now,
+  }) {
+    final n = now ?? DateTime.now();
+
+    // As-needed meds (Calpol etc.) have no schedule to predict against.
+    if (asNeeded) return null;
+    // Nothing to base a time on.
+    if (frequencyPerDay == null && minIntervalHours == null) return null;
+
+    final sorted = [...recentDoses]..sort();
+
+    // Daily cap: once today's doses hit frequencyPerDay, nothing more is due.
+    final startOfDay = DateTime(n.year, n.month, n.day);
+    final todayCount = sorted.where((d) => !d.isBefore(startOfDay)).length;
+    final freq = frequencyPerDay ?? 0;
+    if (freq > 0 && todayCount >= freq) return null;
+
+    final interval = _medInterval(minIntervalHours, frequencyPerDay);
+
+    // No dose ever recorded -> a scheduled med is due now. Otherwise the next
+    // dose lands one interval after the most recent one.
+    final dueAt = sorted.isEmpty ? n : sorted.last.add(interval);
+
+    return NextMedicationDue(
+      medName: name,
+      dosage: dosage,
+      dueAt: dueAt,
+      dosesGivenToday: todayCount,
+      frequencyPerDay: frequencyPerDay,
+      confidence: (minIntervalHours != null && minIntervalHours > 0) ? 0.9 : 0.6,
+    );
+  }
+
+  static Duration _medInterval(double? minIntervalHours, int? frequencyPerDay) {
+    if (minIntervalHours != null && minIntervalHours > 0) {
+      return Duration(minutes: (minIntervalHours * 60).round());
+    }
+    if (frequencyPerDay != null && frequencyPerDay > 0) {
+      final hrs = _wakingHoursPerDay / frequencyPerDay;
+      return Duration(minutes: (hrs * 60).round());
+    }
+    return const Duration(hours: 4);
+  }
 
   /// Day is 7:00-21:59 local; everything else counts as night. Babies have
   /// very different rhythms across dayparts, so gaps are bucketed by the

@@ -34,6 +34,7 @@ class _NextUpCardState extends ConsumerState<NextUpCard> {
       if (!mounted) return;
       ref.invalidate(nextFeedingPredictionProvider);
       ref.invalidate(nextNapPredictionProvider);
+      ref.invalidate(nextMedicationDueProvider);
     });
   }
 
@@ -47,8 +48,11 @@ class _NextUpCardState extends ConsumerState<NextUpCard> {
   Widget build(BuildContext context) {
     final feeding = ref.watch(nextFeedingPredictionProvider).valueOrNull;
     final nap = ref.watch(nextNapPredictionProvider).valueOrNull;
+    final medication = ref.watch(nextMedicationDueProvider).valueOrNull;
 
-    if (feeding == null && nap == null) return const SizedBox.shrink();
+    if (feeding == null && nap == null && medication == null) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -97,10 +101,87 @@ class _NextUpCardState extends ConsumerState<NextUpCard> {
                   ),
               ],
             ),
+            // Medication gets its own full-width row so the dose + name fit.
+            if (medication != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _MedicationTile(prediction: medication),
+            ],
           ],
         ),
       ),
     );
+  }
+}
+
+/// Full-width "next dose" tile for a scheduled medication.
+class _MedicationTile extends StatelessWidget {
+  final NextMedicationDue prediction;
+
+  const _MedicationTile({required this.prediction});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final overdue = prediction.isOverdue(now);
+    final until = prediction.timeUntil(now);
+    final timeLabel = DateFormat('h:mm a').format(prediction.dueAt);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final freq = prediction.frequencyPerDay;
+    final progress =
+        freq != null ? '${prediction.dosesGivenToday}/$freq today' : null;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.primary.withValues(alpha: 0.10)
+            : AppColors.pastelPurpleLight,
+        borderRadius: AppRadius.mdAll,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.medication_rounded,
+                  size: 16,
+                  color: overdue ? AppColors.warning : AppColors.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Medication - ${prediction.medName}'
+                  '${prediction.dosage != null ? ' (${prediction.dosage})' : ''}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (progress != null)
+                Text(progress, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            '~$timeLabel',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: overdue ? AppColors.warning : null,
+                ),
+          ),
+          Text(
+            overdue ? 'due now' : 'in ${_MedicationTile._fmt(until)}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _fmt(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    if (h > 0) return m > 0 ? '${h}h ${m}m' : '${h}h';
+    return '${m}m';
   }
 }
 
