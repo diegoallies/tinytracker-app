@@ -13,6 +13,7 @@ import 'app/router.dart';
 import 'firebase_options.dart';
 import 'providers/night_mode_provider.dart';
 import 'services/analytics_service.dart';
+import 'services/app_info.dart';
 import 'services/notification_service.dart';
 import 'services/pending_writes.dart';
 import 'services/push_service.dart';
@@ -22,6 +23,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: '.env');
+
+  await AppInfo.init();
 
   // Firebase first: Crashlytics needs to be installed as the error handler
   // before anything else can throw, and PushService/AnalyticsService both

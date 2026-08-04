@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/deep_links.dart';
+import '../../services/app_info.dart';
 import '../../services/supabase_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -259,12 +260,24 @@ class _SplashScreenState extends State<SplashScreen>
                   builder: (context, child) {
                     return Opacity(
                       opacity: _textOpacity.value * 0.5,
-                      child: Text(
-                        'Made with love',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.4),
-                        ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Made with love',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            AppInfo.display,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },

@@ -5,6 +5,7 @@ import '../../config/design_tokens.dart';
 import '../../config/theme.dart';
 import '../../providers/feeding_settings_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../services/app_info.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/common/night_mode_toggle.dart';
 
@@ -33,9 +34,6 @@ class WeeklyReportReminderEnabledNotifier extends StateNotifier<bool> {
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
-
-  // Keep in sync with pubspec.yaml's version.
-  static const _appVersion = '1.1.2';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -238,7 +236,7 @@ class SettingsScreen extends ConsumerWidget {
                     title: 'App Version',
                     subtitle: 'TinyTracker',
                     trailing: Text(
-                      _appVersion,
+                      AppInfo.display,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
