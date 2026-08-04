@@ -1,12 +1,10 @@
-Reminders that reach everyone caring for your baby.
+Push notifications now arrive reliably.
 
-• Feed and nap reminders are now sent from our servers instead of being
-  scheduled on a single phone. If your nanny logs a feed, your reminder
-  updates too - even if you haven't opened the app.
-• New alert when a caregiver submits a weekly report, so you know it's
-  ready to read.
-• Overdue alerts follow up if a feed or nap is running late.
-• Reminder settings now follow your account across devices.
-• Improved stability, with crash reporting added so problems get fixed faster.
+• Fixed an issue that stopped push notifications from reaching the App
+  Store version of the app. Feed reminders, nap reminders, overdue
+  follow-ups and weekly report alerts now come through as intended.
+• The app version is now shown on the launch screen and in Settings,
+  so it's easy to check you're on the latest update.
+• Minor improvements and fixes.
 
 Requires iOS 15 or later.
