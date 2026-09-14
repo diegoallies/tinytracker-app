@@ -1,7 +1,7 @@
 name: tinytrack_app
 description: "AI-powered baby tracking app"
 publish_to: 'none'
-version: 1.1.8+16
+version: 1.1.9+17
 
 environment:
   sdk: ^3.11.0
