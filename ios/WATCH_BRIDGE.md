@@ -28,6 +28,7 @@ host forwards it verbatim as the arguments of `onWatchEvent`:
 | `sleepStart` | —                                   | starts a sleep session         |
 | `sleepStop`  | —                                   | stops the active sleep session |
 | `logMed`     | `name` (String)                     | logs a medication dose         |
+| `refreshState` | —                                 | requests a complete fresh snapshot; uses background delivery when needed |
 
 Optional on any event: `loggedAt` (ISO-8601 string). Omit to use "now".
 
@@ -52,6 +53,9 @@ relays it via `updateApplicationContext`. Shape:
 }
 ```
 The watch reads `applicationContext` to populate its home screen + complication.
+The full payload also includes recent `feedLog`, `diaperLog`, `sleepLog`, and
+`medLog` arrays. The watch sends `refreshState` whenever it becomes active, so
+the suspended iPhone app can refresh every Watch page without being onscreen.
 
 ## Manual Xcode steps (do these on the Mac)
 

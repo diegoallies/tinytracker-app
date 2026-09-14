@@ -17,6 +17,8 @@ struct TinyTrackWatchApp: App {
 }
 
 private struct RootTabs: View {
+    @EnvironmentObject private var connectivity: ConnectivityService
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selection: Int = {
         #if DEBUG
         // Lets the Simulator land directly on a page for UI screenshots, e.g.
@@ -36,5 +38,9 @@ private struct RootTabs: View {
             MedicinePage().tag(4)
         }
         .tabViewStyle(.verticalPage)
+        .task { connectivity.requestRefresh() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { connectivity.requestRefresh() }
+        }
     }
 }

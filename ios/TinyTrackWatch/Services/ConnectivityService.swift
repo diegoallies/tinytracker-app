@@ -32,6 +32,7 @@ final class ConnectivityService: NSObject, ObservableObject {
     @Published private(set) var feedLog: [FeedLog] = []
     @Published private(set) var diaperLog: [DiaperLog] = []
     @Published private(set) var sleepLog: [SleepLog] = []
+    @Published private(set) var medLog: [MedLog] = []
 
     private override init() {
         super.init()
@@ -65,6 +66,10 @@ final class ConnectivityService: NSObject, ObservableObject {
             SleepLog(durationMinutes: 95, startedAt: ago(3), endedAt: ago(1.4)),
             SleepLog(durationMinutes: 180, startedAt: ago(12), endedAt: ago(9)),
         ]
+        medLog = [
+            MedLog(name: "Vitamin D", givenAt: ago(5)),
+            MedLog(name: "Panado", givenAt: ago(28)),
+        ]
         daySummaries = [
             DaySummary(date: dayKey(now),       feeds: 5, totalMl: 620, sleepMinutes: 275, diapers: 4),
             DaySummary(date: dayKey(ago(24)),   feeds: 6, totalMl: 700, sleepMinutes: 300, diapers: 5),
@@ -92,6 +97,12 @@ final class ConnectivityService: NSObject, ObservableObject {
     }
 
     // MARK: Sending
+
+    /// Ask the iPhone for a fresh snapshot. When the phone app is suspended,
+    /// the user-info fallback gives iOS permission to wake it in the background.
+    func requestRefresh() {
+        send(action: .refreshState)
+    }
 
     /// Send an action to the phone. Returns immediately (the UI is optimistic).
     /// `extra` carries the action-specific keys (e.g. `["type": "bottle", "amountMl": 150]`).
@@ -160,6 +171,9 @@ final class ConnectivityService: NSObject, ObservableObject {
         }
         if let sleeps: [SleepLog] = decodeArray(context["sleepLog"]) {
             DispatchQueue.main.async { self.sleepLog = sleeps }
+        }
+        if let meds: [MedLog] = decodeArray(context["medLog"]) {
+            DispatchQueue.main.async { self.medLog = meds }
         }
     }
 

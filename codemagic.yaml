@@ -13,6 +13,7 @@
 #   ASC_ISSUER_ID       the issuer uuid from App Store Connect → Integrations
 #   ASC_KEY_P8_BASE64   base64 of ios/fastlane/AuthKey.p8, produced with:
 #                         base64 -i ios/fastlane/AuthKey.p8 | pbcopy
+#   GROQ_API_KEY        Groq API key used by the in-app AI features
 #
 # The .p8 itself is gitignored on purpose — it is never committed, only injected
 # here at build time and written to disk inside the ephemeral CI machine.
@@ -89,6 +90,10 @@ workflows:
           NEXT=$((LATEST + 1))
           echo "Latest uploaded: $LATEST -> using $NEXT"
           echo "CI_BUILD_NUMBER=$NEXT" >> "$CM_ENV"
+      - name: Inject secure app environment
+        script: |
+          test -n "$GROQ_API_KEY" || { echo "GROQ_API_KEY is missing from the appstore environment group"; exit 1; }
+          perl -i -pe 's/^GROQ_API_KEY=.*/GROQ_API_KEY=$ENV{GROQ_API_KEY}/' .env
       - name: flutter pub get
         script: flutter pub get
       - name: flutter analyze
@@ -171,6 +176,10 @@ workflows:
           NEXT=$((LATEST + 1))
           echo "Latest uploaded: $LATEST -> using $NEXT"
           echo "CI_BUILD_NUMBER=$NEXT" >> "$CM_ENV"
+      - name: Inject secure app environment
+        script: |
+          test -n "$GROQ_API_KEY" || { echo "GROQ_API_KEY is missing from the appstore environment group"; exit 1; }
+          perl -i -pe 's/^GROQ_API_KEY=.*/GROQ_API_KEY=$ENV{GROQ_API_KEY}/' .env
       - name: flutter pub get
         script: flutter pub get
       - name: flutter analyze

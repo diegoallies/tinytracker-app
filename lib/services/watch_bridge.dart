@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/sleep_session.dart';
 import 'analytics_service.dart';
 import 'supabase_service.dart';
 import '../providers/baby_provider.dart';
@@ -48,6 +49,11 @@ class WatchBridge with WidgetsBindingObserver {
       },
       fireImmediately: true,
     );
+    // Phone sleep screens invalidate this provider after every start/stop.
+    // Echo those transitions to an already-open watch immediately.
+    container.listen(activeSleepProvider, (previous, next) {
+      next.whenData((_) => pushSummary());
+    });
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -66,6 +72,14 @@ class WatchBridge with WidgetsBindingObserver {
 
     final args = (call.arguments as Map).cast<String, dynamic>();
     final action = args['action'] as String?;
+
+    // A watch launch can wake the suspended iPhone app through
+    // WatchConnectivity. Refresh requests do not mutate data; they simply send
+    // the latest complete snapshot back to the watch.
+    if (action == 'refreshState') {
+      await pushSummary();
+      return true;
+    }
     final baby = container.read(selectedBabyProvider);
     if (action == null || baby == null) return false;
 
@@ -93,15 +107,23 @@ class WatchBridge with WidgetsBindingObserver {
           );
           break;
         case 'sleepStart':
+          container.invalidate(activeSleepProvider);
+          final existing = await container.read(activeSleepProvider.future);
+          if (existing != null) break;
           await SleepActions.startSleep(
             baby.id,
             source: AnalyticsService.sourceWatch,
           );
+          container.invalidate(activeSleepProvider);
           break;
         case 'sleepStop':
+          container.invalidate(activeSleepProvider);
           final active = await container.read(activeSleepProvider.future);
           if (active != null) {
             await SleepActions.stopSleep(active.id, active.startTime);
+            container.invalidate(activeSleepProvider);
+            container.invalidate(recentSleepsProvider);
+            container.invalidate(todaySleepMinutesProvider);
           }
           break;
         case 'logMed':
@@ -181,7 +203,20 @@ class WatchBridge with WidgetsBindingObserver {
       // Live sleep state so the watch mirrors the phone (source of truth):
       // if a session is running, the watch shows the carried-over timer and
       // can only Stop, not Start a second one.
-      final activeSleep = await container.read(activeSleepProvider.future);
+      // Query live state directly. A Riverpod FutureProvider may still hold the
+      // pre-action value while this background refresh is running.
+      final activeSleepRow = await client
+          .from('sleeps')
+          .select()
+          .eq('baby_id', baby.id)
+          .isFilter('end_time', null)
+          .isFilter('deleted_at', null)
+          .order('start_time', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      final activeSleep = activeSleepRow == null
+          ? null
+          : SleepSession.fromJson(activeSleepRow);
 
       // ── Feats 1 & 2: last 7 days of daily summaries (home left-scroll) +
       //    recent per-type record logs (per-page left-scroll). One windowed
@@ -213,6 +248,15 @@ class WatchBridge with WidgetsBindingObserver {
           .not('end_time', 'is', null)
           .gte('start_time', weekStartIso)
           .order('start_time', ascending: false);
+      final medRows = await client
+          .from('health_logs')
+          .select('id, medication, logged_at')
+          .eq('baby_id', baby.id)
+          .isFilter('deleted_at', null)
+          .not('medication', 'is', null)
+          .gte('logged_at', weekStartIso)
+          .order('logged_at', ascending: false)
+          .limit(25);
 
       String dayKeyOf(String iso) {
         final l = DateTime.parse(iso).toLocal();
@@ -277,6 +321,14 @@ class WatchBridge with WidgetsBindingObserver {
             'endedAt': s['end_time'] != null ? iso(s['end_time'] as String) : null,
           }
       ];
+      final medLog = [
+        for (final m in medRows)
+          {
+            'id': '${m['id']}',
+            'name': m['medication'],
+            'givenAt': iso(m['logged_at'] as String),
+          }
+      ];
 
       debugPrint('WatchBridge.pushSummary: sending for ${baby.name} — '
           'feeds=${feeds.length} diapers=${diapers.length} '
@@ -301,6 +353,7 @@ class WatchBridge with WidgetsBindingObserver {
         'feedLog': feedLog,
         'diaperLog': diaperLog,
         'sleepLog': sleepLog,
+        'medLog': medLog,
       });
     } catch (e, st) {
       debugPrint('WatchBridge pushSummary failed: $e\n$st');

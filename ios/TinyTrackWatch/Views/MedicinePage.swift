@@ -7,6 +7,14 @@ struct MedicinePage: View {
     @State private var givenNames: Set<String> = []
 
     var body: some View {
+        TabView {
+            main
+            history
+        }
+        .tabViewStyle(.page)
+    }
+
+    private var main: some View {
         VStack(spacing: 6) {
             PageHeader(icon: "pills.fill", title: "MEDICINE", tint: Theme.medicine)
 
@@ -38,6 +46,17 @@ struct MedicinePage: View {
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .screenBackground(Theme.medicine)
+    }
+
+    private var history: some View {
+        HistoryLog(title: "MEDICINE LOG", icon: "list.bullet", tint: Theme.medicine,
+                   isEmpty: connectivity.medLog.isEmpty,
+                   emptyText: "No medicine given yet.") {
+            ForEach(connectivity.medLog) { med in
+                LogRow(icon: "pills.fill", tint: Theme.medicine,
+                       title: med.name, subtitle: "Given", time: med.givenAt.logStamp)
+            }
+        }
     }
 
     private func medCard(_ name: String) -> some View {
